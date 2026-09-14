@@ -10,33 +10,154 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AiScreeningRouteImport } from './routes/ai-screening'
+import { Route as ApplicationsRouteImport } from './routes/applications'
+import { Route as CandidatesRouteImport } from './routes/candidates'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as JobsRouteImport } from './routes/jobs'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as SettingsRouteImport } from './routes/settings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiScreeningRoute = AiScreeningRouteImport.update({
+  id: '/ai-screening',
+  path: '/ai-screening',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplicationsRoute = ApplicationsRouteImport.update({
+  id: '/applications',
+  path: '/applications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidatesRoute = CandidatesRouteImport.update({
+  id: '/candidates',
+  path: '/candidates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsRoute = JobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai-screening': typeof AiScreeningRoute
+  '/applications': typeof ApplicationsRoute
+  '/candidates': typeof CandidatesRoute
+  '/dashboard': typeof DashboardRoute
+  '/jobs': typeof JobsRoute
+  '/messages': typeof MessagesRoute
+  '/pipeline': typeof PipelineRoute
+  '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai-screening': typeof AiScreeningRoute
+  '/applications': typeof ApplicationsRoute
+  '/candidates': typeof CandidatesRoute
+  '/dashboard': typeof DashboardRoute
+  '/jobs': typeof JobsRoute
+  '/messages': typeof MessagesRoute
+  '/pipeline': typeof PipelineRoute
+  '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai-screening': typeof AiScreeningRoute
+  '/applications': typeof ApplicationsRoute
+  '/candidates': typeof CandidatesRoute
+  '/dashboard': typeof DashboardRoute
+  '/jobs': typeof JobsRoute
+  '/messages': typeof MessagesRoute
+  '/pipeline': typeof PipelineRoute
+  '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/ai-screening'
+    | '/applications'
+    | '/candidates'
+    | '/dashboard'
+    | '/jobs'
+    | '/messages'
+    | '/pipeline'
+    | '/reports'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/ai-screening'
+    | '/applications'
+    | '/candidates'
+    | '/dashboard'
+    | '/jobs'
+    | '/messages'
+    | '/pipeline'
+    | '/reports'
+    | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/ai-screening'
+    | '/applications'
+    | '/candidates'
+    | '/dashboard'
+    | '/jobs'
+    | '/messages'
+    | '/pipeline'
+    | '/reports'
+    | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiScreeningRoute: typeof AiScreeningRoute
+  ApplicationsRoute: typeof ApplicationsRoute
+  CandidatesRoute: typeof CandidatesRoute
+  DashboardRoute: typeof DashboardRoute
+  JobsRoute: typeof JobsRoute
+  MessagesRoute: typeof MessagesRoute
+  PipelineRoute: typeof PipelineRoute
+  ReportsRoute: typeof ReportsRoute
+  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +169,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai-screening': {
+      id: '/ai-screening'
+      path: '/ai-screening'
+      fullPath: '/ai-screening'
+      preLoaderRoute: typeof AiScreeningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applications': {
+      id: '/applications'
+      path: '/applications'
+      fullPath: '/applications'
+      preLoaderRoute: typeof ApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidates': {
+      id: '/candidates'
+      path: '/candidates'
+      fullPath: '/candidates'
+      preLoaderRoute: typeof CandidatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs': {
+      id: '/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof JobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiScreeningRoute: AiScreeningRoute,
+  ApplicationsRoute: ApplicationsRoute,
+  CandidatesRoute: CandidatesRoute,
+  DashboardRoute: DashboardRoute,
+  JobsRoute: JobsRoute,
+  MessagesRoute: MessagesRoute,
+  PipelineRoute: PipelineRoute,
+  ReportsRoute: ReportsRoute,
+  SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
