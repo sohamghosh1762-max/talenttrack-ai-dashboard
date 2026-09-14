@@ -172,7 +172,12 @@
     margin: 0;
   }
 
-  button, input, select, textarea { font: inherit; }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
 }
 
 @utility dashboard-card {
@@ -187,5 +192,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
