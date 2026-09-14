@@ -1,155 +1,671 @@
 "use client";
 
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
+  ArrowLeft,
   ArrowRight,
-  BarChart3,
-  Bot,
-  Brain,
   Briefcase,
+  Check,
   CheckCircle2,
-  FileCheck,
+  ChevronRight,
+  Cpu,
+  FileCheck2,
+  FileSpreadsheet,
+  FileText,
+  Handshake,
+  Layers,
+  Play,
   Search,
   ShieldCheck,
   Sparkles,
-  UserCheck,
-  UserRound,
+  Star,
+  TrendingUp,
+  UserPlus,
   Users,
-  Zap,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthProvider";
+import {
+  GoogleLogo,
+  MicrosoftLogo,
+  AmazonLogo,
+  AdobeLogo,
+  InfosysLogo,
+  TCSLogo,
+  FlipkartLogo,
+  ZomatoLogo,
+} from "@/components/common/CompanyLogos";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "TalentTrack AI — AI-Powered ATS for Smarter Hiring" },
+      { title: "TalentTrack AI — Smarter Hiring. Brighter Teams." },
       {
         name: "description",
         content:
-          "AI-powered applicant tracking system supporting faster, more consistent candidate screening and pipeline management.",
+          "AI-powered applicant tracking system. Post jobs, attract the right talent, and let AI do the heavy lifting.",
       },
     ],
   }),
-  component: LandingPage,
+  component: PublicHomePage,
 });
 
-function LandingPage() {
+const featureStrip = [
+  {
+    title: "Post Jobs Easily",
+    desc: "Reach the right talent in minutes.",
+    icon: FileText,
+    iconBg: "bg-blue-500/10 text-brand-blue",
+  },
+  {
+    title: "AI-Powered Screening",
+    desc: "Get intelligent candidate rankings.",
+    icon: Sparkles,
+    iconBg: "bg-purple-500/10 text-brand-purple",
+  },
+  {
+    title: "Manage Your Pipeline",
+    desc: "Track progress, collaborate, hire.",
+    icon: TrendingUp,
+    iconBg: "bg-emerald-500/10 text-brand-green",
+  },
+  {
+    title: "Find the Right Fit",
+    desc: "Save time, hire with confidence.",
+    icon: ShieldCheck,
+    iconBg: "bg-rose-500/10 text-brand-red",
+  },
+];
+
+const steps = [
+  {
+    num: "01",
+    title: "Create an Account",
+    desc: "Sign up as a job seeker or employer in a few clicks.",
+    icon: UserPlus,
+    color: "bg-brand-blue text-white",
+  },
+  {
+    num: "02",
+    title: "Post or Apply",
+    desc: "Companies post jobs, candidates apply with ease.",
+    icon: FileCheck2,
+    color: "bg-brand-purple text-white",
+  },
+  {
+    num: "03",
+    title: "AI Analysis",
+    desc: "Our AI scans resumes, extracts key skills, and ranks the best matches.",
+    icon: Cpu,
+    color: "bg-brand-green text-white",
+  },
+  {
+    num: "04",
+    title: "Connect & Hire",
+    desc: "Shortlist, interview, and bring the right people onboard.",
+    icon: Handshake,
+    color: "bg-brand-orange text-white",
+  },
+];
+
+const testimonials = [
+  {
+    quote:
+      "TalentTrack AI reduced our screening time by 70%. The AI matching is incredibly accurate!",
+    name: "Sneha Kapoor",
+    role: "HR Manager, TechCorp",
+    avatar: "SK",
+  },
+  {
+    quote:
+      "I found my dream job within weeks. The platform is simple and really understands my profile.",
+    name: "Aarav Mehta",
+    role: "Software Engineer",
+    avatar: "AM",
+  },
+  {
+    quote:
+      "An essential tool for any modern recruitment team. It saves time and helps us find better talent.",
+    name: "Rohit Sharma",
+    role: "Talent Acquisition Lead, InnovateX",
+    avatar: "RS",
+  },
+];
+
+function PublicHomePage() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [activeTestimonialIdx, setActiveTestimonialIdx] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const nextTestimonial = () => {
+    setActiveTestimonialIdx((prev) => (prev + 1) % testimonials.length);
+  };
+
+  const prevTestimonial = () => {
+    setActiveTestimonialIdx((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+  };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-brand-blue selection:text-white">
-      {/* 1. Public Top Navigation */}
-      <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-brand-blue selection:text-white">
+      {/* 1. Header (Exact Visual Match: Clean White Header) */}
+      <header className="sticky top-0 z-50 bg-card border-b border-border/80 px-4 sm:px-8 lg:px-14">
+        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="relative grid size-9 place-items-center rounded-lg bg-surface-blue text-brand-blue">
-              <Users className="size-5.5" />
-              <Sparkles className="absolute -right-0.5 -top-0.5 size-3.5 text-brand-blue" />
+          <Link to="/" className="flex items-center gap-3">
+            <div className="relative grid size-10 place-items-center rounded-xl bg-brand-blue text-primary-foreground shadow-xs">
+              <Users className="size-6 text-white" />
+              <Sparkles className="absolute -right-1 -top-1 size-3.5 text-sky-300" />
             </div>
             <div>
-              <span className="text-lg font-bold tracking-tight text-foreground block leading-tight">
+              <span className="text-[19px] font-extrabold tracking-tight text-foreground block leading-tight">
                 TalentTrack AI
               </span>
-              <span className="text-[9.5px] text-muted-foreground block">
+              <span className="text-[10px] font-medium text-muted-foreground block">
                 Smarter Hiring. Brighter Teams.
               </span>
             </div>
           </Link>
 
-          {/* Links */}
-          <nav className="hidden md:flex items-center gap-7 text-xs font-medium text-muted-foreground">
+          {/* Navigation Links */}
+          <nav className="hidden md:flex items-center gap-8 text-[13px] font-medium text-muted-foreground">
             <Link
               to="/"
-              className="text-foreground font-semibold hover:text-brand-blue transition-colors"
+              className="relative text-brand-blue font-bold after:absolute after:-bottom-2.5 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-brand-blue"
             >
               Home
             </Link>
             <a href="#features" className="hover:text-foreground transition-colors">
-              How It Works
+              Jobs
             </a>
-            <a href="#for-employers" className="hover:text-foreground transition-colors">
+            <a href="#how-it-works" className="hover:text-foreground transition-colors">
               For Employers
             </a>
-            <a href="#candidates" className="hover:text-foreground transition-colors">
-              For Candidates
+            <a href="#how-it-works" className="hover:text-foreground transition-colors">
+              How It Works
+            </a>
+            <a href="#testimonials" className="hover:text-foreground transition-colors">
+              About
             </a>
           </nav>
 
-          {/* Actions */}
-          <div className="flex items-center gap-3">
+          {/* Right Action Buttons */}
+          <div className="hidden sm:flex items-center gap-3">
+            <button
+              type="button"
+              className="grid size-9 place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              aria-label="Search jobs and recruiters"
+            >
+              <Search className="size-4.5" />
+            </button>
+
             {isAuthenticated && user ? (
               <Button
-                size="sm"
-                className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold"
+                className="h-10 px-5 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground font-semibold text-xs gap-1.5 rounded-lg shadow-sm"
                 onClick={() =>
                   navigate({
                     to: user.role === "recruiter" ? "/dashboard" : "/applicant",
                   })
                 }
               >
-                Go to Workspace ({user.name.split(" ")[0]})
-                <ArrowRight className="size-3.5 ml-1.5" />
+                Dashboard ({user.name.split(" ")[0]})
+                <ArrowRight className="size-3.5" />
               </Button>
             ) : (
               <>
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  variant="outline"
                   asChild
-                  className="text-xs font-semibold text-foreground hover:bg-muted"
+                  className="h-10 px-5 text-xs font-semibold text-brand-blue border-brand-blue/30 hover:bg-surface-blue hover:text-brand-blue rounded-lg"
                 >
-                  <Link to="/login">Sign In</Link>
+                  <Link to="/login">Login</Link>
                 </Button>
                 <Button
-                  size="sm"
                   asChild
-                  className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold shadow-xs"
+                  className="h-10 px-5 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold rounded-lg shadow-sm"
                 >
                   <Link to="/register">Get Started</Link>
                 </Button>
               </>
             )}
           </div>
+
+          {/* Mobile Menu Hamburger */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg text-foreground hover:bg-muted"
+            aria-label="Open mobile menu"
+          >
+            {mobileMenuOpen ? <X className="size-6" /> : <Users className="size-6" />}
+          </button>
         </div>
+
+        {/* Mobile Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border py-4 space-y-3">
+            <div className="flex flex-col gap-2.5 text-sm font-medium px-2">
+              <Link
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-brand-blue font-bold py-1"
+              >
+                Home
+              </Link>
+              <Link
+                to="/register"
+                search={{ role: "applicant" }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1"
+              >
+                Jobs
+              </Link>
+              <Link
+                to="/register"
+                search={{ role: "recruiter" }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1"
+              >
+                For Employers
+              </Link>
+              <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="py-1">
+                How It Works
+              </a>
+            </div>
+            <div className="pt-2 flex gap-2">
+              <Button asChild variant="outline" className="flex-1 h-9 text-xs">
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button asChild className="flex-1 h-9 bg-brand-blue text-xs">
+                <Link to="/register">Get Started</Link>
+              </Button>
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* 2. Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 sm:pt-16 sm:pb-28">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-surface-blue/80 via-transparent to-transparent -z-10" />
+      {/* 2. Hero Section (Split Layout with Floating AI UI Cards) */}
+      <section className="relative overflow-hidden pt-8 pb-14 sm:pt-14 sm:pb-20 bg-gradient-to-b from-surface-blue/40 via-background to-background">
+        <div className="mx-auto max-w-7xl px-4 sm:px-8 lg:px-14">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] items-center gap-10 lg:gap-14">
+            {/* Left Hero Content */}
+            <div className="space-y-6">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-brand-blue/25 bg-surface-blue px-4 py-1.5 text-xs font-semibold text-brand-blue shadow-2xs">
+                <Sparkles className="size-3.5 text-brand-blue" />
+                AI-Powered Applicant Tracking System
+              </div>
 
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-brand-blue/30 bg-surface-blue px-3.5 py-1 text-xs font-semibold text-brand-blue shadow-2xs">
-            <Sparkles className="size-3.5" />
-            Next-Generation AI Applicant Tracking System
+              {/* Main Heading */}
+              <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-foreground leading-[1.12]">
+                Hiring Made <br />
+                <span className="text-brand-blue">Smarter,</span> Simpler.
+              </h1>
+
+              {/* Supporting Text */}
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
+                Post jobs, attract the right talent, and let AI do the heavy lifting. For job
+                seekers, find opportunities that match your skills and aspirations — faster than
+                ever.
+              </p>
+
+              {/* Buttons */}
+              <div className="flex flex-wrap items-center gap-3.5 pt-2">
+                <Button
+                  asChild
+                  className="h-11 px-6 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground font-semibold text-xs rounded-lg shadow-md gap-2"
+                >
+                  <Link to="/register" search={{ role: "applicant" }}>
+                    <span>Find a Job</span>
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  asChild
+                  className="h-11 px-6 border-brand-blue/40 text-brand-blue hover:bg-surface-blue font-semibold text-xs rounded-lg"
+                >
+                  <Link to="/register" search={{ role: "recruiter" }}>
+                    I'm a Recruiter
+                  </Link>
+                </Button>
+              </div>
+
+              {/* Statistics Row */}
+              <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-6 border-t border-border/70">
+                <div>
+                  <strong className="block text-2xl font-extrabold text-foreground tracking-tight">
+                    500+
+                  </strong>
+                  <span className="text-[11px] text-muted-foreground">Companies</span>
+                </div>
+                <div>
+                  <strong className="block text-2xl font-extrabold text-foreground tracking-tight">
+                    50K+
+                  </strong>
+                  <span className="text-[11px] text-muted-foreground">Job Seekers</span>
+                </div>
+                <div>
+                  <strong className="block text-2xl font-extrabold text-foreground tracking-tight">
+                    1M+
+                  </strong>
+                  <span className="text-[11px] text-muted-foreground">Applications Processed</span>
+                </div>
+                <div>
+                  <strong className="block text-2xl font-extrabold text-foreground tracking-tight">
+                    4.8/5
+                  </strong>
+                  <span className="text-[11px] text-muted-foreground">User Satisfaction</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Hero Image + Floating AI Cards */}
+            <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+              {/* Handwritten Note Top Right */}
+              <div className="hidden sm:block absolute -top-8 right-4 text-xs font-serif italic text-brand-blue rotate-6 font-semibold select-none z-20">
+                Great Talent <br /> Builds Great Things ↗
+              </div>
+
+              {/* Main Rounded Image */}
+              <div className="relative rounded-3xl overflow-hidden border-4 border-card shadow-2xl bg-muted/40 aspect-square sm:aspect-[4/3.8]">
+                <img
+                  src="/images/hero-recruiter.jpg"
+                  alt="Recruiter reviewing candidate applications on TalentTrack AI"
+                  className="size-full object-cover object-top"
+                  loading="eager"
+                />
+
+                {/* Laptop handwritten sticker overlay */}
+                <div className="absolute bottom-6 right-6 hidden sm:block rounded-md bg-white/90 px-2 py-1 text-[10px] font-serif italic text-slate-800 shadow-sm rotate-[-4deg]">
+                  Better People, Brighter Futures
+                </div>
+              </div>
+
+              {/* Floating UI Card 1: AI Match Score (Top Left) */}
+              <div className="absolute -top-5 -left-4 sm:-left-6 rounded-2xl bg-card p-4 shadow-2xl border border-border/80 w-44 sm:w-48 z-20 animate-in fade-in-50 duration-300">
+                <span className="block text-[11px] font-bold text-foreground mb-2 text-center">
+                  AI Match Score
+                </span>
+                <div className="relative my-2 mx-auto size-16">
+                  {/* Circular Gauge */}
+                  <svg className="size-full -rotate-90" viewBox="0 0 36 36">
+                    <path
+                      className="text-muted/40"
+                      strokeWidth="3.5"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className="text-emerald-500"
+                      strokeDasharray="92, 100"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                  <span className="absolute inset-0 grid place-items-center text-sm font-extrabold text-foreground">
+                    92%
+                  </span>
+                </div>
+                <div className="space-y-1 text-[10px] text-muted-foreground pt-1">
+                  <div className="flex items-center gap-1.5 text-emerald-600 font-medium">
+                    <Check className="size-3" />
+                    <span>Skills matched</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-emerald-600 font-medium">
+                    <Check className="size-3" />
+                    <span>Experience aligned</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-emerald-600 font-medium">
+                    <Check className="size-3" />
+                    <span>High potential</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating UI Card 2: Candidate Top Match (Bottom Right) */}
+              <div className="absolute -bottom-6 -right-2 sm:-right-6 rounded-2xl bg-card p-3.5 shadow-2xl border border-border/80 w-52 sm:w-56 z-20 animate-in fade-in-50 duration-300">
+                <div className="flex items-center gap-2.5">
+                  <div className="grid size-9 place-items-center rounded-full bg-brand-blue text-xs font-bold text-primary-foreground shrink-0">
+                    AM
+                  </div>
+                  <div className="min-w-0">
+                    <strong className="block text-xs font-bold text-foreground truncate">
+                      Frontend Developer
+                    </strong>
+                    <span className="block text-[10px] text-muted-foreground truncate">
+                      3+ years experience
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1 my-2">
+                  <span className="rounded bg-surface-blue px-1.5 py-0.5 text-[9px] font-semibold text-brand-blue">
+                    React
+                  </span>
+                  <span className="rounded bg-surface-blue px-1.5 py-0.5 text-[9px] font-semibold text-brand-blue">
+                    Node.js
+                  </span>
+                  <span className="rounded bg-surface-blue px-1.5 py-0.5 text-[9px] font-semibold text-brand-blue">
+                    AWS
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-border/60 pt-2">
+                  <span className="rounded-md bg-surface-green px-2 py-0.5 text-[9.5px] font-bold text-brand-green">
+                    Top Match
+                  </span>
+                  <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Four-Feature Strip */}
+      <section id="features" className="py-6 px-4 sm:px-8 lg:px-14">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {featureStrip.map((item) => (
+              <div
+                key={item.title}
+                className="dashboard-card p-4.5 rounded-2xl bg-card hover:shadow-md transition-shadow flex items-start gap-3.5"
+              >
+                <div
+                  className={`grid size-10 place-items-center rounded-xl shrink-0 ${item.iconBg}`}
+                >
+                  <item.icon className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-foreground leading-tight">{item.title}</h3>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-normal">
+                    {item.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Trusted By Innovative Companies */}
+      <section className="py-12 border-y border-border/60 bg-muted/20 px-4 sm:px-8 lg:px-14">
+        <div className="mx-auto max-w-7xl text-center space-y-6">
+          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em] block">
+            TRUSTED BY INNOVATIVE COMPANIES
+          </span>
+
+          <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 lg:gap-14 opacity-90 transition-all duration-300">
+            <div className="flex items-center justify-center h-8 hover:scale-105 transition-transform">
+              <GoogleLogo className="h-6.5 w-auto" />
+            </div>
+            <div className="flex items-center justify-center h-8 hover:scale-105 transition-transform">
+              <MicrosoftLogo className="h-5.5 w-auto" />
+            </div>
+            <div className="flex items-center justify-center h-8 hover:scale-105 transition-transform">
+              <AmazonLogo className="h-6.5 w-auto" />
+            </div>
+            <div className="flex items-center justify-center h-8 hover:scale-105 transition-transform">
+              <AdobeLogo className="h-6 w-auto" />
+            </div>
+            <div className="flex items-center justify-center h-8 hover:scale-105 transition-transform">
+              <InfosysLogo className="h-6 w-auto" />
+            </div>
+            <div className="flex items-center justify-center h-8 hover:scale-105 transition-transform">
+              <TCSLogo className="h-6.5 w-auto" />
+            </div>
+            <div className="flex items-center justify-center h-8 hover:scale-105 transition-transform">
+              <FlipkartLogo className="h-6.5 w-auto" />
+            </div>
+            <div className="flex items-center justify-center h-8 hover:scale-105 transition-transform">
+              <ZomatoLogo className="h-6 w-auto" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. How It Works (4 Steps) */}
+      <section id="how-it-works" className="py-18 px-4 sm:px-8 lg:px-14">
+        <div className="mx-auto max-w-7xl text-center space-y-12">
+          <div className="space-y-3">
+            <span className="inline-block rounded-full bg-surface-blue px-3.5 py-1 text-xs font-bold text-brand-blue uppercase tracking-wider">
+              HOW IT WORKS
+            </span>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground tracking-tight">
+              From Job Posting to Joining — In 4 Simple Steps
+            </h2>
           </div>
 
-          {/* Heading */}
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-5xl sm:leading-[1.15] max-w-4xl mx-auto">
-            Smarter candidate matching. <br className="hidden sm:inline" />
-            <span className="text-brand-blue">Faster, collaborative hiring.</span>
-          </h1>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative">
+            {steps.map((step, idx) => (
+              <div
+                key={step.num}
+                className="flex flex-col items-center text-center space-y-3 relative group"
+              >
+                {/* Step Circle with Number */}
+                <div className="relative mb-2">
+                  <div
+                    className={`grid size-14 place-items-center rounded-2xl ${step.color} shadow-lg font-extrabold text-base`}
+                  >
+                    <step.icon className="size-7 text-white" />
+                  </div>
+                  <span className="absolute -top-2 -left-2 rounded-full bg-card px-2 py-0.5 text-[10px] font-extrabold border border-border shadow-xs text-foreground">
+                    {step.num}
+                  </span>
+                </div>
 
-          {/* Subtitle */}
-          <p className="mx-auto max-w-2xl text-xs text-muted-foreground sm:text-base leading-relaxed">
-            TalentTrack AI combines intelligent resume analysis, skill extraction, and structured
-            pipeline management to help recruitment teams screen candidates faster and more
-            consistently.
+                <h3 className="text-sm font-bold text-foreground">{step.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-[220px]">
+                  {step.desc}
+                </p>
+
+                {/* Arrow Connector between steps */}
+                {idx < steps.length - 1 && (
+                  <div className="hidden lg:block absolute top-7 -right-4 text-muted-foreground/40 font-bold">
+                    <ArrowRight className="size-4" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Success Stories (Dark Navy Testimonials Section) */}
+      <section
+        id="testimonials"
+        className="sidebar-gradient text-white py-16 px-4 sm:px-8 lg:px-14"
+      >
+        <div className="mx-auto max-w-7xl space-y-10">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-2">
+              <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold text-sky-300 uppercase tracking-wider">
+                SUCCESS STORIES
+              </span>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+                Hear From <br /> Our Community
+              </h2>
+              <p className="text-xs text-white/70">Real experiences. Real impact.</p>
+            </div>
+
+            {/* Carousel Arrow Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={prevTestimonial}
+                className="grid size-9 place-items-center rounded-full border border-white/20 hover:bg-white/10 text-white transition-colors"
+                aria-label="Previous testimonial"
+              >
+                <ArrowLeft className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={nextTestimonial}
+                className="grid size-9 place-items-center rounded-full border border-white/20 hover:bg-white/10 text-white transition-colors"
+                aria-label="Next testimonial"
+              >
+                <ArrowRight className="size-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Testimonial Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {testimonials.map((t, i) => (
+              <div
+                key={t.name}
+                className={`rounded-2xl border p-6 flex flex-col justify-between space-y-4 backdrop-blur-md transition-all ${
+                  activeTestimonialIdx === i
+                    ? "bg-white/15 border-white/30 shadow-xl scale-[1.02]"
+                    : "bg-white/5 border-white/10 hover:bg-white/10"
+                }`}
+              >
+                <p className="text-xs sm:text-[13px] leading-relaxed text-white/90 italic">
+                  "{t.quote}"
+                </p>
+
+                <div className="flex items-center gap-3 pt-2 border-t border-white/10">
+                  <div className="grid size-8 place-items-center rounded-full bg-brand-blue text-xs font-bold text-white">
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <strong className="block text-xs font-bold text-white">{t.name}</strong>
+                    <span className="block text-[10.5px] text-white/60">{t.role}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Final CTA Section */}
+      <section className="py-20 px-4 sm:px-8 lg:px-14 bg-gradient-to-b from-surface-blue/30 to-background relative overflow-hidden">
+        <div className="mx-auto max-w-4xl text-center space-y-6">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+            Ready to Build What's Next?
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-lg mx-auto">
+            Join thousands of companies and job seekers who trust TalentTrack AI for smarter hiring.
           </p>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
+          <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
             <Button
               size="lg"
               asChild
-              className="w-full sm:w-auto h-11 px-7 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground font-semibold text-xs shadow-md"
+              className="h-11 px-7 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground font-semibold text-xs rounded-lg shadow-md gap-2"
             >
               <Link to="/register">
-                <Briefcase className="size-4 mr-2" />
-                Find a Job
+                <span>Get Started Today</span>
+                <ArrowRight className="size-4" />
               </Link>
             </Button>
 
@@ -157,219 +673,148 @@ function LandingPage() {
               size="lg"
               variant="outline"
               asChild
-              className="w-full sm:w-auto h-11 px-7 border-border hover:bg-surface-blue hover:border-brand-blue/30 font-semibold text-xs"
+              className="h-11 px-6 border-brand-blue/30 text-brand-blue hover:bg-surface-blue font-semibold text-xs rounded-lg gap-2"
             >
               <Link to="/login">
-                <Users className="size-4 mr-2 text-brand-blue" />
-                I'm a Recruiter
+                <Play className="size-3.5 fill-current" />
+                <span>Watch Demo</span>
               </Link>
             </Button>
           </div>
 
-          {/* Social Proof / Stats */}
-          <div className="pt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto border-t border-border/60">
-            <div>
-              <strong className="block text-2xl font-extrabold text-foreground">90%+</strong>
-              <span className="text-[11px] text-muted-foreground">Skill Extraction Match</span>
-            </div>
-            <div>
-              <strong className="block text-2xl font-extrabold text-foreground">3.4x</strong>
-              <span className="text-[11px] text-muted-foreground">Faster Screening Velocity</span>
-            </div>
-            <div>
-              <strong className="block text-2xl font-extrabold text-foreground">5-Stage</strong>
-              <span className="text-[11px] text-muted-foreground">Structured Pipeline Board</span>
-            </div>
-            <div>
-              <strong className="block text-2xl font-extrabold text-foreground">100%</strong>
-              <span className="text-[11px] text-muted-foreground">Human-in-the-Loop Decisions</span>
-            </div>
+          <div className="pt-4 text-xs font-serif italic text-brand-blue rotate-[-2deg]">
+            Talent for a Better Tomorrow ↗
           </div>
         </div>
       </section>
 
-      {/* 3. Core Features Section */}
-      <section id="features" className="py-16 bg-muted/30 border-y border-border/70">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl font-extrabold text-foreground sm:text-3xl">
-              Engineered for Modern Talent Teams
-            </h2>
-            <p className="text-xs text-muted-foreground sm:text-sm">
-              Streamline every step of the talent acquisition lifecycle with responsible AI
-              assistance.
+      {/* 8. Footer */}
+      <footer className="border-t border-border bg-card py-12 px-4 sm:px-8 lg:px-14 mt-auto">
+        <div className="mx-auto max-w-7xl grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-8 text-xs">
+          {/* Brand Info */}
+          <div className="col-span-2 space-y-3">
+            <div className="flex items-center gap-2.5">
+              <div className="relative grid size-8 place-items-center rounded-lg bg-brand-blue text-white">
+                <Users className="size-4.5" />
+              </div>
+              <span className="text-base font-bold text-foreground">TalentTrack AI</span>
+            </div>
+            <p className="text-xs text-muted-foreground max-w-sm">
+              Smarter Hiring. Brighter Teams. Next-generation ATS supporting faster, more consistent
+              candidate screening.
             </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Feature 1 */}
-            <div className="dashboard-card p-6 space-y-3 bg-card">
-              <div className="grid size-11 place-items-center rounded-xl bg-surface-blue text-brand-blue">
-                <Brain className="size-6" />
-              </div>
-              <h3 className="text-sm font-bold text-foreground">AI-Powered Skill Extraction</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Automatically extract technical competencies, frameworks, and domain experience from
-                uploaded resumes for instant comparison against job specifications.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="dashboard-card p-6 space-y-3 bg-card">
-              <div className="grid size-11 place-items-center rounded-xl bg-surface-green text-brand-green">
-                <Sparkles className="size-6" />
-              </div>
-              <h3 className="text-sm font-bold text-foreground">Semantic Match Scoring</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Receive semantic similarity rankings (90%+, 70-89%) to prioritize candidate reviews
-                while ensuring recruiter oversight remains central.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="dashboard-card p-6 space-y-3 bg-card">
-              <div className="grid size-11 place-items-center rounded-xl bg-surface-purple text-brand-purple">
-                <BarChart3 className="size-6" />
-              </div>
-              <h3 className="text-sm font-bold text-foreground">Visual Pipeline Stages</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Track candidate progression seamlessly across Applied, Screening, Interview,
-                Offered, and Rejected stages on an interactive Kanban board.
-              </p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="dashboard-card p-6 space-y-3 bg-card">
-              <div className="grid size-11 place-items-center rounded-xl bg-surface-peach text-brand-orange">
-                <Bot className="size-6" />
-              </div>
-              <h3 className="text-sm font-bold text-foreground">Actionable Hiring Insights</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Get real-time decision-support suggestions highlighting top candidates, surge
-                applications, and pipeline velocity bottlenecks.
-              </p>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="dashboard-card p-6 space-y-3 bg-card">
-              <div className="grid size-11 place-items-center rounded-xl bg-surface-blue text-brand-blue">
-                <Search className="size-6" />
-              </div>
-              <h3 className="text-sm font-bold text-foreground">Centralized Talent Pool</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Quickly search and filter past applicants by skills, experience range, and previous
-                evaluation notes to source talent for new openings.
-              </p>
-            </div>
-
-            {/* Feature 6 */}
-            <div className="dashboard-card p-6 space-y-3 bg-card">
-              <div className="grid size-11 place-items-center rounded-xl bg-surface-pink text-brand-red">
-                <ShieldCheck className="size-6" />
-              </div>
-              <h3 className="text-sm font-bold text-foreground">Role-Based Data Privacy</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Strict separation of Recruiter workspace management and Candidate portal profiles
-                for enterprise data governance.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. For Employers vs For Candidates */}
-      <section id="for-employers" className="py-16">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="grid gap-8 md:grid-cols-2 items-center">
-            <div className="space-y-4">
-              <span className="text-xs font-bold text-brand-blue uppercase tracking-wider">
-                For Recruitment Teams
-              </span>
-              <h2 className="text-2xl font-extrabold text-foreground sm:text-3xl">
-                Close roles faster with automated candidate ranking
-              </h2>
-              <p className="text-xs text-muted-foreground sm:text-sm leading-relaxed">
-                Spend less time manually reading through hundreds of mismatched resumes and more
-                time interviewing qualified finalists.
-              </p>
-              <ul className="space-y-2 text-xs text-foreground/90 pt-2">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-brand-green shrink-0" />
-                  Instant skill match scoring and candidate comparison
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-brand-green shrink-0" />
-                  Multi-member hiring team reviews & interview tracking
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-brand-green shrink-0" />
-                  Visual candidate pipeline with stage progression
-                </li>
-              </ul>
-              <div className="pt-2">
-                <Button
-                  asChild
-                  className="bg-brand-blue hover:bg-brand-blue/90 text-xs font-semibold"
-                >
-                  <Link to="/register">Create Recruiter Account</Link>
-                </Button>
-              </div>
-            </div>
-
-            <div className="dashboard-card p-5 bg-card space-y-3 border-brand-blue/20">
-              <div className="flex items-center justify-between border-b border-border/60 pb-3">
-                <span className="text-xs font-bold text-foreground">
-                  Live Candidate Screening Preview
-                </span>
-                <span className="rounded bg-surface-green px-2 py-0.5 text-[10px] font-bold text-brand-green">
-                  92% Match
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="size-10 rounded-full bg-brand-blue text-primary-foreground font-bold grid place-items-center text-xs">
-                  AM
-                </div>
-                <div>
-                  <strong className="block text-xs">Aarav Mehta</strong>
-                  <span className="text-[11px] text-muted-foreground">
-                    Frontend Developer • 4 yrs exp
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-1 pt-1">
-                {["React", "TypeScript", "Next.js", "Tailwind CSS"].map((s) => (
-                  <span
-                    key={s}
-                    className="rounded bg-surface-blue px-2 py-0.5 text-[10px] text-brand-blue font-medium"
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. Footer */}
-      <footer className="mt-auto border-t border-border bg-card py-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Users className="size-5 text-brand-blue" />
-            <span className="text-xs font-bold text-foreground">TalentTrack AI</span>
-            <span className="text-[11px] text-muted-foreground">
-              — Smarter Hiring. Brighter Teams.
+            <span className="block text-[11px] text-muted-foreground/80 pt-2">
+              © 2026 TalentTrack AI. All rights reserved.
             </span>
           </div>
 
-          <div className="flex items-center gap-6 text-xs text-muted-foreground">
-            <Link to="/login" className="hover:text-foreground">
-              Recruiter Login
-            </Link>
-            <Link to="/register" className="hover:text-foreground">
-              Candidate Sign Up
-            </Link>
-            <span>© 2026 TalentTrack AI</span>
+          {/* Navigation */}
+          <div className="space-y-2.5">
+            <strong className="block text-xs font-bold text-foreground">Platform</strong>
+            <ul className="space-y-1.5 text-muted-foreground">
+              <li>
+                <Link to="/" className="hover:text-foreground">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/register"
+                  search={{ role: "applicant" }}
+                  className="hover:text-foreground"
+                >
+                  Browse Jobs
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/register"
+                  search={{ role: "recruiter" }}
+                  className="hover:text-foreground"
+                >
+                  For Employers
+                </Link>
+              </li>
+              <li>
+                <a href="#how-it-works" className="hover:text-foreground">
+                  How It Works
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Support */}
+          <div className="space-y-2.5">
+            <strong className="block text-xs font-bold text-foreground">Support</strong>
+            <ul className="space-y-1.5 text-muted-foreground">
+              <li>
+                <a href="#" className="hover:text-foreground">
+                  Help Center
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-foreground">
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-foreground">
+                  Terms of Service
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-foreground">
+                  Security & GDPR
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Social */}
+          <div className="space-y-2.5">
+            <strong className="block text-xs font-bold text-foreground">Connect</strong>
+            <ul className="space-y-1.5 text-muted-foreground">
+              <li>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-foreground"
+                >
+                  LinkedIn
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://twitter.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-foreground"
+                >
+                  Twitter/X
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-foreground"
+                >
+                  Instagram
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://youtube.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-foreground"
+                >
+                  YouTube
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
       </footer>
