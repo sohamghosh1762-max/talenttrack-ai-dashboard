@@ -32,7 +32,7 @@ const chartData = [
   { date: "Sep 14", applications: 94, shortlisted: 50, interviewed: 25, offered: 10 },
 ];
 
-const jobs = [
+const jobs: Array<[string, string, string, string, string]> = [
   ["Frontend Developer", "Engineering", "72", "Active", "Aug 20, 2025"],
   ["Backend Developer", "Engineering", "58", "Active", "Aug 18, 2025"],
   ["AI/ML Engineer", "Research", "36", "Active", "Aug 15, 2025"],
