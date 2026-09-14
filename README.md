@@ -3,6 +3,7 @@
 Recreate the uploaded screenshot as an EXACT high-fidelity web dashboard UI.
 
 IMPORTANT:
+
 - Use the uploaded screenshot as the primary visual reference.
 - Do NOT redesign, modernize, simplify, or reinterpret the interface.
 - Match the screenshot's layout, spacing, proportions, typography, colors, borders, shadows, icons, card sizes, alignment, and hierarchy as closely as possible.
@@ -15,6 +16,7 @@ Product name: TalentTrack AI
 Subtitle: Smarter Hiring. Brighter Teams.
 
 TECH STACK:
+
 - React.js
 - Material UI (MUI)
 - React Query
@@ -27,17 +29,21 @@ DESKTOP LAYOUT:
 Create a full-screen recruiter dashboard.
 
 1. LEFT SIDEBAR
-----------------
+
+---
+
 Width approximately 255px.
 
 Use a dark navy/blue gradient background.
 
 At the top:
+
 - TalentTrack AI logo/icon
 - "TalentTrack AI"
 - subtitle "Smarter Hiring. Brighter Teams."
 
 Navigation items vertically:
+
 - Dashboard
 - Jobs
 - Applications
@@ -49,11 +55,13 @@ Navigation items vertically:
 - Settings
 
 Dashboard must be the active item:
+
 - Blue rounded rectangular background
 - White home icon
 - White text
 
 Other navigation items:
+
 - White/light gray icons
 - Light text
 - Transparent background
@@ -61,6 +69,7 @@ Other navigation items:
 Messages should have a small red notification badge showing "2".
 
 At the bottom of the sidebar create an upgrade card:
+
 - Dark blue slightly lighter than sidebar
 - Rounded corners
 - Crown icon
@@ -69,7 +78,9 @@ At the bottom of the sidebar create an upgrade card:
 - Blue "Upgrade Now" button
 
 2. TOP HEADER
---------------
+
+---
+
 The main content starts to the right of the sidebar.
 
 At the top create a horizontal header.
@@ -81,6 +92,7 @@ Large rounded search field:
 Search icon inside the field.
 
 Right:
+
 - Notification bell
 - Red notification badge with "3"
 - Circular blue avatar containing "R"
@@ -89,7 +101,9 @@ Right:
 - Small dropdown arrow
 
 3. DASHBOARD INTRO
-------------------
+
+---
+
 Below the header:
 
 Large heading:
@@ -107,7 +121,9 @@ Blue primary button:
 The button should have rounded corners and white text.
 
 4. FOUR KPI CARDS
------------------
+
+---
+
 Create four equal cards in one row.
 
 Card 1:
@@ -139,12 +155,14 @@ Green text:
 "↑ 3 this week"
 
 Use very subtle pastel backgrounds:
+
 - Card 1: pale blue
 - Card 2: pale green
 - Card 3: pale lavender
 - Card 4: pale peach
 
 Cards should have:
+
 - Rounded corners
 - Very subtle border
 - Very subtle shadow
@@ -153,12 +171,15 @@ Cards should have:
 - Small clean labels
 
 5. APPLICATION OVERVIEW
-------------------------
+
+---
+
 Create a large white card titled:
 
 "Application Overview"
 
 Top-right/upper area contains legend:
+
 - Applications
 - Shortlisted
 - Interviewed
@@ -183,6 +204,7 @@ Y-axis:
 100
 
 Show four lines:
+
 - Applications
 - Shortlisted
 - Interviewed
@@ -191,7 +213,9 @@ Show four lines:
 Use subtle grid lines and clean typography.
 
 6. TOP SKILLS IN APPLICATIONS
------------------------------
+
+---
+
 Place this card to the right of Application Overview.
 
 Title:
@@ -202,14 +226,15 @@ Top-right:
 
 Display horizontal progress bars for:
 
-Python       142
-JavaScript   118
-React         96
-Node.js       74
+Python 142
+JavaScript 118
+React 96
+Node.js 74
 Machine Learning 62
-AWS           58
+AWS 58
 
 Each skill should have:
+
 - Skill name on left
 - Horizontal progress bar
 - Number on right
@@ -217,7 +242,9 @@ Each skill should have:
 Use different subtle accent colors for the bars.
 
 7. AI INSIGHTS CARD
--------------------
+
+---
+
 Place a third card on the right.
 
 Header:
@@ -227,21 +254,26 @@ Robot/AI icon
 Create three insight rows:
 
 1.
+
 Green check icon
 "You have 24 strong candidates for Software Engineer roles."
 
 2.
+
 Blue analytics icon
 "Applications increased by 18% this week."
 
 3.
+
 Orange lightbulb icon
 "Consider reviewing 5 high-potential candidates who match 90%+ with your job descriptions."
 
 Make this card visually distinct using a very light blue background/header.
 
 8. YOUR JOB OPENINGS
---------------------
+
+---
+
 Below the charts create a large white table card.
 
 Header:
@@ -296,7 +328,9 @@ Active = green
 Paused = yellow/orange
 
 9. RECENT APPLICATIONS
-----------------------
+
+---
+
 Place a second table card beside "Your Job Openings".
 
 Title:
@@ -355,7 +389,9 @@ Match scores:
 Status should use colored rounded pills.
 
 10. HIRING PIPELINE
--------------------
+
+---
+
 At the bottom create a card titled:
 
 "Hiring Pipeline"
@@ -378,6 +414,7 @@ Rejected
 32
 
 Each stage should have:
+
 - Icon
 - Stage name
 - Large count
@@ -390,7 +427,9 @@ Offered = green
 Rejected = pink/red
 
 11. QUICK ACTIONS
------------------
+
+---
+
 Place a Quick Actions card beside the Hiring Pipeline.
 
 Title:
@@ -398,12 +437,13 @@ Title:
 
 Create four action buttons:
 
-+ Post a Job
-Search Candidates
-Send Message
-Generate Report
+- Post a Job
+  Search Candidates
+  Send Message
+  Generate Report
 
 Each should have:
+
 - Large simple icon
 - Label underneath
 - Very light background
@@ -412,9 +452,11 @@ Each should have:
 
 VISUAL DESIGN:
 ---------------
+
 Follow the screenshot extremely closely.
 
 Overall:
+
 - Clean professional HR SaaS product
 - White/light gray main background
 - Dark navy sidebar
@@ -427,12 +469,14 @@ Overall:
 - Professional enterprise UI
 
 Typography:
+
 - Use Inter, Roboto, or a very similar modern sans-serif.
 - Headings should be bold.
 - Body text should be clean and readable.
 - Do not use decorative fonts.
 
 Colors:
+
 - Navy sidebar: approximately #10213D / #142743
 - Primary blue: approximately #1264F5
 - Main background: approximately #F8FAFD
@@ -445,8 +489,10 @@ Colors:
 
 SPACING:
 -----------
+
 Maintain consistent spacing throughout.
 Use approximately:
+
 - 24px page padding
 - 16–24px card padding
 - 16px gaps between cards
@@ -454,6 +500,7 @@ Use approximately:
 
 IMPORTANT VISUAL REQUIREMENTS:
 --------------------------------
+
 1. Do not add extra sections that aren't in the screenshot.
 2. Do not remove any visible sections.
 3. Do not change the sidebar structure.
@@ -473,6 +520,7 @@ IMPORTANT VISUAL REQUIREMENTS:
 
 FUNCTIONAL BEHAVIOR:
 --------------------
+
 - Dashboard navigation works.
 - "Post a New Job" opens a job creation page/modal.
 - "View All" opens the corresponding listing.
@@ -487,9 +535,11 @@ FUNCTIONAL BEHAVIOR:
 
 AI ATS FEATURES:
 ----------------
+
 The dashboard should visually communicate that this is an AI-powered ATS.
 
 Include:
+
 - AI candidate matching
 - Resume parsing
 - Skill extraction
@@ -502,6 +552,7 @@ Do NOT make AI recommendations the sole hiring decision. Present them as recruit
 
 FINAL REQUIREMENT:
 ------------------
+
 The rendered page should visually resemble the uploaded screenshot as closely as possible at 1440px–1536px desktop width.
 
 Prioritize visual fidelity over adding unnecessary features.
