@@ -4,8 +4,8 @@ import { useMemo, useState, type ComponentType } from "react";
 import {
   BarChart3, Bell, Bot, BriefcaseBusiness, CalendarDays, CheckCircle2, ChevronDown,
   CircleUserRound, Crown, FileSearch, Home, Lightbulb, Mail, Menu, MoreVertical,
-  Plus, Search, Send, Settings, SlidersHorizontal, Sparkles, TrendingUp, UserRound,
-  Users, XCircle, ClipboardList, LogOut, UserCog,
+  Plus, Search, Settings, SlidersHorizontal, Sparkles, UserRound,
+  Users, XCircle, LogOut, UserCog,
 } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,31 @@ const skills = [
   ["Machine Learning", 62, "bg-brand-green/80"], ["AWS", 58, "bg-brand-blue/60"],
 ] as const;
 
+const kpis: Array<[Icon, string, string, string, string, string]> = [
+  [BriefcaseBusiness, "12", "Active Job Openings", "↑ 3 from last week", "bg-surface-blue", "text-brand-blue"],
+  [Users, "248", "Total Applications", "↑ 18% from last week", "bg-surface-green", "text-brand-green"],
+  [CircleUserRound, "36", "Shortlisted Candidates", "↑ 6 from last week", "bg-surface-purple", "text-brand-purple"],
+  [CalendarDays, "8", "Interviews Scheduled", "↑ 3 this week", "bg-surface-peach", "text-brand-red"],
+];
+
+const insights: Array<[Icon, string, string, string]> = [
+  [CheckCircle2, "You have 24 strong candidates for Software Engineer roles.", "text-brand-green", "bg-surface-green"],
+  [BarChart3, "Applications increased by 18% this week.", "text-brand-blue", "bg-surface-blue"],
+  [Lightbulb, "Consider reviewing 5 high-potential candidates who match 90%+ with your job descriptions.", "text-brand-orange", "bg-surface-peach"],
+];
+
+const pipeline: Array<[string, string, Icon, string, string]> = [
+  ["Applied", "118", BarChart3, "bg-surface-blue", "text-brand-blue"],
+  ["Screening", "46", FileSearch, "bg-surface-purple", "text-brand-purple"],
+  ["Interview", "24", UserRound, "bg-surface-peach", "text-brand-orange"],
+  ["Offered", "8", BriefcaseBusiness, "bg-surface-green", "text-brand-green"],
+  ["Rejected", "32", XCircle, "bg-surface-pink", "text-brand-red"],
+];
+
+const quickActions: Array<[Icon, string]> = [
+  [Plus, "Post a Job"], [Search, "Search Candidates"], [Mail, "Send Message"], [BarChart3, "Generate Report"],
+];
+
 function Brand() {
   return <div className="flex items-center gap-3 px-1"><div className="relative grid size-9 shrink-0 place-items-center text-sidebar-primary-foreground"><Users className="size-8 text-brand-blue"/><Sparkles className="absolute -right-0.5 -top-0.5 size-3 text-sidebar-primary-foreground"/></div><div className="min-w-0"><div className="truncate text-[18px] font-bold text-sidebar-primary-foreground">TalentTrack AI</div><div className="truncate text-[9px] text-sidebar-foreground/70">Smarter Hiring. Brighter Teams.</div></div></div>;
 }
@@ -100,14 +125,12 @@ export function TalentDashboard() {
       <main className="space-y-3 p-4 md:p-6">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3"><div className="min-w-0"><h1 className="truncate text-[23px] font-extrabold leading-tight md:text-[27px]">Welcome back, Rahul! 👋</h1><p className="mt-1 text-[12px] text-muted-foreground md:text-sm">Here's what's happening with your hiring process today.</p></div><div className="hidden items-center gap-6 md:flex"><span className="text-xs text-muted-foreground">Monday, 15 Sep 2025</span><Button className="h-11 px-5" onClick={() => open("Post a New Job", "Create a role, add requirements, and publish it to your hiring pipeline.")}><Plus/>Post a New Job</Button></div><Button size="icon" className="md:hidden" aria-label="Post a new job" onClick={() => open("Post a New Job", "Create a role, add requirements, and publish it to your hiring pipeline.")}><Plus/></Button></div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[
-          [BriefcaseBusiness,"12","Active Job Openings","↑ 3 from last week","bg-surface-blue","text-brand-blue"], [Users,"248","Total Applications","↑ 18% from last week","bg-surface-green","text-brand-green"], [CircleUserRound,"36","Shortlisted Candidates","↑ 6 from last week","bg-surface-purple","text-brand-purple"], [CalendarDays,"8","Interviews Scheduled","↑ 3 this week","bg-surface-peach","text-brand-red"],
-        ].map(([KpiIcon,num,label,change,bg,tone]) => <button key={String(label)} onClick={() => open(String(label), `${num} ${String(label).toLowerCase()}. ${change}`)} className={`${bg} grid min-h-[112px] grid-cols-[54px_minmax(0,1fr)] items-center gap-4 rounded-lg border border-border/40 px-4 text-left shadow-sm transition-transform hover:-translate-y-0.5`}><span className={`grid size-[52px] place-items-center rounded-lg bg-card/45 ${tone}`}><KpiIcon className="size-7"/></span><span><strong className="block text-[24px] leading-7">{num}</strong><span className="block text-xs">{label}</span><span className="mt-2 block text-[10px] font-medium text-brand-green">{change}</span></span></button>)}</div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{kpis.map(([KpiIcon,num,label,change,bg,tone]) => <button key={label} onClick={() => open(label, `${num} ${label.toLowerCase()}. ${change}`)} className={`${bg} grid min-h-[112px] grid-cols-[54px_minmax(0,1fr)] items-center gap-4 rounded-lg border border-border/40 px-4 text-left shadow-sm transition-transform hover:-translate-y-0.5`}><span className={`grid size-[52px] place-items-center rounded-lg bg-card/45 ${tone}`}><KpiIcon className="size-7"/></span><span><strong className="block text-[24px] leading-7">{num}</strong><span className="block text-xs">{label}</span><span className="mt-2 block text-[10px] font-medium text-brand-green">{change}</span></span></button>)}</div>
 
         <div className="grid gap-3 xl:grid-cols-[1.56fr_1.12fr_.98fr]">
           <SectionCard title="Application Overview" className="h-[278px]"><div className="flex h-8 items-center justify-center gap-6 text-[9px] text-muted-foreground">{[["Applications","bg-brand-blue"],["Shortlisted","bg-brand-green"],["Interviewed","bg-brand-purple"],["Offered","bg-brand-orange"]].map(([l,c])=><span key={l} className="flex items-center gap-2"><i className={`size-2 rounded-full ${c}`}/>{l}</span>)}</div><div className="h-[200px] px-1 pb-2"><ResponsiveContainer width="100%" height="100%"><LineChart data={chartData} margin={{ top: 5, right: 15, left: -20, bottom: 0 }}><CartesianGrid stroke="var(--border)" vertical/><XAxis dataKey="date" tick={{fontSize:9, fill:"var(--muted-foreground)"}} axisLine={false} tickLine={false}/><YAxis domain={[0,100]} ticks={[0,20,40,60,80,100]} tick={{fontSize:9, fill:"var(--muted-foreground)"}} axisLine={false} tickLine={false}/><Tooltip contentStyle={{fontSize:10,borderRadius:6,borderColor:"var(--border)"}}/><Line type="monotone" dataKey="applications" stroke="var(--brand-blue)" strokeWidth={2} dot={{r:3,fill:"var(--brand-blue)"}}/><Line type="monotone" dataKey="shortlisted" stroke="var(--brand-green)" strokeWidth={2} dot={{r:3,fill:"var(--brand-green)"}}/><Line type="monotone" dataKey="interviewed" stroke="var(--brand-purple)" strokeWidth={2} dot={{r:3,fill:"var(--brand-purple)"}}/><Line type="monotone" dataKey="offered" stroke="var(--brand-orange)" strokeWidth={2} dot={{r:3,fill:"var(--brand-orange)"}}/></LineChart></ResponsiveContainer></div></SectionCard>
           <SectionCard title="Top Skills in Applications" action={() => open("Top Skills", "Skill extraction summarizes the strongest skills across parsed resumes.")} className="h-[278px]"><div className="space-y-3 px-3 pt-1">{skills.map(([skill,value,color])=><button key={skill} className="grid w-full grid-cols-[92px_minmax(70px,1fr)_28px] items-center gap-2 text-left text-[11px]" onClick={() => open(skill, `${value} applicants have ${skill} identified through resume skill extraction.`)}><span>{skill}</span><span className="h-4 overflow-hidden rounded bg-muted"><span className={`block h-full rounded ${color}`} style={{width:`${value/1.42}%`}}/></span><span className="text-right text-muted-foreground">{value}</span></button>)}</div></SectionCard>
-          <SectionCard title="AI Insights" className="h-[278px]"><div className="mx-2 rounded-md bg-panel-head px-2 py-2 text-sm font-bold"><span className="flex items-center gap-2"><Bot className="size-7 text-brand-blue"/>AI Insights</span></div><div className="divide-y divide-border/70 px-3">{[[CheckCircle2,"You have 24 strong candidates for Software Engineer roles.","text-brand-green","bg-surface-green"],[BarChart3,"Applications increased by 18% this week.","text-brand-blue","bg-surface-blue"],[Lightbulb,"Consider reviewing 5 high-potential candidates who match 90%+ with your job descriptions.","text-brand-orange","bg-surface-peach"]].map(([InsightIcon,text,tone,bg])=><button key={String(text)} className="grid w-full grid-cols-[34px_minmax(0,1fr)] gap-3 py-3 text-left text-[11px] leading-4" onClick={() => open("AI decision support", String(text))}><span className={`grid size-8 place-items-center rounded-lg ${bg} ${tone}`}><InsightIcon className="size-5"/></span><span>{text}</span></button>)}</div></SectionCard>
+          <SectionCard title="AI Insights" className="h-[278px]"><div className="mx-2 rounded-md bg-panel-head px-2 py-2 text-sm font-bold"><span className="flex items-center gap-2"><Bot className="size-7 text-brand-blue"/>AI Insights</span></div><div className="divide-y divide-border/70 px-3">{insights.map(([InsightIcon,text,tone,bg])=><button key={text} className="grid w-full grid-cols-[34px_minmax(0,1fr)] gap-3 py-3 text-left text-[11px] leading-4" onClick={() => open("AI decision support", text)}><span className={`grid size-8 place-items-center rounded-lg ${bg} ${tone}`}><InsightIcon className="size-5"/></span><span>{text}</span></button>)}</div></SectionCard>
         </div>
 
         <div className="grid gap-3 xl:grid-cols-[1.08fr_.92fr]">
@@ -116,8 +139,8 @@ export function TalentDashboard() {
         </div>
 
         <div className="grid gap-3 xl:grid-cols-[1.36fr_1fr]">
-          <SectionCard title="Hiring Pipeline"><div className="grid grid-cols-2 gap-2 px-3 pb-3 sm:grid-cols-5">{[["Applied","118",BarChart3,"bg-surface-blue","text-brand-blue"],["Screening","46",FileSearch,"bg-surface-purple","text-brand-purple"],["Interview","24",UserRound,"bg-surface-peach","text-brand-orange"],["Offered","8",BriefcaseBusiness,"bg-surface-green","text-brand-green"],["Rejected","32",XCircle,"bg-surface-pink","text-brand-red"]].map(([label,count,StageIcon,bg,tone])=><button key={String(label)} onClick={() => open(`${label} candidates`, `${count} candidates are currently in the ${String(label).toLowerCase()} stage.`)} className={`${bg} min-h-[70px] rounded-md p-3 text-left transition-transform hover:-translate-y-0.5`}><span className={`block text-[11px] font-bold ${tone}`}>{label}</span><span className="mt-3 flex items-center justify-center gap-3"><StageIcon className={`size-4 ${tone}`}/><strong className="text-[13px]">{count}</strong></span></button>)}</div></SectionCard>
-          <SectionCard title="Quick Actions"><div className="grid grid-cols-2 gap-2 px-3 pb-3 sm:grid-cols-4">{[[Plus,"Post a Job"],[Search,"Search Candidates"],[Mail,"Send Message"],[BarChart3,"Generate Report"]].map(([ActionIcon,label])=><button key={String(label)} onClick={() => open(String(label), `${String(label)} workflow opened.`)} className="grid min-h-[70px] place-items-center rounded-md bg-panel-head px-2 py-2 text-center text-[9px] transition-all hover:bg-surface-blue hover:text-brand-blue"><ActionIcon className="size-6 text-brand-blue"/><span>{label}</span></button>)}</div></SectionCard>
+          <SectionCard title="Hiring Pipeline"><div className="grid grid-cols-2 gap-2 px-3 pb-3 sm:grid-cols-5">{pipeline.map(([label,count,StageIcon,bg,tone])=><button key={label} onClick={() => open(`${label} candidates`, `${count} candidates are currently in the ${label.toLowerCase()} stage.`)} className={`${bg} min-h-[70px] rounded-md p-3 text-left transition-transform hover:-translate-y-0.5`}><span className={`block text-[11px] font-bold ${tone}`}>{label}</span><span className="mt-3 flex items-center justify-center gap-3"><StageIcon className={`size-4 ${tone}`}/><strong className="text-[13px]">{count}</strong></span></button>)}</div></SectionCard>
+          <SectionCard title="Quick Actions"><div className="grid grid-cols-2 gap-2 px-3 pb-3 sm:grid-cols-4">{quickActions.map(([ActionIcon,label])=><button key={label} onClick={() => open(label, `${label} workflow opened.`)} className="grid min-h-[70px] place-items-center rounded-md bg-panel-head px-2 py-2 text-center text-[9px] transition-all hover:bg-surface-blue hover:text-brand-blue"><ActionIcon className="size-6 text-brand-blue"/><span>{label}</span></button>)}</div></SectionCard>
         </div>
       </main>
     </div>
