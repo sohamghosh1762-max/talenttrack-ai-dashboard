@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "./Sidebar";
+import { useAuth } from "@/auth/AuthProvider";
 import {
   notificationsData,
   recruiterProfile,
@@ -47,12 +48,30 @@ interface HeaderProps {
 }
 
 export function Header({ searchQuery = "", onSearchChange, onUpgradeClick }: HeaderProps) {
+  const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [internalQuery, setInternalQuery] = useState(searchQuery);
   const [notifications, setNotifications] = useState(notificationsData);
   const [activeModal, setActiveModal] = useState<{ title: string; text: string } | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const navigate = useNavigate();
+
+  const displayName = user?.name || recruiterProfile.name;
+  const displayRole =
+    user?.recruiterProfile?.jobTitle || user?.role === "recruiter"
+      ? "Recruiter"
+      : recruiterProfile.role;
+  const displayEmail = user?.email || recruiterProfile.email;
+  const displayDept =
+    user?.recruiterProfile?.department ||
+    user?.recruiterProfile?.companyName ||
+    recruiterProfile.department;
+  const initial = displayName.charAt(0).toUpperCase();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate({ to: "/login" });
+  };
 
   const handleQueryChange = (val: string) => {
     setInternalQuery(val);
@@ -269,7 +288,7 @@ export function Header({ searchQuery = "", onSearchChange, onUpgradeClick }: Hea
             className="grid size-9.5 place-items-center rounded-full bg-brand-blue text-sm font-bold text-primary-foreground shadow-sm ring-2 ring-background"
             aria-hidden="true"
           >
-            {recruiterProfile.initials}
+            {initial}
           </div>
 
           {/* Recruiter Profile Dropdown */}
@@ -281,11 +300,9 @@ export function Header({ searchQuery = "", onSearchChange, onUpgradeClick }: Hea
                 aria-label="User profile menu"
               >
                 <div>
-                  <span className="block text-xs font-bold text-foreground">
-                    {recruiterProfile.name}
-                  </span>
+                  <span className="block text-xs font-bold text-foreground">{displayName}</span>
                   <span className="block text-[10px] font-normal text-muted-foreground">
-                    {recruiterProfile.role}
+                    {displayRole}
                   </span>
                 </div>
                 <ChevronDown className="size-3.5 text-muted-foreground" />
@@ -293,11 +310,9 @@ export function Header({ searchQuery = "", onSearchChange, onUpgradeClick }: Hea
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 shadow-xl">
               <div className="px-3 py-2">
-                <div className="text-xs font-bold">{recruiterProfile.name}</div>
-                <div className="text-[10px] text-muted-foreground">{recruiterProfile.email}</div>
-                <div className="mt-1 text-[9px] font-medium text-brand-blue">
-                  {recruiterProfile.department}
-                </div>
+                <div className="text-xs font-bold">{displayName}</div>
+                <div className="text-[10px] text-muted-foreground">{displayEmail}</div>
+                <div className="mt-1 text-[9px] font-medium text-brand-blue">{displayDept}</div>
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -323,12 +338,7 @@ export function Header({ searchQuery = "", onSearchChange, onUpgradeClick }: Hea
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onSelect={() =>
-                  setActiveModal({
-                    title: "Recruiter Sign Out",
-                    text: "You remain signed in for this Phase 1 frontend demonstration. Full authentication session management will be added in Phase 2.",
-                  })
-                }
+                onSelect={handleLogout}
                 className="cursor-pointer gap-2 text-destructive focus:text-destructive"
               >
                 <LogOut className="size-4" />

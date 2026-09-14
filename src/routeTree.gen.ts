@@ -15,10 +15,19 @@ import { Route as ApplicationsRouteImport } from './routes/applications'
 import { Route as CandidatesRouteImport } from './routes/candidates'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as JobsRouteImport } from './routes/jobs'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ApplicantIndexRouteImport } from './routes/applicant/index'
+import { Route as ApplicantApplicationsRouteImport } from './routes/applicant/applications'
+import { Route as ApplicantJobsRouteImport } from './routes/applicant/jobs'
+import { Route as ApplicantMessagesRouteImport } from './routes/applicant/messages'
+import { Route as ApplicantProfileRouteImport } from './routes/applicant/profile'
+import { Route as ApplicantSavedJobsRouteImport } from './routes/applicant/saved-jobs'
+import { Route as ApplicantSettingsRouteImport } from './routes/applicant/settings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -50,6 +59,11 @@ const JobsRoute = JobsRouteImport.update({
   path: '/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MessagesRoute = MessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -58,6 +72,11 @@ const MessagesRoute = MessagesRouteImport.update({
 const PipelineRoute = PipelineRouteImport.update({
   id: '/pipeline',
   path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -70,6 +89,41 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApplicantIndexRoute = ApplicantIndexRouteImport.update({
+  id: '/applicant/',
+  path: '/applicant/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplicantApplicationsRoute = ApplicantApplicationsRouteImport.update({
+  id: '/applicant/applications',
+  path: '/applicant/applications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplicantJobsRoute = ApplicantJobsRouteImport.update({
+  id: '/applicant/jobs',
+  path: '/applicant/jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplicantMessagesRoute = ApplicantMessagesRouteImport.update({
+  id: '/applicant/messages',
+  path: '/applicant/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplicantProfileRoute = ApplicantProfileRouteImport.update({
+  id: '/applicant/profile',
+  path: '/applicant/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplicantSavedJobsRoute = ApplicantSavedJobsRouteImport.update({
+  id: '/applicant/saved-jobs',
+  path: '/applicant/saved-jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplicantSettingsRoute = ApplicantSettingsRouteImport.update({
+  id: '/applicant/settings',
+  path: '/applicant/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -78,10 +132,19 @@ export interface FileRoutesByFullPath {
   '/candidates': typeof CandidatesRoute
   '/dashboard': typeof DashboardRoute
   '/jobs': typeof JobsRoute
+  '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/pipeline': typeof PipelineRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/applicant/applications': typeof ApplicantApplicationsRoute
+  '/applicant/jobs': typeof ApplicantJobsRoute
+  '/applicant/messages': typeof ApplicantMessagesRoute
+  '/applicant/profile': typeof ApplicantProfileRoute
+  '/applicant/saved-jobs': typeof ApplicantSavedJobsRoute
+  '/applicant/settings': typeof ApplicantSettingsRoute
+  '/applicant/': typeof ApplicantIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -90,10 +153,19 @@ export interface FileRoutesByTo {
   '/candidates': typeof CandidatesRoute
   '/dashboard': typeof DashboardRoute
   '/jobs': typeof JobsRoute
+  '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/pipeline': typeof PipelineRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/applicant/applications': typeof ApplicantApplicationsRoute
+  '/applicant/jobs': typeof ApplicantJobsRoute
+  '/applicant/messages': typeof ApplicantMessagesRoute
+  '/applicant/profile': typeof ApplicantProfileRoute
+  '/applicant/saved-jobs': typeof ApplicantSavedJobsRoute
+  '/applicant/settings': typeof ApplicantSettingsRoute
+  '/applicant': typeof ApplicantIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,10 +175,19 @@ export interface FileRoutesById {
   '/candidates': typeof CandidatesRoute
   '/dashboard': typeof DashboardRoute
   '/jobs': typeof JobsRoute
+  '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/pipeline': typeof PipelineRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/applicant/applications': typeof ApplicantApplicationsRoute
+  '/applicant/jobs': typeof ApplicantJobsRoute
+  '/applicant/messages': typeof ApplicantMessagesRoute
+  '/applicant/profile': typeof ApplicantProfileRoute
+  '/applicant/saved-jobs': typeof ApplicantSavedJobsRoute
+  '/applicant/settings': typeof ApplicantSettingsRoute
+  '/applicant/': typeof ApplicantIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,10 +198,19 @@ export interface FileRouteTypes {
     | '/candidates'
     | '/dashboard'
     | '/jobs'
+    | '/login'
     | '/messages'
     | '/pipeline'
+    | '/register'
     | '/reports'
     | '/settings'
+    | '/applicant/applications'
+    | '/applicant/jobs'
+    | '/applicant/messages'
+    | '/applicant/profile'
+    | '/applicant/saved-jobs'
+    | '/applicant/settings'
+    | '/applicant/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -129,10 +219,19 @@ export interface FileRouteTypes {
     | '/candidates'
     | '/dashboard'
     | '/jobs'
+    | '/login'
     | '/messages'
     | '/pipeline'
+    | '/register'
     | '/reports'
     | '/settings'
+    | '/applicant/applications'
+    | '/applicant/jobs'
+    | '/applicant/messages'
+    | '/applicant/profile'
+    | '/applicant/saved-jobs'
+    | '/applicant/settings'
+    | '/applicant'
   id:
     | '__root__'
     | '/'
@@ -141,10 +240,19 @@ export interface FileRouteTypes {
     | '/candidates'
     | '/dashboard'
     | '/jobs'
+    | '/login'
     | '/messages'
     | '/pipeline'
+    | '/register'
     | '/reports'
     | '/settings'
+    | '/applicant/applications'
+    | '/applicant/jobs'
+    | '/applicant/messages'
+    | '/applicant/profile'
+    | '/applicant/saved-jobs'
+    | '/applicant/settings'
+    | '/applicant/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -154,10 +262,19 @@ export interface RootRouteChildren {
   CandidatesRoute: typeof CandidatesRoute
   DashboardRoute: typeof DashboardRoute
   JobsRoute: typeof JobsRoute
+  LoginRoute: typeof LoginRoute
   MessagesRoute: typeof MessagesRoute
   PipelineRoute: typeof PipelineRoute
+  RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
+  ApplicantApplicationsRoute: typeof ApplicantApplicationsRoute
+  ApplicantJobsRoute: typeof ApplicantJobsRoute
+  ApplicantMessagesRoute: typeof ApplicantMessagesRoute
+  ApplicantProfileRoute: typeof ApplicantProfileRoute
+  ApplicantSavedJobsRoute: typeof ApplicantSavedJobsRoute
+  ApplicantSettingsRoute: typeof ApplicantSettingsRoute
+  ApplicantIndexRoute: typeof ApplicantIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -204,6 +321,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JobsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/messages': {
       id: '/messages'
       path: '/messages'
@@ -216,6 +340,13 @@ declare module '@tanstack/react-router' {
       path: '/pipeline'
       fullPath: '/pipeline'
       preLoaderRoute: typeof PipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -232,6 +363,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/applicant/': {
+      id: '/applicant/'
+      path: '/applicant'
+      fullPath: '/applicant/'
+      preLoaderRoute: typeof ApplicantIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applicant/applications': {
+      id: '/applicant/applications'
+      path: '/applicant/applications'
+      fullPath: '/applicant/applications'
+      preLoaderRoute: typeof ApplicantApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applicant/jobs': {
+      id: '/applicant/jobs'
+      path: '/applicant/jobs'
+      fullPath: '/applicant/jobs'
+      preLoaderRoute: typeof ApplicantJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applicant/messages': {
+      id: '/applicant/messages'
+      path: '/applicant/messages'
+      fullPath: '/applicant/messages'
+      preLoaderRoute: typeof ApplicantMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applicant/profile': {
+      id: '/applicant/profile'
+      path: '/applicant/profile'
+      fullPath: '/applicant/profile'
+      preLoaderRoute: typeof ApplicantProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applicant/saved-jobs': {
+      id: '/applicant/saved-jobs'
+      path: '/applicant/saved-jobs'
+      fullPath: '/applicant/saved-jobs'
+      preLoaderRoute: typeof ApplicantSavedJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applicant/settings': {
+      id: '/applicant/settings'
+      path: '/applicant/settings'
+      fullPath: '/applicant/settings'
+      preLoaderRoute: typeof ApplicantSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -242,10 +422,19 @@ const rootRouteChildren: RootRouteChildren = {
   CandidatesRoute: CandidatesRoute,
   DashboardRoute: DashboardRoute,
   JobsRoute: JobsRoute,
+  LoginRoute: LoginRoute,
   MessagesRoute: MessagesRoute,
   PipelineRoute: PipelineRoute,
+  RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
+  ApplicantApplicationsRoute: ApplicantApplicationsRoute,
+  ApplicantJobsRoute: ApplicantJobsRoute,
+  ApplicantMessagesRoute: ApplicantMessagesRoute,
+  ApplicantProfileRoute: ApplicantProfileRoute,
+  ApplicantSavedJobsRoute: ApplicantSavedJobsRoute,
+  ApplicantSettingsRoute: ApplicantSettingsRoute,
+  ApplicantIndexRoute: ApplicantIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
