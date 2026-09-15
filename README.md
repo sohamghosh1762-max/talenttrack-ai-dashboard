@@ -527,11 +527,9 @@ Recommended branch structure: `main` ➔ `develop` ➔ `feature/<feature-name>`
 This project is developed for educational, research, and demonstration purposes unless a separate commercial license is provided.
 
 ### Contributors
-- **Project Lead:**
-- **Team Members:**
-- **Institution:**
-- **Department:**
-- **Academic Year:**
+- **Project Lead: SOHAM GHOSH**
+- **Team Members: Jevin Parmar, Nayesha Suhail Ahmed Bijapure, Shubham Tiwari.**
+- **Internship: Zaalima Development Pvt. Ltd.**
 
 ---
 
