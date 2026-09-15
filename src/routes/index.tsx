@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Briefcase,
-  Check,
   CheckCircle2,
   ChevronRight,
   Cpu,
@@ -19,7 +18,6 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
-  Star,
   TrendingUp,
   UserPlus,
   Users,
@@ -286,36 +284,71 @@ function PublicHomePage() {
         )}
       </header>
 
-      {/* 2. Hero Section (Split Layout with Floating AI UI Cards) */}
-      <section className="relative overflow-hidden pt-8 pb-14 sm:pt-14 sm:pb-20 bg-gradient-to-b from-surface-blue/40 via-background to-background">
-        <div className="mx-auto max-w-7xl px-4 sm:px-8 lg:px-14">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] items-center gap-10 lg:gap-14">
-            {/* Left Hero Content */}
-            <div className="space-y-6">
+      {/* 2. Hero Section (True Two-Sided Layout Matching Target Reference) */}
+      <section className="relative overflow-hidden bg-white min-h-[580px] lg:min-h-[660px] flex items-center border-b border-border/40">
+        {/* Right Photograph Panel (Occupies right 52% on desktop, absolute positioned, with soft fade on left edge) */}
+        <div className="hidden lg:block absolute top-0 right-0 w-[52%] xl:w-[54%] h-full select-none pointer-events-none overflow-hidden">
+          <img
+            src="/images/image.png"
+            alt="Recruiter using TalentTrack AI ATS platform"
+            className="size-full object-cover object-[75%_center]"
+            loading="eager"
+          />
+          {/* Subtle soft gradient fade where the image starts in the center */}
+          <div className="absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-white via-white/80 to-transparent" />
+
+          {/* Handwritten Quote and Curved Arrow (Positioned 40–60px from the right edge) */}
+          <div className="absolute top-10 right-12 xl:right-16 flex items-start gap-2 select-none z-10">
+            {/* Hand-drawn Curved Arrow pointing to the woman */}
+            <svg
+              className="w-8 h-16 text-brand-blue/85 -scale-x-100 rotate-12 mt-1"
+              viewBox="0 0 32 64"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 6C18 16 26 34 18 52M18 52L10 46M18 52L26 48"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <div className="font-serif italic font-semibold text-brand-blue text-xs sm:text-[13px] leading-tight rotate-3">
+              Great<br />Talent<br />Builds<br />Great<br />Things
+            </div>
+          </div>
+        </div>
+
+        {/* Foreground Content Container (Clean Left Side) */}
+        <div className="relative mx-auto max-w-7xl w-full px-4 sm:px-8 lg:px-14 pt-8 pb-12 sm:pt-10 sm:pb-16 lg:pt-12 lg:pb-16 z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 items-center gap-10">
+            {/* Left Content Area (Occupies left 6 columns, max-w-[620px]) */}
+            <div className="lg:col-span-6 xl:col-span-6 max-w-[620px] space-y-6">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 rounded-full border border-brand-blue/25 bg-surface-blue px-4 py-1.5 text-xs font-semibold text-brand-blue shadow-2xs">
                 <Sparkles className="size-3.5 text-brand-blue" />
                 AI-Powered Applicant Tracking System
               </div>
 
-              {/* Main Heading */}
+              {/* Main Heading (Clean on White) */}
               <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-foreground leading-[1.12]">
                 Hiring Made <br />
                 <span className="text-brand-blue">Smarter,</span> Simpler.
               </h1>
 
               {/* Supporting Text */}
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
+              <p className="text-sm sm:text-[15px] text-muted-foreground leading-relaxed max-w-xl">
                 Post jobs, attract the right talent, and let AI do the heavy lifting. For job
                 seekers, find opportunities that match your skills and aspirations — faster than
                 ever.
               </p>
 
-              {/* Buttons */}
+              {/* CTA Buttons */}
               <div className="flex flex-wrap items-center gap-3.5 pt-2">
                 <Button
                   asChild
-                  className="h-11 px-6 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground font-semibold text-xs rounded-lg shadow-md gap-2"
+                  className="h-11 sm:h-12 px-6 sm:px-7 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground font-semibold text-xs sm:text-sm rounded-lg shadow-md gap-2"
                 >
                   <Link to="/register" search={{ role: "applicant" }}>
                     <span>Find a Job</span>
@@ -326,7 +359,7 @@ function PublicHomePage() {
                 <Button
                   variant="outline"
                   asChild
-                  className="h-11 px-6 border-brand-blue/40 text-brand-blue hover:bg-surface-blue font-semibold text-xs rounded-lg"
+                  className="h-11 sm:h-12 px-6 sm:px-7 border-brand-blue/40 text-brand-blue hover:bg-surface-blue font-semibold text-xs sm:text-sm rounded-lg"
                 >
                   <Link to="/register" search={{ role: "recruiter" }}>
                     I'm a Recruiter
@@ -334,28 +367,28 @@ function PublicHomePage() {
                 </Button>
               </div>
 
-              {/* Statistics Row */}
-              <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-6 border-t border-border/70">
-                <div>
-                  <strong className="block text-2xl font-extrabold text-foreground tracking-tight">
+              {/* Statistics Row with Subtle Vertical Dividers */}
+              <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-0 sm:divide-x sm:divide-border/60">
+                <div className="sm:pr-4">
+                  <strong className="block text-2xl sm:text-[28px] font-extrabold text-foreground tracking-tight">
                     500+
                   </strong>
                   <span className="text-[11px] text-muted-foreground">Companies</span>
                 </div>
-                <div>
-                  <strong className="block text-2xl font-extrabold text-foreground tracking-tight">
+                <div className="sm:px-4">
+                  <strong className="block text-2xl sm:text-[28px] font-extrabold text-foreground tracking-tight">
                     50K+
                   </strong>
                   <span className="text-[11px] text-muted-foreground">Job Seekers</span>
                 </div>
-                <div>
-                  <strong className="block text-2xl font-extrabold text-foreground tracking-tight">
+                <div className="sm:px-4">
+                  <strong className="block text-2xl sm:text-[28px] font-extrabold text-foreground tracking-tight">
                     1M+
                   </strong>
                   <span className="text-[11px] text-muted-foreground">Applications Processed</span>
                 </div>
-                <div>
-                  <strong className="block text-2xl font-extrabold text-foreground tracking-tight">
+                <div className="sm:pl-4">
+                  <strong className="block text-2xl sm:text-[28px] font-extrabold text-foreground tracking-tight">
                     4.8/5
                   </strong>
                   <span className="text-[11px] text-muted-foreground">User Satisfaction</span>
@@ -363,108 +396,14 @@ function PublicHomePage() {
               </div>
             </div>
 
-            {/* Right Hero Image + Floating AI Cards */}
-            <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
-              {/* Handwritten Note Top Right */}
-              <div className="hidden sm:block absolute -top-8 right-4 text-xs font-serif italic text-brand-blue rotate-6 font-semibold select-none z-20">
-                Great Talent <br /> Builds Great Things ↗
-              </div>
-
-              {/* Main Rounded Image */}
-              <div className="relative rounded-3xl overflow-hidden border-4 border-card shadow-2xl bg-muted/40 aspect-square sm:aspect-[4/3.8]">
-                <img
-                  src="/images/hero-recruiter.jpg"
-                  alt="Recruiter reviewing candidate applications on TalentTrack AI"
-                  className="size-full object-cover object-top"
-                  loading="eager"
-                />
-
-                {/* Laptop handwritten sticker overlay */}
-                <div className="absolute bottom-6 right-6 hidden sm:block rounded-md bg-white/90 px-2 py-1 text-[10px] font-serif italic text-slate-800 shadow-sm rotate-[-4deg]">
-                  Better People, Brighter Futures
-                </div>
-              </div>
-
-              {/* Floating UI Card 1: AI Match Score (Top Left) */}
-              <div className="absolute -top-5 -left-4 sm:-left-6 rounded-2xl bg-card p-4 shadow-2xl border border-border/80 w-44 sm:w-48 z-20 animate-in fade-in-50 duration-300">
-                <span className="block text-[11px] font-bold text-foreground mb-2 text-center">
-                  AI Match Score
-                </span>
-                <div className="relative my-2 mx-auto size-16">
-                  {/* Circular Gauge */}
-                  <svg className="size-full -rotate-90" viewBox="0 0 36 36">
-                    <path
-                      className="text-muted/40"
-                      strokeWidth="3.5"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className="text-emerald-500"
-                      strokeDasharray="92, 100"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                  </svg>
-                  <span className="absolute inset-0 grid place-items-center text-sm font-extrabold text-foreground">
-                    92%
-                  </span>
-                </div>
-                <div className="space-y-1 text-[10px] text-muted-foreground pt-1">
-                  <div className="flex items-center gap-1.5 text-emerald-600 font-medium">
-                    <Check className="size-3" />
-                    <span>Skills matched</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-emerald-600 font-medium">
-                    <Check className="size-3" />
-                    <span>Experience aligned</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-emerald-600 font-medium">
-                    <Check className="size-3" />
-                    <span>High potential</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating UI Card 2: Candidate Top Match (Bottom Right) */}
-              <div className="absolute -bottom-6 -right-2 sm:-right-6 rounded-2xl bg-card p-3.5 shadow-2xl border border-border/80 w-52 sm:w-56 z-20 animate-in fade-in-50 duration-300">
-                <div className="flex items-center gap-2.5">
-                  <div className="grid size-9 place-items-center rounded-full bg-brand-blue text-xs font-bold text-primary-foreground shrink-0">
-                    AM
-                  </div>
-                  <div className="min-w-0">
-                    <strong className="block text-xs font-bold text-foreground truncate">
-                      Frontend Developer
-                    </strong>
-                    <span className="block text-[10px] text-muted-foreground truncate">
-                      3+ years experience
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-1 my-2">
-                  <span className="rounded bg-surface-blue px-1.5 py-0.5 text-[9px] font-semibold text-brand-blue">
-                    React
-                  </span>
-                  <span className="rounded bg-surface-blue px-1.5 py-0.5 text-[9px] font-semibold text-brand-blue">
-                    Node.js
-                  </span>
-                  <span className="rounded bg-surface-blue px-1.5 py-0.5 text-[9px] font-semibold text-brand-blue">
-                    AWS
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between border-t border-border/60 pt-2">
-                  <span className="rounded-md bg-surface-green px-2 py-0.5 text-[9.5px] font-bold text-brand-green">
-                    Top Match
-                  </span>
-                  <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                </div>
-              </div>
+            {/* Mobile / Tablet Image Fallback (Stacked vertically below content) */}
+            <div className="lg:hidden w-full overflow-hidden rounded-2xl shadow-sm">
+              <img
+                src="/images/image.png"
+                alt="Recruiter using TalentTrack AI ATS platform"
+                className="w-full h-[360px] sm:h-[420px] object-cover object-center select-none"
+                loading="eager"
+              />
             </div>
           </div>
         </div>
