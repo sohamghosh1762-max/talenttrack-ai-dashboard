@@ -15,9 +15,10 @@ export const Route = createFileRoute("/register")({
       },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): { role?: UserRole } => {
+  validateSearch: (search: Record<string, unknown>): { role?: UserRole | undefined } => {
+    const r = search["role"];
     return {
-      role: search.role === "applicant" || search.role === "recruiter" ? search.role : undefined,
+      role: r === "applicant" || r === "recruiter" ? r : undefined,
     };
   },
   component: RegisterPage,

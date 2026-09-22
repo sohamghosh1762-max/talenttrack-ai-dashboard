@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "node --test --experimental-strip-types src/server/__tests__/admin-users.test.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"

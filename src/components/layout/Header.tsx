@@ -42,9 +42,9 @@ import {
 } from "@/data/mockData";
 
 interface HeaderProps {
-  searchQuery?: string;
-  onSearchChange?: (val: string) => void;
-  onUpgradeClick?: () => void;
+  searchQuery?: string | undefined;
+  onSearchChange?: ((val: string) => void) | undefined;
+  onUpgradeClick?: (() => void) | undefined;
 }
 
 export function Header({ searchQuery = "", onSearchChange, onUpgradeClick }: HeaderProps) {

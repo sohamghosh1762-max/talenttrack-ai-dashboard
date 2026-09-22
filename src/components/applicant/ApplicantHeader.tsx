@@ -16,8 +16,8 @@ import { ApplicantSidebar } from "./ApplicantSidebar";
 import { useAuth } from "@/auth/AuthProvider";
 
 interface ApplicantHeaderProps {
-  searchQuery?: string;
-  onSearchChange?: (val: string) => void;
+  searchQuery?: string | undefined;
+  onSearchChange?: ((val: string) => void) | undefined;
 }
 
 export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantHeaderProps) {

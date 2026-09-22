@@ -11,9 +11,10 @@ export const Route = createFileRoute("/login")({
       { name: "description", content: "Sign in to your TalentTrack AI workspace." },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+  validateSearch: (search: Record<string, unknown>): { redirect?: string | undefined } => {
+    const r = search["redirect"];
     return {
-      redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+      redirect: typeof r === "string" ? r : undefined,
     };
   },
   component: LoginPage,

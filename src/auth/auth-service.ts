@@ -4,7 +4,19 @@ import { authStorage } from "./auth-storage";
 // Demo pre-seeded accounts for Phase 2 prototype
 const DEMO_USERS: User[] = [
   {
-    id: "user_recruiter_001",
+    id: "65f1a2b3c4d5e6f7a8b9c001",
+    name: "Admin",
+    email: "admin@talenttrack.ai",
+    role: "admin",
+    adminProfile: {
+      platformRole: "Super Administrator",
+      permissions: ["all"],
+      lastLogin: "Just now",
+    },
+    createdAt: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "65f1a2b3c4d5e6f7a8b9c003",
     name: "Rahul Mehta",
     email: "rahul.mehta@talenttrack.ai",
     role: "recruiter",
@@ -16,7 +28,7 @@ const DEMO_USERS: User[] = [
     createdAt: "2025-08-01T00:00:00Z",
   },
   {
-    id: "user_applicant_001",
+    id: "65f1a2b3c4d5e6f7a8b9c008",
     name: "Aarav Mehta",
     email: "aarav.mehta@example.com",
     role: "applicant",
@@ -181,7 +193,13 @@ export const authService = {
   /**
    * Get demo credentials for instant testing
    */
-  getDemoCredentials(role: "recruiter" | "applicant") {
+  getDemoCredentials(role: "recruiter" | "applicant" | "admin") {
+    if (role === "admin") {
+      return {
+        email: "admin@talenttrack.ai",
+        password: "password123",
+      };
+    }
     if (role === "recruiter") {
       return {
         email: "rahul.mehta@talenttrack.ai",

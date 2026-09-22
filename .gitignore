@@ -20,6 +20,10 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Local backup & temporary copy folders
+*- Copy/
+* - Copy/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

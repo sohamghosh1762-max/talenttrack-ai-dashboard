@@ -1,4 +1,4 @@
-export type UserRole = "recruiter" | "applicant";
+export type UserRole = "recruiter" | "applicant" | "admin";
 
 export interface RecruiterProfile {
   companyName: string;
@@ -15,14 +15,21 @@ export interface ApplicantProfile {
   resumeFileName?: string;
 }
 
+export interface AdminProfile {
+  platformRole?: string;
+  permissions?: string[];
+  lastLogin?: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
-  avatarUrl?: string;
-  recruiterProfile?: RecruiterProfile;
-  applicantProfile?: ApplicantProfile;
+  avatarUrl?: string | undefined;
+  recruiterProfile?: RecruiterProfile | undefined;
+  applicantProfile?: ApplicantProfile | undefined;
+  adminProfile?: AdminProfile | undefined;
   createdAt: string;
 }
 

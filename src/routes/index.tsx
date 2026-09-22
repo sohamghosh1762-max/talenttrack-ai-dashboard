@@ -187,6 +187,12 @@ function PublicHomePage() {
             <a href="#testimonials" className="hover:text-foreground transition-colors">
               About
             </a>
+            <Link
+              to="/admin"
+              className="hover:text-foreground transition-colors font-semibold text-slate-700"
+            >
+              Admin Portal
+            </Link>
           </nav>
 
           {/* Right Action Buttons */}
@@ -204,7 +210,12 @@ function PublicHomePage() {
                 className="h-10 px-5 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground font-semibold text-xs gap-1.5 rounded-lg shadow-sm"
                 onClick={() =>
                   navigate({
-                    to: user.role === "recruiter" ? "/dashboard" : "/applicant",
+                    to:
+                      user.role === "admin"
+                        ? "/admin"
+                        : user.role === "recruiter"
+                          ? "/dashboard"
+                          : "/applicant",
                   })
                 }
               >
@@ -315,7 +326,15 @@ function PublicHomePage() {
               />
             </svg>
             <div className="font-serif italic font-semibold text-brand-blue text-xs sm:text-[13px] leading-tight rotate-3">
-              Great<br />Talent<br />Builds<br />Great<br />Things
+              Great
+              <br />
+              Talent
+              <br />
+              Builds
+              <br />
+              Great
+              <br />
+              Things
             </div>
           </div>
         </div>

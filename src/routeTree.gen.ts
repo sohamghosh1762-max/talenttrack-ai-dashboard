@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AiScreeningRouteImport } from './routes/ai-screening'
 import { Route as ApplicationsRouteImport } from './routes/applications'
 import { Route as CandidatesRouteImport } from './routes/candidates'
@@ -21,6 +22,10 @@ import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as AdminActivityRouteImport } from './routes/admin/activity'
+import { Route as AdminReportsRouteImport } from './routes/admin/reports'
+import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ApplicantIndexRouteImport } from './routes/applicant/index'
 import { Route as ApplicantApplicationsRouteImport } from './routes/applicant/applications'
 import { Route as ApplicantJobsRouteImport } from './routes/applicant/jobs'
@@ -32,6 +37,11 @@ import { Route as ApplicantSettingsRouteImport } from './routes/applicant/settin
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AiScreeningRoute = AiScreeningRouteImport.update({
@@ -89,6 +99,26 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminActivityRoute = AdminActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ApplicantIndexRoute = ApplicantIndexRouteImport.update({
   id: '/applicant/',
   path: '/applicant/',
@@ -127,6 +157,7 @@ const ApplicantSettingsRoute = ApplicantSettingsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/ai-screening': typeof AiScreeningRoute
   '/applications': typeof ApplicationsRoute
   '/candidates': typeof CandidatesRoute
@@ -138,6 +169,10 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/admin/activity': typeof AdminActivityRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/applicant/applications': typeof ApplicantApplicationsRoute
   '/applicant/jobs': typeof ApplicantJobsRoute
   '/applicant/messages': typeof ApplicantMessagesRoute
@@ -148,6 +183,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/ai-screening': typeof AiScreeningRoute
   '/applications': typeof ApplicationsRoute
   '/candidates': typeof CandidatesRoute
@@ -159,6 +195,10 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/admin/activity': typeof AdminActivityRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/applicant/applications': typeof ApplicantApplicationsRoute
   '/applicant/jobs': typeof ApplicantJobsRoute
   '/applicant/messages': typeof ApplicantMessagesRoute
@@ -170,6 +210,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/ai-screening': typeof AiScreeningRoute
   '/applications': typeof ApplicationsRoute
   '/candidates': typeof CandidatesRoute
@@ -181,6 +222,10 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/admin/activity': typeof AdminActivityRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/applicant/applications': typeof ApplicantApplicationsRoute
   '/applicant/jobs': typeof ApplicantJobsRoute
   '/applicant/messages': typeof ApplicantMessagesRoute
@@ -193,6 +238,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/ai-screening'
     | '/applications'
     | '/candidates'
@@ -204,6 +250,10 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/settings'
+    | '/admin/activity'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/users'
     | '/applicant/applications'
     | '/applicant/jobs'
     | '/applicant/messages'
@@ -214,6 +264,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/ai-screening'
     | '/applications'
     | '/candidates'
@@ -225,6 +276,10 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/settings'
+    | '/admin/activity'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/users'
     | '/applicant/applications'
     | '/applicant/jobs'
     | '/applicant/messages'
@@ -235,6 +290,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/ai-screening'
     | '/applications'
     | '/candidates'
@@ -246,6 +302,10 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/settings'
+    | '/admin/activity'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/users'
     | '/applicant/applications'
     | '/applicant/jobs'
     | '/applicant/messages'
@@ -257,6 +317,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AiScreeningRoute: typeof AiScreeningRoute
   ApplicationsRoute: typeof ApplicationsRoute
   CandidatesRoute: typeof CandidatesRoute
@@ -284,6 +345,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ai-screening': {
@@ -363,6 +431,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/activity': {
+      id: '/admin/activity'
+      path: '/activity'
+      fullPath: '/admin/activity'
+      preLoaderRoute: typeof AdminActivityRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/applicant/': {
       id: '/applicant/'
       path: '/applicant'
@@ -415,8 +511,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminActivityRoute: typeof AdminActivityRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminActivityRoute: AdminActivityRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AiScreeningRoute: AiScreeningRoute,
   ApplicationsRoute: ApplicationsRoute,
   CandidatesRoute: CandidatesRoute,

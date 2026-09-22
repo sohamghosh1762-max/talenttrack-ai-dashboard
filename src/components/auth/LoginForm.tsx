@@ -10,6 +10,7 @@ import {
   EyeOff,
   Lock,
   Mail,
+  Shield,
   UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ import {
 import { useAuth } from "@/auth/AuthProvider";
 
 interface LoginFormProps {
-  redirectPath?: string;
+  redirectPath?: string | undefined;
 }
 
 export function LoginForm({ redirectPath }: LoginFormProps) {
@@ -55,17 +56,23 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
     const res = await login({ email, password, rememberMe });
     if (res.success && res.user) {
       const destination =
-        redirectPath || (res.user.role === "recruiter" ? "/dashboard" : "/applicant");
+        redirectPath ||
+        (res.user.role === "admin"
+          ? "/admin"
+          : res.user.role === "recruiter"
+            ? "/dashboard"
+            : "/applicant");
       navigate({ to: destination });
     } else {
       setErrorMessage(res.message || "Invalid email or password.");
     }
   };
 
-  const handleDemoLogin = async (role: "recruiter" | "applicant") => {
+  const handleDemoLogin = async (role: "recruiter" | "applicant" | "admin") => {
     setErrorMessage("");
     await switchDemoRole(role);
-    const destination = role === "recruiter" ? "/dashboard" : "/applicant";
+    const destination =
+      role === "admin" ? "/admin" : role === "recruiter" ? "/dashboard" : "/applicant";
     navigate({ to: destination });
   };
 
@@ -86,17 +93,28 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
           <div className="text-[11px] font-bold text-brand-blue uppercase tracking-wider">
             Quick One-Click Demo Access
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isLoading}
+              onClick={() => handleDemoLogin("admin")}
+              className="h-8.5 px-2 text-[11px] font-semibold justify-center bg-card hover:bg-surface-blue hover:text-brand-blue border-border"
+            >
+              <Shield className="size-3.5 mr-1 text-brand-purple shrink-0" />
+              Admin
+            </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
               disabled={isLoading}
               onClick={() => handleDemoLogin("recruiter")}
-              className="h-8.5 text-xs font-semibold justify-center bg-card hover:bg-surface-blue hover:text-brand-blue border-border"
+              className="h-8.5 px-2 text-[11px] font-semibold justify-center bg-card hover:bg-surface-blue hover:text-brand-blue border-border"
             >
-              <Briefcase className="size-3.5 mr-1 text-brand-blue" />
-              Recruiter Demo
+              <Briefcase className="size-3.5 mr-1 text-brand-blue shrink-0" />
+              Recruiter
             </Button>
             <Button
               type="button"
@@ -104,10 +122,10 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
               size="sm"
               disabled={isLoading}
               onClick={() => handleDemoLogin("applicant")}
-              className="h-8.5 text-xs font-semibold justify-center bg-card hover:bg-surface-blue hover:text-brand-blue border-border"
+              className="h-8.5 px-2 text-[11px] font-semibold justify-center bg-card hover:bg-surface-blue hover:text-brand-blue border-border"
             >
-              <UserRound className="size-3.5 mr-1 text-brand-green" />
-              Applicant Demo
+              <UserRound className="size-3.5 mr-1 text-brand-green shrink-0" />
+              Applicant
             </Button>
           </div>
         </div>

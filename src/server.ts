@@ -44,9 +44,19 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+import { handleAdminApiRequest } from "./server/routes/admin-users-handler";
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+      if (url.pathname.startsWith("/api/admin")) {
+        const apiResponse = await handleAdminApiRequest(request);
+        if (apiResponse) {
+          return apiResponse;
+        }
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
