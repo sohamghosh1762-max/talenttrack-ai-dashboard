@@ -24,6 +24,11 @@ import type {
   AdminSettings,
   AdminSettingsValidationErrors,
   SettingsCategoryKey,
+  NotificationSettings,
+  FileUploadSettings,
+  AiConfigSettings,
+  SecuritySettings,
+  PlatformPreferencesSettings,
 } from "@/data/adminSettingsTypes";
 
 interface CategoryTab {
@@ -79,11 +84,9 @@ const CATEGORY_TABS: CategoryTab[] = [
 ];
 
 export function AdminSettingsView() {
-  const [settings, setSettings] = useState<AdminSettings>(() =>
-    adminSettingsService.getSettings()
-  );
+  const [settings, setSettings] = useState<AdminSettings>(() => adminSettingsService.getSettings());
   const [savedSettings, setSavedSettings] = useState<AdminSettings>(() =>
-    adminSettingsService.getSettings()
+    adminSettingsService.getSettings(),
   );
   const [activeTab, setActiveTab] = useState<SettingsCategoryKey>("general");
   const [isSaving, setIsSaving] = useState(false);
@@ -188,7 +191,8 @@ export function AdminSettingsView() {
                 Platform Administration Settings
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Configure platform governance, authentication tolerances, AI models, security policies, and defaults.
+                Configure platform governance, authentication tolerances, AI models, security
+                policies, and defaults.
               </p>
             </div>
           </div>
@@ -257,7 +261,8 @@ export function AdminSettingsView() {
           <span className="font-bold text-slate-800 dark:text-slate-200">
             Enterprise Security & Credential Protection:
           </span>{" "}
-          API keys, passwords, and tokens are stored using zero-trust encrypted vault references. Plaintext secret credentials are never exposed in UI responses.
+          API keys, passwords, and tokens are stored using zero-trust encrypted vault references.
+          Plaintext secret credentials are never exposed in UI responses.
         </div>
       </div>
 
@@ -278,25 +283,29 @@ export function AdminSettingsView() {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-xs font-medium transition-all text-left whitespace-nowrap lg:whitespace-normal shrink-0 ${
+                className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-xs font-medium transition-all text-left whitespace-nowrap lg:whitespace-normal shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:focus-visible:ring-blue-400 ${
                   isActive
                     ? "bg-blue-600 text-white font-semibold shadow-sm dark:bg-blue-600"
                     : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80 border border-slate-200/70 dark:border-slate-800"
                 }`}
+                role="tab"
+                aria-selected={isActive}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <TabIcon
                     className={`size-4 shrink-0 ${
-                      isActive
-                        ? "text-white"
-                        : "text-slate-500 dark:text-slate-400"
+                      isActive ? "text-white" : "text-slate-500 dark:text-slate-400"
                     }`}
+                    aria-hidden="true"
                   />
                   <span className="truncate">{tab.label}</span>
                 </div>
 
                 {hasSectionError && (
-                  <span className="size-2 rounded-full bg-rose-500 shrink-0" title="Validation errors in this section" />
+                  <span
+                    className="size-2 rounded-full bg-rose-500 shrink-0"
+                    title="Validation errors in this section"
+                  />
                 )}
               </button>
             );
@@ -644,9 +653,7 @@ export function AdminSettingsView() {
                     }`}
                   />
                   {authErrors?.passwordMinLength && (
-                    <p className="text-[11px] text-rose-600 mt-1">
-                      {authErrors.passwordMinLength}
-                    </p>
+                    <p className="text-[11px] text-rose-600 mt-1">{authErrors.passwordMinLength}</p>
                   )}
                 </div>
 
@@ -675,9 +682,7 @@ export function AdminSettingsView() {
                     }`}
                   />
                   {authErrors?.maxFailedLogins && (
-                    <p className="text-[11px] text-rose-600 mt-1">
-                      {authErrors.maxFailedLogins}
-                    </p>
+                    <p className="text-[11px] text-rose-600 mt-1">{authErrors.maxFailedLogins}</p>
                   )}
                 </div>
               </div>
@@ -809,7 +814,8 @@ export function AdminSettingsView() {
                         ...settings,
                         notifications: {
                           ...settings.notifications,
-                          adminDigestFrequency: e.target.value as any,
+                          adminDigestFrequency: e.target
+                            .value as NotificationSettings["adminDigestFrequency"],
                         },
                       })
                     }
@@ -945,9 +951,7 @@ export function AdminSettingsView() {
                       className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-xs outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                     />
                     {notifErrors?.smtpServerHost && (
-                      <p className="text-[11px] text-rose-600 mt-1">
-                        {notifErrors.smtpServerHost}
-                      </p>
+                      <p className="text-[11px] text-rose-600 mt-1">{notifErrors.smtpServerHost}</p>
                     )}
                   </div>
 
@@ -1017,9 +1021,7 @@ export function AdminSettingsView() {
                     }`}
                   />
                   {fileErrors?.maxResumeSizeMB && (
-                    <p className="text-[11px] text-rose-600 mt-1">
-                      {fileErrors.maxResumeSizeMB}
-                    </p>
+                    <p className="text-[11px] text-rose-600 mt-1">{fileErrors.maxResumeSizeMB}</p>
                   )}
                 </div>
 
@@ -1048,9 +1050,7 @@ export function AdminSettingsView() {
                     }`}
                   />
                   {fileErrors?.maxLogoSizeMB && (
-                    <p className="text-[11px] text-rose-600 mt-1">
-                      {fileErrors.maxLogoSizeMB}
-                    </p>
+                    <p className="text-[11px] text-rose-600 mt-1">{fileErrors.maxLogoSizeMB}</p>
                   )}
                 </div>
 
@@ -1079,9 +1079,7 @@ export function AdminSettingsView() {
                     }`}
                   />
                   {fileErrors?.retentionDays && (
-                    <p className="text-[11px] text-rose-600 mt-1">
-                      {fileErrors.retentionDays}
-                    </p>
+                    <p className="text-[11px] text-rose-600 mt-1">{fileErrors.retentionDays}</p>
                   )}
                 </div>
               </div>
@@ -1140,7 +1138,7 @@ export function AdminSettingsView() {
                         ...settings,
                         fileUpload: {
                           ...settings.fileUpload,
-                          storageProvider: e.target.value as any,
+                          storageProvider: e.target.value as FileUploadSettings["storageProvider"],
                         },
                       })
                     }
@@ -1196,7 +1194,7 @@ export function AdminSettingsView() {
                         ...settings,
                         aiConfig: {
                           ...settings.aiConfig,
-                          matchingModel: e.target.value as any,
+                          matchingModel: e.target.value as AiConfigSettings["matchingModel"],
                         },
                       })
                     }
@@ -1209,7 +1207,9 @@ export function AdminSettingsView() {
                       TalentTrack-v3-Pro (High Accuracy Embedding)
                     </option>
                     <option value="GPT-4o-Mini (Azure)">GPT-4o-Mini (Azure Hosted)</option>
-                    <option value="Claude-3.5-Sonnet (Bedrock)">Claude-3.5-Sonnet (AWS Bedrock)</option>
+                    <option value="Claude-3.5-Sonnet (Bedrock)">
+                      Claude-3.5-Sonnet (AWS Bedrock)
+                    </option>
                   </select>
                 </div>
 
@@ -1242,9 +1242,7 @@ export function AdminSettingsView() {
                     <span>95% (Strict)</span>
                   </div>
                   {aiErrors?.matchThresholdPct && (
-                    <p className="text-[11px] text-rose-600 mt-1">
-                      {aiErrors.matchThresholdPct}
-                    </p>
+                    <p className="text-[11px] text-rose-600 mt-1">{aiErrors.matchThresholdPct}</p>
                   )}
                 </div>
               </div>
@@ -1351,7 +1349,8 @@ export function AdminSettingsView() {
                           ...settings,
                           aiConfig: {
                             ...settings.aiConfig,
-                            confidenceRating: e.target.value as any,
+                            confidenceRating: e.target
+                              .value as AiConfigSettings["confidenceRating"],
                           },
                         })
                       }
@@ -1390,9 +1389,7 @@ export function AdminSettingsView() {
                   }`}
                 />
                 {secErrors?.corsAllowedOrigins && (
-                  <p className="text-[11px] text-rose-600 mt-1">
-                    {secErrors.corsAllowedOrigins}
-                  </p>
+                  <p className="text-[11px] text-rose-600 mt-1">{secErrors.corsAllowedOrigins}</p>
                 )}
               </div>
 
@@ -1473,9 +1470,7 @@ export function AdminSettingsView() {
                     }`}
                   />
                   {secErrors?.apiRateLimitPerMin && (
-                    <p className="text-[11px] text-rose-600 mt-1">
-                      {secErrors.apiRateLimitPerMin}
-                    </p>
+                    <p className="text-[11px] text-rose-600 mt-1">{secErrors.apiRateLimitPerMin}</p>
                   )}
                 </div>
 
@@ -1488,7 +1483,10 @@ export function AdminSettingsView() {
                     onChange={(e) =>
                       setSettings({
                         ...settings,
-                        security: { ...settings.security, cspPolicy: e.target.value as any },
+                        security: {
+                          ...settings.security,
+                          cspPolicy: e.target.value as SecuritySettings["cspPolicy"],
+                        },
                       })
                     }
                     className="h-9.5 w-full rounded-md border border-slate-200 bg-white px-3 text-xs outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
@@ -1541,7 +1539,8 @@ export function AdminSettingsView() {
                         ...settings,
                         platformPreferences: {
                           ...settings.platformPreferences,
-                          defaultThemeMode: e.target.value as any,
+                          defaultThemeMode: e.target
+                            .value as PlatformPreferencesSettings["defaultThemeMode"],
                         },
                       })
                     }
@@ -1564,7 +1563,8 @@ export function AdminSettingsView() {
                         ...settings,
                         platformPreferences: {
                           ...settings.platformPreferences,
-                          dashboardRefreshInterval: e.target.value as any,
+                          dashboardRefreshInterval: e.target
+                            .value as PlatformPreferencesSettings["dashboardRefreshInterval"],
                         },
                       })
                     }
@@ -1588,7 +1588,8 @@ export function AdminSettingsView() {
                         ...settings,
                         platformPreferences: {
                           ...settings.platformPreferences,
-                          exportFormatDefault: e.target.value as any,
+                          exportFormatDefault: e.target
+                            .value as PlatformPreferencesSettings["exportFormatDefault"],
                         },
                       })
                     }

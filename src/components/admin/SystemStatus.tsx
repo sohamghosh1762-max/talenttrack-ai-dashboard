@@ -33,7 +33,9 @@ export function SystemStatus({
     setIsChecking(true);
     setTimeout(() => {
       setIsChecking(false);
-      toast.success("System status recheck complete. All core infrastructure services operational.");
+      toast.success(
+        "System status recheck complete. All core infrastructure services operational.",
+      );
     }, 650);
   };
 

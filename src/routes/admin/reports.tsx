@@ -7,7 +7,8 @@ export const Route = createFileRoute("/admin/reports")({
       { title: "Platform Reports & Analytics — TalentTrack AI" },
       {
         name: "description",
-        content: "Executive analytics, candidate sourcing breakdown, pipeline conversion, and compliance audit reports.",
+        content:
+          "Executive analytics, candidate sourcing breakdown, pipeline conversion, and compliance audit reports.",
       },
     ],
   }),

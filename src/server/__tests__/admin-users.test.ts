@@ -8,7 +8,11 @@ import {
   handleUpdateUserStatus,
   handleBulkUpdateUserStatus,
   handleGetUserActivity,
+  handleAdminApiRequest,
 } from "../routes/admin-users-handler.ts";
+import { initialAuditLogs, getFilteredAuditLogs } from "../../data/activityData.ts";
+import { defaultAdminSettings, validateAdminSettings } from "../../data/adminSettingsData.ts";
+import { generateUsersCsvContent } from "../../lib/export-utils.ts";
 
 // Test Helper to create a simulated HTTP Request
 function createRequest(
@@ -466,7 +470,10 @@ describe("ADMIN PHASE 2: User Management API Suite", () => {
     assert.ok(
       data.users.every((u: { createdAt: string }) => {
         const t = new Date(u.createdAt).getTime();
-        return t >= new Date("2025-01-01").getTime() && t <= new Date("2025-02-01T23:59:59.999Z").getTime();
+        return (
+          t >= new Date("2025-01-01").getTime() &&
+          t <= new Date("2025-02-01T23:59:59.999Z").getTime()
+        );
       }),
     );
   });
@@ -532,5 +539,170 @@ describe("ADMIN PHASE 2: User Management API Suite", () => {
     });
     const resStatus = await handleBulkUpdateUserStatus(reqStatus);
     assert.equal(resStatus.status, 400);
+  });
+});
+
+describe("ADMIN MODULE: Dispatcher & Security Guard Suite", () => {
+  it("23. Dispatcher handles non-admin requests with 403", async () => {
+    const req = createRequest("http://localhost/api/admin/users", {
+      token: RECRUITER_TOKEN,
+    });
+    const res = await handleAdminApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 403);
+  });
+
+  it("24. Dispatcher handles unauthenticated requests with 401", async () => {
+    const req = createRequest("http://localhost/api/admin/users");
+    const res = await handleAdminApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 401);
+  });
+
+  it("25. Dispatcher returns null for non-admin API routes", async () => {
+    const req = createRequest("http://localhost/api/other-endpoint");
+    const res = await handleAdminApiRequest(req);
+    assert.equal(res, null);
+  });
+
+  it("26. Dispatcher returns 404 for unknown admin sub-routes", async () => {
+    const req = createRequest("http://localhost/api/admin/unknown-subroute", {
+      token: ADMIN_TOKEN,
+    });
+    const res = await handleAdminApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 404);
+  });
+});
+
+describe("ADMIN MODULE: System Activity & Audit Logs Suite", () => {
+  it("27. Activity filter returns all items when no filters applied", () => {
+    const { filtered, total } = getFilteredAuditLogs(initialAuditLogs, {});
+    assert.equal(filtered.length, initialAuditLogs.length);
+    assert.equal(total, initialAuditLogs.length);
+  });
+
+  it("28. Activity filter matches text search on action, actor, or target", () => {
+    const { filtered } = getFilteredAuditLogs(initialAuditLogs, { search: "Jenkins" });
+    assert.ok(filtered.length > 0);
+    assert.ok(
+      filtered.every(
+        (item) => item.actorName.includes("Jenkins") || item.description.includes("Jenkins"),
+      ),
+    );
+  });
+
+  it("29. Activity filter filters by action type accurately", () => {
+    const { filtered } = getFilteredAuditLogs(initialAuditLogs, { action: "status_change" });
+    assert.ok(filtered.length > 0);
+    assert.ok(filtered.every((item) => item.actionType === "USER_STATUS_CHANGED"));
+  });
+
+  it("30. Activity filter filters by actor role accurately", () => {
+    const { filtered } = getFilteredAuditLogs(initialAuditLogs, { actor: "Admin" });
+    assert.ok(filtered.length > 0);
+    assert.ok(filtered.every((item) => item.actorRole.toLowerCase() === "admin"));
+  });
+
+  it("31. Activity filter filters by target entity accurately", () => {
+    const { filtered } = getFilteredAuditLogs(initialAuditLogs, { target: "User" });
+    assert.ok(filtered.length > 0);
+    assert.ok(
+      filtered.every(
+        (item) =>
+          item.targetType.toLowerCase().includes("user") || item.category.toLowerCase() === "user",
+      ),
+    );
+  });
+});
+
+describe("ADMIN MODULE: Settings Validation & Integrity Suite", () => {
+  it("32. Default platform settings pass validation with zero errors", () => {
+    const { isValid, errors } = validateAdminSettings(defaultAdminSettings);
+    assert.equal(isValid, true);
+    assert.equal(Object.keys(errors).length, 0);
+  });
+
+  it("33. Invalid email in general settings is rejected", () => {
+    const invalidSettings = {
+      ...defaultAdminSettings,
+      general: {
+        ...defaultAdminSettings.general,
+        supportEmail: "not-an-email",
+      },
+    };
+    const { isValid, errors } = validateAdminSettings(invalidSettings);
+    assert.equal(isValid, false);
+    assert.ok(errors.general?.supportEmail);
+  });
+
+  it("34. Out-of-bounds session timeout in auth settings is rejected", () => {
+    const invalidSettings = {
+      ...defaultAdminSettings,
+      authentication: {
+        ...defaultAdminSettings.authentication,
+        sessionTimeoutMins: 5, // Minimum is 15
+      },
+    };
+    const { isValid, errors } = validateAdminSettings(invalidSettings);
+    assert.equal(isValid, false);
+    assert.ok(errors.authentication?.sessionTimeoutMins);
+  });
+
+  it("35. Empty allowed resume extensions is rejected", () => {
+    const invalidSettings = {
+      ...defaultAdminSettings,
+      fileUpload: {
+        ...defaultAdminSettings.fileUpload,
+        allowedResumeExtensions: [],
+      },
+    };
+    const { isValid, errors } = validateAdminSettings(invalidSettings);
+    assert.equal(isValid, false);
+    assert.ok(errors.fileUpload?.allowedResumeExtensions);
+  });
+
+  it("36. Out-of-range AI match threshold is rejected", () => {
+    const invalidSettings = {
+      ...defaultAdminSettings,
+      aiConfig: {
+        ...defaultAdminSettings.aiConfig,
+        matchThresholdPct: 40, // Minimum is 50
+      },
+    };
+    const { isValid, errors } = validateAdminSettings(invalidSettings);
+    assert.equal(isValid, false);
+    assert.ok(errors.aiConfig?.matchThresholdPct);
+  });
+});
+
+describe("ADMIN MODULE: User CSV Export Generator Suite", () => {
+  it("37. Returns empty string for empty user array", () => {
+    const csv = generateUsersCsvContent([]);
+    assert.equal(csv, "");
+  });
+
+  it("38. Formats user rows with proper headers and escaping", () => {
+    const testUsers = [
+      {
+        id: "usr-01",
+        name: 'Sarah "The Admin" Jenkins',
+        email: "sarah@talenttrack.ai",
+        role: "ADMIN",
+        status: "ACTIVE",
+        emailVerified: true,
+        createdAt: "2025-01-01T00:00:00Z",
+        lastActive: "2026-09-22T00:00:00Z",
+      },
+    ];
+    const csv = generateUsersCsvContent(testUsers);
+    assert.ok(
+      csv.includes(
+        "User ID,Full Name,Email Address,Role,Status,Email Verified,Created Date / Joined,Last Active",
+      ),
+    );
+    assert.ok(csv.includes('"usr-01"'));
+    assert.ok(csv.includes('"Sarah ""The Admin"" Jenkins"'));
+    assert.ok(csv.includes("Yes"));
   });
 });

@@ -22,7 +22,8 @@ export interface AuthenticationSettings {
 export interface NotificationSettings {
   notificationSenderEmail: string;
   enableCriticalAlerts: boolean;
-  adminDigestFrequency: "Instant (Real-time)" | "Daily Summary (08:00 UTC)" | "Weekly Digest (Mondays)";
+  adminDigestFrequency:
+    "Instant (Real-time)" | "Daily Summary (08:00 UTC)" | "Weekly Digest (Mondays)";
   notifyOnRecruiterReg: boolean;
   notifyOnSecurityAlerts: boolean;
   smtpServerHost: string;
@@ -35,16 +36,22 @@ export interface FileUploadSettings {
   maxLogoSizeMB: number;
   allowedResumeExtensions: string[];
   resumeVirusScanning: boolean;
-  storageProvider: "Amazon S3 Enterprise" | "Google Cloud Storage" | "Cloudflare R2" | "Local Encrypted Storage";
+  storageProvider:
+    "Amazon S3 Enterprise" | "Google Cloud Storage" | "Cloudflare R2" | "Local Encrypted Storage";
   retentionDays: number;
 }
 
 export interface AiConfigSettings {
-  matchingModel: "TalentTrack-v3-Turbo (Default)" | "TalentTrack-v3-Pro" | "GPT-4o-Mini (Azure)" | "Claude-3.5-Sonnet (Bedrock)";
+  matchingModel:
+    | "TalentTrack-v3-Turbo (Default)"
+    | "TalentTrack-v3-Pro"
+    | "GPT-4o-Mini (Azure)"
+    | "Claude-3.5-Sonnet (Bedrock)";
   matchThresholdPct: number;
   autoSummarizeResumes: boolean;
   biasReductionAnonymization: boolean;
-  confidenceRating: "Strict (High Precision)" | "Balanced (Recommended)" | "Permissive (High Recall)";
+  confidenceRating:
+    "Strict (High Precision)" | "Balanced (Recommended)" | "Permissive (High Recall)";
   apiKeyMasked: string;
 }
 

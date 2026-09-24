@@ -41,10 +41,14 @@ const categoryIcons: Record<AuditCategory, typeof ShieldCheck> = {
 const categoryColors: Record<AuditCategory, string> = {
   user: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800",
   job: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800",
-  application: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800",
-  company: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
-  system: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-  security: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800",
+  application:
+    "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800",
+  company:
+    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
+  system:
+    "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+  security:
+    "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800",
 };
 
 export function ActivityDetailDrawer({ log, open, onOpenChange }: ActivityDetailDrawerProps) {
@@ -82,8 +86,8 @@ export function ActivityDetailDrawer({ log, open, onOpenChange }: ActivityDetail
                 log.status === "Success"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300"
                   : log.status === "Warning"
-                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300"
-                  : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300"
+                    ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300"
+                    : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300"
               }`}
             >
               {log.status === "Success" ? (
@@ -188,9 +192,7 @@ export function ActivityDetailDrawer({ log, open, onOpenChange }: ActivityDetail
               <span className="flex items-center gap-1.5 text-slate-500">
                 <Globe className="size-3.5" /> Network IP Address
               </span>
-              <span className="font-mono text-slate-900 dark:text-slate-200">
-                {log.ipAddress}
-              </span>
+              <span className="font-mono text-slate-900 dark:text-slate-200">{log.ipAddress}</span>
             </div>
           )}
         </div>
@@ -199,12 +201,18 @@ export function ActivityDetailDrawer({ log, open, onOpenChange }: ActivityDetail
         <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 text-blue-900 text-xs flex items-center gap-2 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300">
           <ShieldCheck className="size-5 text-blue-600 shrink-0" />
           <p className="text-[11px] leading-tight">
-            <strong>Immutable Audit Log:</strong> Cryptographically timestamped and sealed according to SOC2 and platform compliance policies.
+            <strong>Immutable Audit Log:</strong> Cryptographically timestamped and sealed according
+            to SOC2 and platform compliance policies.
           </p>
         </div>
 
         <div className="pt-2 flex justify-end">
-          <Button size="sm" variant="outline" onClick={() => onOpenChange(false)} className="text-xs">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="text-xs"
+          >
             Close Audit Entry
           </Button>
         </div>

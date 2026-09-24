@@ -80,7 +80,7 @@ export function AdminHeader({
             <SheetTrigger asChild>
               <button
                 type="button"
-                className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300"
+                className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
                 aria-label="Open mobile navigation menu"
               >
                 <Menu className="size-4" />
@@ -114,7 +114,7 @@ export function AdminHeader({
       <div className="flex items-center gap-2.5 sm:gap-3">
         {/* Search Field */}
         <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="search"
             placeholder="Search platform..."
@@ -129,7 +129,7 @@ export function AdminHeader({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="relative inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+              className="relative inline-flex size-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
               aria-label="Platform notifications"
             >
               <Bell className="size-4" />
@@ -150,7 +150,7 @@ export function AdminHeader({
                 <button
                   type="button"
                   onClick={markAllRead}
-                  className="text-[11px] font-medium text-blue-600 hover:underline flex items-center gap-1"
+                  className="text-[11px] font-medium text-blue-600 hover:underline flex items-center gap-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-600"
                 >
                   <Check className="size-3" />
                   Mark all read
@@ -188,7 +188,7 @@ export function AdminHeader({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-2 rounded-lg border border-slate-200/80 p-1 pr-2 hover:bg-slate-100/70 dark:border-slate-700 dark:hover:bg-slate-800 transition-colors"
+              className="flex items-center gap-2 rounded-lg border border-slate-200/80 p-1 pr-2 hover:bg-slate-100/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-700 dark:hover:bg-slate-800 transition-colors"
               aria-label="Admin user account"
             >
               <div className="flex size-7 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-xs">

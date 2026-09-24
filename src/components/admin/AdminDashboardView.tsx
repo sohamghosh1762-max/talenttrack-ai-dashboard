@@ -124,7 +124,8 @@ export function AdminDashboardView({
               </h2>
             </div>
             <p className="text-xs text-slate-500">
-              Audit corporate domains, active recruiter seats, and billing tiers across enterprise organizations on TalentTrack AI.
+              Audit corporate domains, active recruiter seats, and billing tiers across enterprise
+              organizations on TalentTrack AI.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
               <div className="rounded-lg border border-slate-200 p-4 bg-slate-50/50">
@@ -150,7 +151,8 @@ export function AdminDashboardView({
               </h2>
             </div>
             <p className="text-xs text-slate-500">
-              Platform-wide index of active roles, screening rubric configurations, and application intakes.
+              Platform-wide index of active roles, screening rubric configurations, and application
+              intakes.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
               <div className="rounded-lg border border-slate-200 p-4 bg-slate-50/50">
@@ -205,7 +207,8 @@ export function AdminDashboardView({
             <div>
               <h3 className="text-sm font-bold">Failed to load dashboard metrics</h3>
               <p className="text-xs text-rose-700 dark:text-rose-300 mt-0.5">
-                {error.message || "An unexpected error occurred while communicating with the administrative data service."}
+                {error.message ||
+                  "An unexpected error occurred while communicating with the administrative data service."}
               </p>
             </div>
           </div>
@@ -292,10 +295,7 @@ export function AdminDashboardView({
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
             {/* Recent Users Table */}
             <div className="min-w-0">
-              <UserTable
-                initialUsers={recentUsersData}
-                onViewAll={() => onSelectNav?.("Users")}
-              />
+              <UserTable initialUsers={recentUsersData} onViewAll={() => onSelectNav?.("Users")} />
             </div>
 
             {/* Recent Platform Activity & System Status */}
@@ -305,11 +305,7 @@ export function AdminDashboardView({
                 isLoading={isLoading}
                 isError={!!error}
               />
-              <SystemStatus
-                services={systemStatusData}
-                isLoading={isLoading}
-                isError={!!error}
-              />
+              <SystemStatus services={systemStatusData} isLoading={isLoading} isError={!!error} />
             </div>
           </div>
         </>

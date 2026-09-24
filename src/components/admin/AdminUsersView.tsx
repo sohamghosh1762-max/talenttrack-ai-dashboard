@@ -5,6 +5,7 @@ import { UsersFilterBar, type FilterState } from "./UsersFilterBar";
 import { AdminUsersTable } from "./AdminUsersTable";
 import { UserDetailDrawer } from "./UserDetailDrawer";
 import { useAdminUsers } from "@/hooks/use-admin-users";
+import type { UserRole, UserStatus } from "@/server/types/user-types";
 import { exportUsersToCsv, exportUsersToJson } from "@/lib/export-utils";
 import { toast } from "sonner";
 
@@ -74,7 +75,10 @@ export function AdminUsersView() {
     toast.success(`Exported ${users.length} users to JSON.`);
   };
 
-  const handleSummaryCardClick = (type: "role" | "status" | "emailVerified" | "clear", value?: any) => {
+  const handleSummaryCardClick = (
+    type: "role" | "status" | "emailVerified" | "clear",
+    value?: UserRole | UserStatus | boolean,
+  ) => {
     if (type === "clear") {
       setFilters(DEFAULT_FILTERS);
       setPage(1);
@@ -82,9 +86,9 @@ export function AdminUsersView() {
     }
     setFilters((prev) => ({
       ...prev,
-      role: type === "role" ? value : "",
-      status: type === "status" ? value : "",
-      emailVerified: type === "emailVerified" ? value : "",
+      role: type === "role" ? (value as UserRole) : "",
+      status: type === "status" ? (value as UserStatus) : "",
+      emailVerified: type === "emailVerified" ? (value as boolean) : "",
     }));
     setPage(1);
   };

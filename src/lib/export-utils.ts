@@ -14,11 +14,11 @@ export interface ExportableUserRecord {
 }
 
 /**
- * Convert user objects to CSV text format and trigger browser file download
+ * Convert user objects to CSV string content
  */
-export function exportUsersToCsv(users: ExportableUserRecord[], filename: string = "talenttrack_users.csv"): void {
+export function generateUsersCsvContent(users: ExportableUserRecord[]): string {
   if (!users || users.length === 0) {
-    return;
+    return "";
   }
 
   const headers = [
@@ -33,18 +33,31 @@ export function exportUsersToCsv(users: ExportableUserRecord[], filename: string
   ];
 
   const rows = users.map((user) => [
-    `"${user.id}"`,
+    `"${user.id || ""}"`,
     `"${(user.name || "").replace(/"/g, '""')}"`,
     `"${(user.email || "").replace(/"/g, '""')}"`,
-    `"${user.role}"`,
-    `"${user.status}"`,
+    `"${user.role || ""}"`,
+    `"${user.status || ""}"`,
     user.emailVerified ? "Yes" : "No",
     `"${user.createdAt || user.joined || ""}"`,
     `"${user.lastActive || ""}"`,
   ]);
 
-  const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\r\n");
+  return [headers.join(","), ...rows.map((row) => row.join(","))].join("\r\n");
+}
 
+/**
+ * Convert user objects to CSV text format and trigger browser file download
+ */
+export function exportUsersToCsv(
+  users: ExportableUserRecord[],
+  filename: string = "talenttrack_users.csv",
+): void {
+  if (!users || users.length === 0 || typeof document === "undefined") {
+    return;
+  }
+
+  const csvContent = generateUsersCsvContent(users);
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -59,7 +72,10 @@ export function exportUsersToCsv(users: ExportableUserRecord[], filename: string
 /**
  * Format user objects as formatted JSON and trigger browser file download
  */
-export function exportUsersToJson(users: ExportableUserRecord[], filename: string = "talenttrack_users.json"): void {
+export function exportUsersToJson(
+  users: ExportableUserRecord[],
+  filename: string = "talenttrack_users.json",
+): void {
   if (!users || users.length === 0) {
     return;
   }

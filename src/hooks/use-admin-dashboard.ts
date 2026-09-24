@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { adminService, recentPlatformActivityData, initialSystemStatusData, recentUsersInitialData } from "@/data/adminData";
+import {
+  adminService,
+  recentPlatformActivityData,
+  initialSystemStatusData,
+  recentUsersInitialData,
+} from "@/data/adminData";
 import type {
   AdminOverviewStats,
   AdminUserRecord,
@@ -137,10 +142,42 @@ export function useAdminDashboardData() {
       if (simulateEmpty) {
         return {
           stats: {
-            totalUsers: { id: "1", label: "TOTAL USERS", value: "0", rawCount: 0, changePct: "0%", isPositive: true, trend: "neutral" },
-            activeRecruiters: { id: "2", label: "ACTIVE RECRUITERS", value: "0", rawCount: 0, changePct: "0%", isPositive: true, trend: "neutral" },
-            activeApplicants: { id: "3", label: "ACTIVE APPLICANTS", value: "0", rawCount: 0, changePct: "0%", isPositive: true, trend: "neutral" },
-            activeJobs: { id: "4", label: "ACTIVE JOBS", value: "0", rawCount: 0, changePct: "0%", isPositive: true, trend: "neutral" },
+            totalUsers: {
+              id: "1",
+              label: "TOTAL USERS",
+              value: "0",
+              rawCount: 0,
+              changePct: "0%",
+              isPositive: true,
+              trend: "neutral",
+            },
+            activeRecruiters: {
+              id: "2",
+              label: "ACTIVE RECRUITERS",
+              value: "0",
+              rawCount: 0,
+              changePct: "0%",
+              isPositive: true,
+              trend: "neutral",
+            },
+            activeApplicants: {
+              id: "3",
+              label: "ACTIVE APPLICANTS",
+              value: "0",
+              rawCount: 0,
+              changePct: "0%",
+              isPositive: true,
+              trend: "neutral",
+            },
+            activeJobs: {
+              id: "4",
+              label: "ACTIVE JOBS",
+              value: "0",
+              rawCount: 0,
+              changePct: "0%",
+              isPositive: true,
+              trend: "neutral",
+            },
           },
           growthData: [],
           userDistribution: [],

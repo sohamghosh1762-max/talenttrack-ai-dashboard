@@ -81,7 +81,10 @@ export function useAdminReports() {
   const [isExporting, setIsExporting] = useState(false);
   const queryClient = useQueryClient();
 
-  const query = useQuery<{ metrics: ReportSummaryMetrics; sourcingChannels: SourcingChannelItem[] }, Error>({
+  const query = useQuery<
+    { metrics: ReportSummaryMetrics; sourcingChannels: SourcingChannelItem[] },
+    Error
+  >({
     queryKey: adminReportsKeys.data(timeframe),
     queryFn: async () => {
       // Small simulated latency for smooth UI feedback
@@ -109,10 +112,30 @@ export function useAdminReports() {
 
       const metrics = getScaledReportMetrics(timeframe);
       const sourcingChannels: SourcingChannelItem[] = [
-        { channel: "Direct Career Portal", candidateCount: Math.round(1728 * (timeframe === "7 Days" ? 0.3 : 1)), percentage: 45, color: "#2563eb" },
-        { channel: "LinkedIn Integration", candidateCount: Math.round(1190 * (timeframe === "7 Days" ? 0.3 : 1)), percentage: 31, color: "#7c3aed" },
-        { channel: "Internal Employee Referrals", candidateCount: Math.round(537 * (timeframe === "7 Days" ? 0.3 : 1)), percentage: 14, color: "#059669" },
-        { channel: "AI Automated Match Sourcing", candidateCount: Math.round(385 * (timeframe === "7 Days" ? 0.3 : 1)), percentage: 10, color: "#d97706" },
+        {
+          channel: "Direct Career Portal",
+          candidateCount: Math.round(1728 * (timeframe === "7 Days" ? 0.3 : 1)),
+          percentage: 45,
+          color: "#2563eb",
+        },
+        {
+          channel: "LinkedIn Integration",
+          candidateCount: Math.round(1190 * (timeframe === "7 Days" ? 0.3 : 1)),
+          percentage: 31,
+          color: "#7c3aed",
+        },
+        {
+          channel: "Internal Employee Referrals",
+          candidateCount: Math.round(537 * (timeframe === "7 Days" ? 0.3 : 1)),
+          percentage: 14,
+          color: "#059669",
+        },
+        {
+          channel: "AI Automated Match Sourcing",
+          candidateCount: Math.round(385 * (timeframe === "7 Days" ? 0.3 : 1)),
+          percentage: 10,
+          color: "#d97706",
+        },
       ];
 
       return { metrics, sourcingChannels };
@@ -128,7 +151,10 @@ export function useAdminReports() {
   const handleExportCsv = () => {
     setIsExporting(true);
     try {
-      exportUsersToCsv(recentUsersInitialData, `talenttrack_admin_report_${timeframe.toLowerCase().replace(" ", "_")}.csv`);
+      exportUsersToCsv(
+        recentUsersInitialData,
+        `talenttrack_admin_report_${timeframe.toLowerCase().replace(" ", "_")}.csv`,
+      );
     } finally {
       setTimeout(() => setIsExporting(false), 600);
     }
@@ -137,7 +163,10 @@ export function useAdminReports() {
   const handleExportJson = () => {
     setIsExporting(true);
     try {
-      exportUsersToJson(recentUsersInitialData, `talenttrack_admin_report_${timeframe.toLowerCase().replace(" ", "_")}.json`);
+      exportUsersToJson(
+        recentUsersInitialData,
+        `talenttrack_admin_report_${timeframe.toLowerCase().replace(" ", "_")}.json`,
+      );
     } finally {
       setTimeout(() => setIsExporting(false), 600);
     }

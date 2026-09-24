@@ -110,10 +110,10 @@ export function UsersFilterBar({
   };
 
   const selectClass =
-    "h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer";
+    "h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 cursor-pointer transition-colors";
 
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:border-slate-800 dark:bg-slate-900/90 space-y-3">
+    <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900/90 space-y-3">
       {/* Top row: search & primary filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
         {/* Search */}
@@ -125,13 +125,13 @@ export function UsersFilterBar({
             placeholder="Search by name or email…"
             value={localSearch}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50/70 pl-9 pr-8 text-xs text-slate-800 outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
+            className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50/70 pl-9 pr-8 text-xs text-slate-800 outline-none focus:border-blue-500 focus:bg-white focus-visible:ring-2 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500 transition-all"
           />
           {localSearch && (
             <button
               type="button"
               onClick={handleClearSearch}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
               aria-label="Clear search"
             >
               <X className="size-3.5" />
@@ -306,7 +306,9 @@ export function UsersFilterBar({
       {/* Active Filter Tags */}
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">Active filters:</span>
+          <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+            Active filters:
+          </span>
           {filters.role && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 text-[11px] font-medium">
               Role: {filters.role}

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode, useCallback } from "react";
 import type { AuthResponse, LoginCredentials, RegisterData, User, UserRole } from "./auth-types";
 import { authService } from "./auth-service";
 import { authStorage } from "./auth-storage";
@@ -14,6 +14,8 @@ export interface AuthContextType {
   register: (data: RegisterData) => Promise<AuthResponse>;
   logout: () => Promise<void>;
   switchDemoRole: (role: UserRole) => Promise<void>;
+  checkSessionExpiry: () => boolean;
+  expireSession: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -22,6 +24,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const checkSessionExpiry = useCallback((): boolean => {
+    const session = authStorage.getSession();
+    if (!session && user) {
+      setUser(null);
+      return true;
+    }
+    return false;
+  }, [user]);
+
+  const expireSession = useCallback(() => {
+    authStorage.clearSession();
+    setUser(null);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("talenttrack:auth-session-expired"));
+    }
+  }, []);
+
   useEffect(() => {
     // Check initial session
     const existing = authStorage.getCurrentUser();
@@ -29,7 +48,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(existing);
     }
     setIsLoading(false);
-  }, []);
+
+    // Set up periodic session check every 10 seconds
+    const interval = setInterval(() => {
+      const session = authStorage.getSession();
+      if (!session && user) {
+        setUser(null);
+      }
+    }, 10000);
+
+    // Listen for custom session-expired event
+    const handleExpiredEvent = () => {
+      setUser(null);
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "talenttrack_auth_session_v1") {
+        const currentUser = authStorage.getCurrentUser();
+        setUser(currentUser);
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("talenttrack:auth-session-expired", handleExpiredEvent);
+      window.addEventListener("storage", handleStorageChange);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("talenttrack:auth-session-expired", handleExpiredEvent);
+        window.removeEventListener("storage", handleStorageChange);
+      }
+    };
+  }, [user]);
 
   const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
     setIsLoading(true);
@@ -83,6 +135,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         switchDemoRole,
+        checkSessionExpiry,
+        expireSession,
       }}
     >
       {children}

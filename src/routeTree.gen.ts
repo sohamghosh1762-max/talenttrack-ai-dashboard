@@ -22,6 +22,7 @@ import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as UnauthorizedRouteImport } from './routes/unauthorized'
 import { Route as AdminActivityRouteImport } from './routes/admin/activity'
 import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
@@ -99,6 +100,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UnauthorizedRoute = UnauthorizedRouteImport.update({
+  id: '/unauthorized',
+  path: '/unauthorized',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminActivityRoute = AdminActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/unauthorized': typeof UnauthorizedRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -195,6 +202,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/unauthorized': typeof UnauthorizedRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -222,6 +230,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/unauthorized': typeof UnauthorizedRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/settings'
+    | '/unauthorized'
     | '/admin/activity'
     | '/admin/reports'
     | '/admin/settings'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/settings'
+    | '/unauthorized'
     | '/admin/activity'
     | '/admin/reports'
     | '/admin/settings'
@@ -302,6 +313,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reports'
     | '/settings'
+    | '/unauthorized'
     | '/admin/activity'
     | '/admin/reports'
     | '/admin/settings'
@@ -329,6 +341,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
+  UnauthorizedRoute: typeof UnauthorizedRoute
   ApplicantApplicationsRoute: typeof ApplicantApplicationsRoute
   ApplicantJobsRoute: typeof ApplicantJobsRoute
   ApplicantMessagesRoute: typeof ApplicantMessagesRoute
@@ -429,6 +442,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unauthorized': {
+      id: '/unauthorized'
+      path: '/unauthorized'
+      fullPath: '/unauthorized'
+      preLoaderRoute: typeof UnauthorizedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/activity': {
@@ -541,6 +561,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
+  UnauthorizedRoute: UnauthorizedRoute,
   ApplicantApplicationsRoute: ApplicantApplicationsRoute,
   ApplicantJobsRoute: ApplicantJobsRoute,
   ApplicantMessagesRoute: ApplicantMessagesRoute,

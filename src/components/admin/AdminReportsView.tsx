@@ -84,7 +84,8 @@ export function AdminReportsView() {
                 Platform Analytics & Compliance Reports
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Executive reports on hiring throughput, candidate sourcing channels, and AI bias neutrality.
+                Executive reports on hiring throughput, candidate sourcing channels, and AI bias
+                neutrality.
               </p>
             </div>
           </div>
@@ -93,10 +94,7 @@ export function AdminReportsView() {
         {/* Global Controls: Date Range, Export & Demo State Toggles */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Date Range Selector */}
-          <Select
-            value={timeframe}
-            onValueChange={(val) => setTimeframe(val as TimeframeRange)}
-          >
+          <Select value={timeframe} onValueChange={(val) => setTimeframe(val as TimeframeRange)}>
             <SelectTrigger className="h-9 text-xs w-[130px]">
               <SelectValue placeholder="Timeframe" />
             </SelectTrigger>
@@ -114,7 +112,7 @@ export function AdminReportsView() {
             size="sm"
             onClick={handleExportCsv}
             disabled={isExporting}
-            className="text-xs gap-1.5"
+            className="text-xs gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
             <FileSpreadsheet className="size-3.5 text-emerald-600" />
             Export CSV
@@ -126,7 +124,7 @@ export function AdminReportsView() {
             size="sm"
             onClick={handleExportJson}
             disabled={isExporting}
-            className="text-xs gap-1.5 hidden sm:inline-flex"
+            className="text-xs gap-1.5 hidden sm:inline-flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
             <FileJson className="size-3.5 text-blue-600" />
             Export JSON
@@ -136,7 +134,7 @@ export function AdminReportsView() {
           <Button
             size="sm"
             onClick={() => setShowComplianceModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
             <ShieldCheck className="size-3.5" />
             Compliance Audit
@@ -148,8 +146,9 @@ export function AdminReportsView() {
             size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing || isLoading}
-            className="text-xs p-2.5"
+            className="text-xs p-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
             title="Refresh analytics data"
+            aria-label="Refresh analytics data"
           >
             <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />
           </Button>
@@ -220,8 +219,9 @@ export function AdminReportsView() {
             No Report Data Available
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            There are currently no report metrics compiled for timeframe <strong>{timeframe}</strong>.
-            Try selecting a different date range or restore platform metrics.
+            There are currently no report metrics compiled for timeframe{" "}
+            <strong>{timeframe}</strong>. Try selecting a different date range or restore platform
+            metrics.
           </p>
           <Button
             variant="outline"
@@ -349,7 +349,9 @@ export function AdminReportsView() {
                 {sourcingChannels.map((src) => (
                   <div key={src.channel} className="space-y-1 text-xs">
                     <div className="flex justify-between font-medium">
-                      <span className="truncate text-slate-800 dark:text-slate-200">{src.channel}</span>
+                      <span className="truncate text-slate-800 dark:text-slate-200">
+                        {src.channel}
+                      </span>
                       <span className="text-slate-500 dark:text-slate-400 font-mono">
                         {src.candidateCount.toLocaleString()} ({src.percentage}%)
                       </span>
@@ -366,7 +368,9 @@ export function AdminReportsView() {
 
               <div className="rounded-lg bg-blue-50/60 border border-blue-100 p-3 text-xs text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300">
                 <span className="block font-semibold mb-0.5">Sourcing Velocity Metric</span>
-                Average time to hire across active listings is <strong>{metrics.timeToHireDays} days</strong> with an offer acceptance rate of <strong>{metrics.offerAcceptanceRate}</strong>.
+                Average time to hire across active listings is{" "}
+                <strong>{metrics.timeToHireDays} days</strong> with an offer acceptance rate of{" "}
+                <strong>{metrics.offerAcceptanceRate}</strong>.
               </div>
             </div>
           </div>
@@ -388,7 +392,8 @@ export function AdminReportsView() {
                   Platform Equal Opportunity & AI Neutrality Certified
                 </h3>
                 <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-0.5">
-                  Algorithmic bias score: <strong>{metrics.biasAuditScore}</strong>. Fully compliant with SOC2 Type II data security standards and EEOC fair-hiring guidelines.
+                  Algorithmic bias score: <strong>{metrics.biasAuditScore}</strong>. Fully compliant
+                  with SOC2 Type II data security standards and EEOC fair-hiring guidelines.
                 </p>
               </div>
             </div>

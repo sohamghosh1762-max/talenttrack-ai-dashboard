@@ -87,12 +87,14 @@ export function useAdminActivity() {
     return {
       totalEvents: all.length,
       adminActions: all.filter((item) => item.actorRole === "Admin").length,
-      systemAlerts: all.filter((item) => item.category === "security" || item.status !== "Success").length,
+      systemAlerts: all.filter((item) => item.category === "security" || item.status !== "Success")
+        .length,
       activeSessions: 6,
     };
   }, []);
 
-  const logs = query.data?.logs ?? [];
+  const rawLogs = query.data?.logs;
+  const logs = useMemo(() => rawLogs ?? [], [rawLogs]);
   const total = query.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / limit));
 

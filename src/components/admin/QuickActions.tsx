@@ -1,4 +1,12 @@
-import { Users, Building2, Briefcase, BarChart3, Activity, Settings, ChevronRight } from "lucide-react";
+import {
+  Users,
+  Building2,
+  Briefcase,
+  BarChart3,
+  Activity,
+  Settings,
+  ChevronRight,
+} from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,

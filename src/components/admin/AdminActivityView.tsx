@@ -122,7 +122,8 @@ export function AdminActivityView() {
                 System Activity & Audit Logs
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Real-time chronological record of administrative actions, user changes, and security events.
+                Real-time chronological record of administrative actions, user changes, and security
+                events.
               </p>
             </div>
           </div>
@@ -135,7 +136,8 @@ export function AdminActivityView() {
             size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing || isLoading}
-            className="text-xs gap-1.5"
+            className="text-xs gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            aria-label="Refresh activity logs"
           >
             <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />
             Refresh
@@ -512,8 +514,8 @@ export function AdminActivityView() {
                             log.status === "Success"
                               ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300"
                               : log.status === "Warning"
-                              ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300"
-                              : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300"
+                                ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300"
+                                : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300"
                           }`}
                         >
                           {log.status === "Success" ? (
@@ -553,7 +555,8 @@ export function AdminActivityView() {
         {/* Table Footer with Pagination */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-slate-200/80 bg-slate-50/50 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900/50">
           <span>
-            Showing <strong>{auditLogs.length}</strong> of <strong>{totalCount}</strong> audit events
+            Showing <strong>{auditLogs.length}</strong> of <strong>{totalCount}</strong> audit
+            events
           </span>
 
           <div className="flex items-center gap-2">
@@ -562,7 +565,8 @@ export function AdminActivityView() {
               size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1 || isLoading}
-              className="text-xs h-8"
+              className="text-xs h-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              aria-label="Previous page"
             >
               Previous
             </Button>
@@ -574,7 +578,8 @@ export function AdminActivityView() {
               size="sm"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages || isLoading}
-              className="text-xs h-8"
+              className="text-xs h-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              aria-label="Next page"
             >
               Next
             </Button>

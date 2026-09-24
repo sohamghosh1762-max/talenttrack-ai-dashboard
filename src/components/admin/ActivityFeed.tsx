@@ -1,4 +1,13 @@
-import { Briefcase, UserPlus, FileCheck2, CheckCircle2, Building2, Clock, Inbox, AlertCircle } from "lucide-react";
+import {
+  Briefcase,
+  UserPlus,
+  FileCheck2,
+  CheckCircle2,
+  Building2,
+  Clock,
+  Inbox,
+  AlertCircle,
+} from "lucide-react";
 import type { PlatformActivityItem } from "@/data/adminTypes";
 
 interface ActivityFeedProps {
@@ -27,7 +36,11 @@ function SkeletonActivity() {
   );
 }
 
-export function ActivityFeed({ activities = [], isLoading = false, isError = false }: ActivityFeedProps) {
+export function ActivityFeed({
+  activities = [],
+  isLoading = false,
+  isError = false,
+}: ActivityFeedProps) {
   return (
     <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:border-slate-800 dark:bg-slate-900/90 flex flex-col justify-between">
       {/* Header */}

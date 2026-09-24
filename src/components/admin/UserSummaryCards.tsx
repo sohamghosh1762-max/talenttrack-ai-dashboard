@@ -4,7 +4,10 @@ import type { UserSummaryStats, UserRole, UserStatus } from "@/server/types/user
 interface UserSummaryCardsProps {
   summary: UserSummaryStats | undefined;
   isLoading: boolean;
-  onCardClick?: (type: "role" | "status" | "emailVerified" | "clear", value?: any) => void;
+  onCardClick?: (
+    type: "role" | "status" | "emailVerified" | "clear",
+    value?: UserRole | UserStatus | boolean,
+  ) => void;
 }
 
 const CARD_DEFS = [

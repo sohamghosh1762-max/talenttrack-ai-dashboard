@@ -113,11 +113,12 @@ export function AdminSidebar({
                   onSelectNavItem?.(key);
                   onNavClick?.();
                 }}
-                className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium transition-all ${
+                className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:focus-visible:ring-blue-400 ${
                   isActive
                     ? "bg-blue-50 text-blue-700 font-semibold dark:bg-blue-950/60 dark:text-blue-300"
                     : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                 }`}
+                aria-current={isActive ? "page" : undefined}
               >
                 <NavIcon
                   className={`size-4 transition-colors ${
@@ -125,6 +126,7 @@ export function AdminSidebar({
                       ? "text-blue-600 dark:text-blue-400 stroke-[2.2]"
                       : "text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 stroke-[1.8]"
                   }`}
+                  aria-hidden="true"
                 />
                 <span className="truncate">{label}</span>
                 {isActive && (
@@ -142,7 +144,7 @@ export function AdminSidebar({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center justify-between rounded-lg p-2 text-left hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors"
+              className="flex w-full items-center justify-between rounded-lg p-2 text-left hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:focus-visible:ring-blue-400"
               aria-label="Admin user menu"
             >
               <div className="flex items-center gap-2.5 min-w-0">

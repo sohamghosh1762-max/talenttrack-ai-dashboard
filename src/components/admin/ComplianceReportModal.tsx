@@ -1,11 +1,4 @@
-import {
-  ShieldCheck,
-  CheckCircle2,
-  FileText,
-  Award,
-  Lock,
-  Download,
-} from "lucide-react";
+import { ShieldCheck, CheckCircle2, FileText, Award, Lock, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -78,9 +71,7 @@ export function ComplianceReportModal({
               </span>
               <CheckCircle2 className="size-4 text-blue-600" />
             </div>
-            <strong className="text-xl font-bold text-blue-700 dark:text-blue-300">
-              Verified
-            </strong>
+            <strong className="text-xl font-bold text-blue-700 dark:text-blue-300">Verified</strong>
             <span className="text-[10.5px] text-blue-600 block mt-0.5">
               Full fair-hiring standard match
             </span>
@@ -113,7 +104,8 @@ export function ComplianceReportModal({
                   Automated Audit Trail Logging
                 </span>
                 <span className="text-slate-500 dark:text-slate-400 text-[11px]">
-                  100% of administrative user status modifications are recorded with cryptographic timestamps.
+                  100% of administrative user status modifications are recorded with cryptographic
+                  timestamps.
                 </span>
               </div>
             </div>
@@ -121,7 +113,10 @@ export function ComplianceReportModal({
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-          <Badge variant="outline" className="text-[10px] font-mono text-emerald-600 border-emerald-300">
+          <Badge
+            variant="outline"
+            className="text-[10px] font-mono text-emerald-600 border-emerald-300"
+          >
             Audit Status: PASSED
           </Badge>
 

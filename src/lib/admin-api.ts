@@ -70,6 +70,17 @@ async function adminFetch<T>(path: string, options: RequestInit = {}): Promise<T
     } catch {
       // ignore JSON parse errors on error responses
     }
+
+    if (res.status === 401) {
+      authStorage.clearSession();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("talenttrack:auth-session-expired"));
+      }
+      errorMessage = "Your administrative session has expired. Please sign in again.";
+    } else if (res.status === 403) {
+      errorMessage = errorMessage || "Access denied. Administrator privileges required.";
+    }
+
     throw new Error(errorMessage);
   }
 

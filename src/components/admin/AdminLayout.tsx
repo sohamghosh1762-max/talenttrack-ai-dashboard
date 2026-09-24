@@ -13,12 +13,12 @@ export function AdminLayout({ initialNav = "Dashboard" }: { initialNav?: AdminNa
     location.pathname === "/admin/users"
       ? "Users"
       : location.pathname === "/admin/activity"
-      ? "System Activity"
-      : location.pathname === "/admin/reports"
-      ? "Reports"
-      : location.pathname === "/admin/settings"
-      ? "Settings"
-      : initialNav,
+        ? "System Activity"
+        : location.pathname === "/admin/reports"
+          ? "Reports"
+          : location.pathname === "/admin/settings"
+            ? "Settings"
+            : initialNav,
   );
 
   const [searchQuery, setSearchQuery] = useState("");

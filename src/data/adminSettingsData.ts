@@ -17,7 +17,8 @@ export const defaultAdminSettings: AdminSettings = {
     orgName: "TalentTrack Enterprise Inc.",
     defaultTimezone: "UTC (GMT+00:00)",
     maintenanceMode: false,
-    maintenanceNotice: "TalentTrack AI is under scheduled maintenance. Normal service will resume shortly.",
+    maintenanceNotice:
+      "TalentTrack AI is under scheduled maintenance. Normal service will resume shortly.",
     systemLanguage: "en-US",
   },
   authentication: {
@@ -101,10 +102,16 @@ export function validateAdminSettings(settings: AdminSettings): {
 
   // Authentication Validation
   const authErrors: Partial<Record<keyof AuthenticationSettings, string>> = {};
-  if (settings.authentication.sessionTimeoutMins < 15 || settings.authentication.sessionTimeoutMins > 1440) {
+  if (
+    settings.authentication.sessionTimeoutMins < 15 ||
+    settings.authentication.sessionTimeoutMins > 1440
+  ) {
     authErrors.sessionTimeoutMins = "Session timeout must be between 15 and 1440 minutes.";
   }
-  if (settings.authentication.passwordMinLength < 8 || settings.authentication.passwordMinLength > 32) {
+  if (
+    settings.authentication.passwordMinLength < 8 ||
+    settings.authentication.passwordMinLength > 32
+  ) {
     authErrors.passwordMinLength = "Minimum password length must be between 8 and 32 characters.";
   }
   if (settings.authentication.maxFailedLogins < 3 || settings.authentication.maxFailedLogins > 10) {
@@ -152,7 +159,10 @@ export function validateAdminSettings(settings: AdminSettings): {
   if (!settings.security.corsAllowedOrigins.trim()) {
     secErrors.corsAllowedOrigins = "At least one CORS origin is required.";
   }
-  if (settings.security.auditLogRetentionDays < 30 || settings.security.auditLogRetentionDays > 730) {
+  if (
+    settings.security.auditLogRetentionDays < 30 ||
+    settings.security.auditLogRetentionDays > 730
+  ) {
     secErrors.auditLogRetentionDays = "Audit log retention must be between 30 and 730 days.";
   }
   if (settings.security.apiRateLimitPerMin < 30 || settings.security.apiRateLimitPerMin > 1000) {
@@ -239,7 +249,8 @@ export const adminSettingsService = {
     await new Promise((r) => setTimeout(r, 500));
     return {
       success: true,
-      message: "AI API Key Validated! Status: Active (Latency: 110ms, Model: TalentTrack-v3-Turbo).",
+      message:
+        "AI API Key Validated! Status: Active (Latency: 110ms, Model: TalentTrack-v3-Turbo).",
     };
   },
 };

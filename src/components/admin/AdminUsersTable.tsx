@@ -209,8 +209,7 @@ export function AdminUsersTable({
 
   const currentVisibleIds = users ? users.map((u) => u.id) : [];
   const isAllSelected =
-    currentVisibleIds.length > 0 &&
-    currentVisibleIds.every((id) => selectedUserIds.includes(id));
+    currentVisibleIds.length > 0 && currentVisibleIds.every((id) => selectedUserIds.includes(id));
   const isSomeSelected =
     currentVisibleIds.some((id) => selectedUserIds.includes(id)) && !isAllSelected;
 
@@ -511,7 +510,7 @@ export function AdminUsersTable({
                           <DropdownMenuTrigger asChild>
                             <button
                               type="button"
-                              className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                              className="inline-flex size-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                               aria-label={`Actions for ${user.name}`}
                             >
                               <MoreHorizontal className="size-4" />
@@ -588,7 +587,7 @@ export function AdminUsersTable({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0"
+                className="h-7 w-7 p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                 disabled={page <= 1 || isLoading}
                 onClick={() => onPageChange(page - 1)}
                 aria-label="Previous page"
@@ -610,11 +609,13 @@ export function AdminUsersTable({
                     type="button"
                     onClick={() => onPageChange(p)}
                     disabled={isLoading}
-                    className={`flex h-7 w-7 items-center justify-center rounded-md text-[11px] font-semibold transition-colors ${
+                    className={`flex h-7 w-7 items-center justify-center rounded-md text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
                       p === page
                         ? "bg-blue-600 text-white"
                         : "border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                     }`}
+                    aria-label={`Page ${p}`}
+                    aria-current={p === page ? "page" : undefined}
                   >
                     {p}
                   </button>
@@ -624,7 +625,7 @@ export function AdminUsersTable({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0"
+                className="h-7 w-7 p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                 disabled={page >= totalPages || isLoading}
                 onClick={() => onPageChange(page + 1)}
                 aria-label="Next page"
@@ -658,5 +659,3 @@ export function AdminUsersTable({
     </>
   );
 }
-
-

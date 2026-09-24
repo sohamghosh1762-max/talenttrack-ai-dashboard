@@ -58,7 +58,8 @@ export const initialAuditLogs: AuditLogRecord[] = [
     status: "Warning",
     timestamp: "2026-09-22T02:45:00Z",
     timeAgo: "15 minutes ago",
-    description: "Administrator modified account status from Active to Suspended due to unverified recruiters limit.",
+    description:
+      "Administrator modified account status from Active to Suspended due to unverified recruiters limit.",
     details: {
       previousStatus: "Active",
       newStatus: "Suspended",
@@ -81,7 +82,8 @@ export const initialAuditLogs: AuditLogRecord[] = [
     status: "Success",
     timestamp: "2026-09-22T02:10:00Z",
     timeAgo: "50 minutes ago",
-    description: "Recruiter posted a new job listing under Engineering department with AI screening enabled.",
+    description:
+      "Recruiter posted a new job listing under Engineering department with AI screening enabled.",
     details: {
       jobTitle: "Staff Software Engineer",
       department: "Engineering",
@@ -105,7 +107,8 @@ export const initialAuditLogs: AuditLogRecord[] = [
     status: "Success",
     timestamp: "2026-09-22T01:30:00Z",
     timeAgo: "1 hour ago",
-    description: "Applicant submitted resume vector and cover letter for Senior Fullstack Developer role.",
+    description:
+      "Applicant submitted resume vector and cover letter for Senior Fullstack Developer role.",
     details: {
       applicantId: "usr-02",
       resumeFileName: "aarav_shah_resume_2026.pdf",
@@ -127,7 +130,8 @@ export const initialAuditLogs: AuditLogRecord[] = [
     status: "Success",
     timestamp: "2026-09-21T21:15:00Z",
     timeAgo: "5 hours ago",
-    description: "Corporate domain 'enterprise-hire.com' verified and granted recruiter seat management access.",
+    description:
+      "Corporate domain 'enterprise-hire.com' verified and granted recruiter seat management access.",
     details: {
       companyName: "Enterprise Hire Inc.",
       verifiedDomain: "enterprise-hire.com",
@@ -149,7 +153,8 @@ export const initialAuditLogs: AuditLogRecord[] = [
     status: "Success",
     timestamp: "2026-09-21T18:00:00Z",
     timeAgo: "8 hours ago",
-    description: "Automated recalibration of NLP embedding model tolerance for candidate skill matching.",
+    description:
+      "Automated recalibration of NLP embedding model tolerance for candidate skill matching.",
     details: {
       modelName: "TalentTrack-Embedding-v3",
       confidenceThreshold: 0.85,
@@ -337,10 +342,12 @@ export function getFilteredAuditLogs(
     result = result.filter((item) => {
       if (actFilter === "status_change") return item.actionType === "USER_STATUS_CHANGED";
       if (actFilter === "role_update") return item.actionType === "USER_ROLE_UPDATED";
-      if (actFilter === "job") return item.actionType === "JOB_CREATED" || item.actionType === "JOB_STATUS_CHANGED";
+      if (actFilter === "job")
+        return item.actionType === "JOB_CREATED" || item.actionType === "JOB_STATUS_CHANGED";
       if (actFilter === "application") return item.actionType === "APPLICATION_SUBMITTED";
       if (actFilter === "system") return item.actionType === "SYSTEM_POLICY_UPDATED";
-      if (actFilter === "security") return item.actionType === "SECURITY_ALERT" || item.actionType === "USER_LOGIN";
+      if (actFilter === "security")
+        return item.actionType === "SECURITY_ALERT" || item.actionType === "USER_LOGIN";
       return true;
     });
   }
@@ -354,7 +361,11 @@ export function getFilteredAuditLogs(
   // 4. Target Entity Filter
   if (params.target && params.target !== "All") {
     const targetFilter = params.target.toLowerCase();
-    result = result.filter((item) => item.targetType.toLowerCase().includes(targetFilter) || item.category.toLowerCase() === targetFilter);
+    result = result.filter(
+      (item) =>
+        item.targetType.toLowerCase().includes(targetFilter) ||
+        item.category.toLowerCase() === targetFilter,
+    );
   }
 
   // 5. Date Range Filter

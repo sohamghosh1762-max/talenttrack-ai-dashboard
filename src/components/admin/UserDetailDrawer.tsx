@@ -400,9 +400,13 @@ function UserDetailContent({ user }: { user: SafeUser }) {
               label="Email Verified"
               value={
                 user.emailVerified ? (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Verified</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                    Verified
+                  </span>
                 ) : (
-                  <span className="text-amber-600 dark:text-amber-400 font-semibold">Not verified</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                    Not verified
+                  </span>
                 )
               }
             />
@@ -418,10 +422,22 @@ function UserDetailContent({ user }: { user: SafeUser }) {
             <>
               <SectionTitle>Recruiter Profile</SectionTitle>
               <div className="rounded-lg border border-slate-100 dark:border-slate-800 overflow-hidden px-1">
-                <InfoRow icon={Building2} label="Company" value={user.recruiterProfile.companyName} />
-                <InfoRow icon={Briefcase} label="Job Title" value={user.recruiterProfile.jobTitle} />
+                <InfoRow
+                  icon={Building2}
+                  label="Company"
+                  value={user.recruiterProfile.companyName}
+                />
+                <InfoRow
+                  icon={Briefcase}
+                  label="Job Title"
+                  value={user.recruiterProfile.jobTitle}
+                />
                 {user.recruiterProfile.department && (
-                  <InfoRow icon={Layers} label="Department" value={user.recruiterProfile.department} />
+                  <InfoRow
+                    icon={Layers}
+                    label="Department"
+                    value={user.recruiterProfile.department}
+                  />
                 )}
               </div>
             </>
@@ -433,7 +449,11 @@ function UserDetailContent({ user }: { user: SafeUser }) {
               <SectionTitle>Applicant Profile</SectionTitle>
               <div className="rounded-lg border border-slate-100 dark:border-slate-800 overflow-hidden px-1">
                 {user.applicantProfile.headline && (
-                  <InfoRow icon={Briefcase} label="Headline" value={user.applicantProfile.headline} />
+                  <InfoRow
+                    icon={Briefcase}
+                    label="Headline"
+                    value={user.applicantProfile.headline}
+                  />
                 )}
                 {user.applicantProfile.location && (
                   <InfoRow icon={MapPin} label="Location" value={user.applicantProfile.location} />
@@ -480,7 +500,11 @@ function UserDetailContent({ user }: { user: SafeUser }) {
               <SectionTitle>Admin Profile</SectionTitle>
               <div className="rounded-lg border border-slate-100 dark:border-slate-800 overflow-hidden px-1">
                 {user.adminProfile.platformRole && (
-                  <InfoRow icon={Shield} label="Platform Role" value={user.adminProfile.platformRole} />
+                  <InfoRow
+                    icon={Shield}
+                    label="Platform Role"
+                    value={user.adminProfile.platformRole}
+                  />
                 )}
                 {user.adminProfile.lastLogin && (
                   <InfoRow
@@ -566,5 +590,3 @@ export function UserDetailDrawer({ userId, onClose }: UserDetailDrawerProps) {
     </Sheet>
   );
 }
-
-
