@@ -722,7 +722,7 @@ function PublicHomePage() {
               </li>
               <li>
                 <a href="#" className="hover:text-foreground">
-                  Security & GDPR
+                  Security & Privacy
                 </a>
               </li>
             </ul>

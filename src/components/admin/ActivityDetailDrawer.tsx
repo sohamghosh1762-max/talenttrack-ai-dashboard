@@ -197,12 +197,12 @@ export function ActivityDetailDrawer({ log, open, onOpenChange }: ActivityDetail
           )}
         </div>
 
-        {/* Cryptographic Compliance Banner */}
+        {/* Audit Compliance Banner */}
         <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 text-blue-900 text-xs flex items-center gap-2 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300">
           <ShieldCheck className="size-5 text-blue-600 shrink-0" />
           <p className="text-[11px] leading-tight">
-            <strong>Immutable Audit Log:</strong> Cryptographically timestamped and sealed according
-            to SOC2 and platform compliance policies.
+            <strong>Structured Audit Record:</strong> Timestamped and retained according to platform
+            security and compliance policies.
           </p>
         </div>
 

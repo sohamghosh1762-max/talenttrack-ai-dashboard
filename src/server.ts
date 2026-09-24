@@ -44,14 +44,14 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
-import { handleAdminApiRequest } from "./server/routes/admin-users-handler";
+import { handleApiRequest } from "./server/routes/index.ts";
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const url = new URL(request.url);
-      if (url.pathname.startsWith("/api/admin")) {
-        const apiResponse = await handleAdminApiRequest(request);
+      if (url.pathname.startsWith("/api")) {
+        const apiResponse = await handleApiRequest(request);
         if (apiResponse) {
           return apiResponse;
         }

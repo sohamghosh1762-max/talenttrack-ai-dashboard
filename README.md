@@ -8,39 +8,78 @@
 
 ---
 
-## Product Overview
+## 1. Project Implementation Status
 
-TalentTrack AI supports two primary user roles:
+This repository is organized into sequential engineering phases. Below is the accurate status of all platform capabilities:
+
+### Currently Implemented (UI & Prototype Portals)
+
+- **Frontend Presentation:** Complete responsive React 19 application with Tailwind CSS v4 and Radix UI accessible primitives.
+- **Role Portals:**
+  - **Recruiter ATS:** Dashboard, Job Openings, Candidate Directory, Kanban Pipeline, AI Screening UI, Messaging UI, Reports, and Settings.
+  - **Applicant Portal:** Overview, Search Jobs, Saved Jobs, Applications, Profile & Resume view, and Messages.
+  - **Admin Module:** User Management, Activity Logs, Platform Reports, and Platform Configuration.
+- **Routing & Guards:** TanStack Router file-based routing with role-based protected route wrappers (`ProtectedRoute`).
+- **State Management:** TanStack Query configured for async caching and query invalidation.
+- **Development Mock Layer:** Isolated in-memory datasets providing realistic data for UI walkthroughs.
+
+### Phase 1 Implemented (Production Foundation & Architecture)
+
+- **Package Management:** Standardized on `npm` with synchronized `package-lock.json`, removed conflicting lockfiles.
+- **Runtime Environment:** Explicit Node.js version requirement (`>=20.0.0`, `.nvmrc` configured to `22.12.0`).
+- **Build System:** Vite + TanStack Start + Nitro SSR pipeline stabilized with zero native binding errors.
+- **Environment Layer:** Type-safe configuration via Zod schema validation in `src/server/config/`, with zero secrets committed.
+- **Server Architecture:** Modular backend structure (`config`, `middleware`, `routes`, `controllers`, `services`, `repositories`, `validators`, `models`, `workers`, `utils`).
+- **API Foundation:** Centralized `/api` router dispatcher with `/api/health`, standard response wrappers, and structured HTTP request logging (`requestId`, `timestamp`, `method`, `route`, `status`, `duration`).
+- **Error Handling:** Standardized error hierarchy (`AppError`, `ValidationError`, `AuthenticationError`, `AuthorizationError`, `NotFoundError`, `ConflictError`, `InternalServerError`) with safe production formatting.
+- **Frontend API Client:** Type-safe `src/lib/api/client.ts` with automatic bearer token attachment, error normalization, and standard HTTP methods.
+- **Documentation:** Complete architectural documentation suite under `docs/`.
+
+### Prepared & Planned for Subsequent Phases
+
+- **Phase 2 — Real Authentication & RBAC:** Production JWT session tokens, bcrypt/argon2 password hashing, refresh tokens, password reset flows.
+- **Phase 3 — Multi-Tenancy & Organizations:** Organization onboarding, workspace isolation, team member invitations.
+- **Phase 4 — Database Persistence & Real Job CRUD:** MongoDB/Mongoose connection layer, persistent job creation, candidate directories.
+- **Phase 5 — Resume Parsing & Storage:** AWS S3 secure object storage, PDF/DOCX document text extraction.
+- **Phase 6 — Application Lifecycle & Real Pipeline:** Database-persisted stage transitions, candidate audit history.
+- **Phase 7 — AI Candidate Screening:** Embeddings, semantic matching engine, match explanation generation.
+- **Phase 8 — Communication & Interviews:** Real-time messaging, calendar interview scheduling, SMTP email dispatch.
+- **Phase 9 — Production Analytics:** Database-aggregated pipeline funnels, sourcing metrics, and export pipelines.
+
+---
+
+## 2. Product Overview
+
+TalentTrack AI supports three primary user roles:
 
 ### Recruiter
 
 - Create, edit, publish, pause, and archive job openings
 - Review and manage applications
-- View candidate profiles
-- Analyze resumes
-- Compare candidates with job requirements
+- View candidate profiles and analyze resumes
 - Review explainable match scores
-- Manage the hiring pipeline
-- Schedule interviews
-- Communicate with candidates
-- View recruitment analytics
+- Manage the hiring pipeline across Kanban stages
+- Schedule interviews and communicate with candidates
+- View recruitment analytics and reports
 
 ### Applicant
 
-- Browse and search job openings
-- View detailed job descriptions
-- Create and manage a profile
-- Upload a resume
-- Apply for jobs
-- Track applications
-- Save jobs
-- Receive recruiter communications
+- Browse and search job openings with filters
+- View detailed job descriptions and requirements
+- Create and manage a candidate profile
+- Upload resumes and track application progress
+- Save jobs and receive recruiter communications
+
+### Administrator
+
+- User lifecycle management (search, role/status filtering, activate/suspend)
+- Platform-wide activity audit logs
+- Platform health, user distribution, and hiring compliance reports
+- System settings configuration (General, Auth, Notifications, File Upload, AI, Security)
 
 ---
 
-## User Journey
-
-The application follows a deliberate three-stage experience:
+## 3. User Journey
 
 ```text
 Public Homepage
@@ -48,20 +87,20 @@ Public Homepage
        ▼
 Authentication
        │
-       ├──────────────────────┐
-       │                      │
-       ▼                      ▼
-   Recruiter               Applicant
-       │                      │
-       ▼                      ▼
- Recruiter ATS          Applicant Portal
+       ├──────────────────────┬──────────────────────┐
+       │                      │                      │
+       ▼                      ▼                      ▼
+   Recruiter               Applicant               Admin
+       │                      │                      │
+       ▼                      ▼                      ▼
+ Recruiter ATS         Applicant Portal         Admin Portal
 ```
 
 ### Route Structure
 
 #### Public Routes
 
-- `/` — Homepage
+- `/` — Homepage & Value Proposition
 - `/jobs` — Public Job Board
 - `/login` — User Login
 - `/register` — User Registration
@@ -88,526 +127,82 @@ Authentication
 - `/applicant/messages` — Recruiter Communications
 - `/applicant/settings` — Applicant Settings
 
-_Unauthenticated users cannot access protected recruiter or applicant routes._
+#### Admin Routes (Protected)
+
+- `/admin` — Admin Dashboard
+- `/admin/users` — User Directory & Status Management
+- `/admin/activity` — System Activity & Audit Trail
+- `/admin/reports` — Platform Analytics & Hiring Compliance
+- `/admin/settings` — Platform System Configuration
 
 ---
 
-## Core Features
+## 4. Quick Start & Development
 
-### 1. Public Homepage
+### Prerequisites
 
-The homepage introduces the platform before authentication and contains:
+- **Node.js:** `>= 20.0.0` (Recommended: `22.12.0`)
+- **Package Manager:** `npm` `>= 10.0.0`
 
-- Product branding and value proposition
-- Recruitment-focused hero section
-- Job seeker and recruiter calls-to-action
-- Live platform statistics
-- Core platform capabilities
-- "How It Works" workflow guide
-- Social proof and trust indicators
-- Success stories & testimonials
-- Conversion-oriented final CTA and professional footer
+### Setup Steps
 
-### 2. Authentication & Role Management
+```bash
+# 1. Clone repository and install dependencies
+git clone https://github.com/sohamghosh1762-max/talenttrack-ai-dashboard.git
+cd talenttrack-ai-dashboard
+npm install
 
-- Secure Login and Registration
-- Role selection (`Recruiter` vs. `Applicant`)
-- Strict client- and server-side form validation
-- Session and JWT token management
-- Protected route middleware with role-based redirects
-- User profiles initialization
+# 2. Configure environment
+cp .env.example .env
 
-### 3. Recruiter Dashboard
-
-- High-level KPIs: Active Job Openings, Total Applications, Shortlisted Candidates, Scheduled Interviews
-- Visual application trends over time
-- Top candidate skills distribution
-- AI-driven recruitment insights
-- Recent job openings and application feed
-- Hiring pipeline summary with quick action triggers
-
-### 4. Job Management
-
-Recruiters can manage job openings throughout their lifecycle with comprehensive metadata:
-
-- **Fields:** Job Title, Department, Company, Location, Employment Type, Salary Range, Job Description, Required Skills, Preferred Skills, Experience Requirement, Education Requirement, Application Deadline, Status.
-- **Statuses:** `Draft` | `Published` | `Paused` | `Archived`
-
-### 5. Application Management
-
-Applications connect applicants, jobs, resumes, and recruitment stages.
-
-- **Statuses:** `Applied` ➔ `Screening` ➔ `Shortlisted` ➔ `Interview` ➔ `Offered` (or `Rejected` / `Withdrawn`)
-- Full audit history and recruiter notes for every application stage.
-
-### 6. Resume Processing
-
-Designed to support PDF and DOCX resumes.
-
-```text
-Resume Upload ──► Secure Storage ──► Document Extraction ──► Resume Text ──► Structured Candidate Data
+# 3. Start development server
+npm run dev
 ```
 
-**Extracted Information:**
+The application will be running at `http://localhost:3000` (or `http://localhost:5173`).
 
-- Professional summary
-- Skills & competencies
-- Work experience & duration
-- Education background
-- Certifications & credentials
-- Projects & domain relevance
+### Quality & Build Verification Commands
 
-### 7. Candidate Matching & Scoring Model
+```bash
+# Run TypeScript type check
+npm run typecheck
 
-Candidate-job comparison evaluates job-relevant criteria:
+# Run production build
+npm run build
 
-| Evaluation Component    | Weight   |
-| :---------------------- | :------- |
-| **Skill Match**         | 40%      |
-| **Experience Match**    | 25%      |
-| **Education Match**     | 10%      |
-| **Project Relevance**   | 15%      |
-| **Preferred Skills**    | 10%      |
-| **Total Overall Match** | **100%** |
+# Run automated tests
+npm test
 
-Candidate recommendations include explainable breakdowns: matched skills, missing requirements, relevant experience highlights, and concise AI-generated summaries.
+# Run linter
+npm run lint
 
-### 8. Candidate Ranking & Filtering
-
-Recruiters can filter and sort candidates by:
-
-- Match score
-- Skills & experience level
-- Education requirements
-- Application status & timeline
-- Job title & location
-- Availability
-
-### 9. Hiring Pipeline
-
-Interactive Kanban board managing candidate progression:
-
-```text
-Applied ──► Screening ──► Shortlisted ──► Interview ──► Offered
-                              │
-                              └──► Rejected / Withdrawn
-```
-
-### 10. Communication & Notifications
-
-- Application status updates
-- Interview invitations & calendar reminders
-- Offer letters and notifications
-- Recruiter-to-applicant direct messaging
-- In-app notification center
-
-### 11. Analytics & Reports
-
-- Applications per job and over time
-- Full hiring funnel & stage conversion rates (Shortlisting, Interview, Offer)
-- Pipeline distribution across departments
-- Common skill frequency in candidate pool
-- Average candidate match scores per opening
-
----
-
-## Architecture
-
-```text
-                    Web Application
-                          │
-                          ▼
-                 React / TypeScript
-                          │
-                    React Query
-                          │
-                          ▼
-                  Node.js / Express
-                          │
-            ┌─────────────┼─────────────┐
-            │             │             │
-            ▼             ▼             ▼
-        MongoDB        AWS S3       AI Service
-                                      │
-                                      ▼
-                               Python / FastAPI
-                                      │
-                         ┌────────────┴────────────┐
-                         │                         │
-                         ▼                         ▼
-                    LLM Provider            NLP / Embeddings
-```
-
-### Technology Stack
-
-- **Frontend:** React.js, TypeScript, TanStack Router, React Query, Tailwind CSS, Radix UI, Lucide Icons, Recharts
-- **Backend:** Node.js, Express.js, REST APIs, Authentication & Authorization Middleware
-- **AI & Document Processing:** Python, FastAPI, PDF/DOCX Extraction, LLM APIs (Gemini / OpenAI), Semantic Embeddings & NLP
-- **Database:** MongoDB
-- **File Storage:** AWS S3, Multer
-- **Communication:** Nodemailer / Transactional Email Provider
-
----
-
-## Recommended Repository Structure
-
-```text
-talenttrack-ai/
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── layout/
-│   │   │   ├── dashboard/
-│   │   │   ├── jobs/
-│   │   │   ├── applications/
-│   │   │   ├── candidates/
-│   │   │   ├── pipeline/
-│   │   │   ├── auth/
-│   │   │   └── ui/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   ├── hooks/
-│   │   ├── types/
-│   │   ├── data/
-│   │   └── lib/
-│   └── package.json
-│
-├── backend/
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── routes/
-│   │   ├── models/
-│   │   ├── middleware/
-│   │   ├── services/
-│   │   ├── utils/
-│   │   └── config/
-│   └── package.json
-│
-├── ai-service/
-│   ├── app/
-│   │   ├── api/
-│   │   ├── services/
-│   │   ├── models/
-│   │   ├── schemas/
-│   │   └── utils/
-│   ├── requirements.txt
-│   └── main.py
-│
-├── docs/
-│   ├── architecture.md
-│   ├── api.md
-│   └── database.md
-│
-├── .env.example
-├── .gitignore
-└── README.md
+# Run code formatter
+npm run format
 ```
 
 ---
 
-## Data Model
+## 5. Architecture Documentation
 
-```text
-User
-├── id
-├── name
-├── email
-├── passwordHash
-├── role ('recruiter' | 'applicant')
-├── createdAt
-└── updatedAt
+Detailed architectural and engineering documentation is available in the [`docs/`](./docs) directory:
 
-RecruiterProfile
-├── userId
-├── companyName
-├── jobTitle
-├── companyWebsite
-└── createdAt
-
-ApplicantProfile
-├── userId
-├── headline
-├── location
-├── skills
-├── experience
-├── education
-├── certifications
-└── projects
-
-Job
-├── recruiterId
-├── title
-├── department
-├── description
-├── requiredSkills
-├── preferredSkills
-├── experienceRequirement
-├── educationRequirement
-├── location
-├── employmentType
-├── salaryRange
-├── status ('draft' | 'published' | 'paused' | 'archived')
-├── createdAt
-└── updatedAt
-
-Application
-├── applicantId
-├── jobId
-├── resumeId
-├── status ('applied' | 'screening' | 'shortlisted' | 'interview' | 'offered' | 'rejected' | 'withdrawn')
-├── aiAnalysisId
-├── recruiterNotes
-├── appliedAt
-└── updatedAt
-
-Resume
-├── applicantId
-├── storageKey
-├── originalFilename
-├── fileType
-├── extractedText
-├── parsedData
-└── uploadedAt
-
-CandidateAnalysis
-├── applicationId
-├── matchScore
-├── matchedSkills
-├── missingSkills
-├── experienceMatch
-├── educationMatch
-├── projectRelevance
-├── summary
-└── createdAt
-```
+- [System Architecture](docs/ARCHITECTURE.md) (`docs/ARCHITECTURE.md`)
+- [Developer Guide](docs/DEVELOPMENT.md) (`docs/DEVELOPMENT.md`)
+- [Environment Configuration](docs/ENVIRONMENT.md) (`docs/ENVIRONMENT.md`)
+- [API Architecture & Response Standard](docs/API_ARCHITECTURE.md) (`docs/API_ARCHITECTURE.md`)
+- [Security Baseline](docs/SECURITY_BASELINE.md) (`docs/SECURITY_BASELINE.md`)
 
 ---
 
-## Security & Responsible AI
+## 6. Contributors & Internship
 
-### Security Best Practices
-
-- Password hashing with salted bcrypt
-- Role-based authorization (RBAC) & protected API routes
-- Strict input validation and sanitization
-- MIME type and file-size constraints for resume uploads
-- Private S3 storage with presigned URLs for authorized document access
-- Rate limiting, security headers (Helmet), and CORS configuration
-- Zero secrets committed to frontend bundles or git history
-
-### Responsible Candidate Evaluation
-
-The candidate analysis system evaluates strictly job-relevant criteria (skills, experience, education, projects, certifications).
-
-- **Strict Non-Discrimination:** Protected or irrelevant characteristics (e.g., religion, gender, age, marital status, political affiliation, photographs) are never used in scoring or ranking.
-- **Decision Support:** AI outputs are structured as decision support with full auditability and explanations, preserving human oversight for all hiring decisions.
-
----
-
-## API Design
-
-### Authentication
-
-- `POST /api/auth/register` — Register a new recruiter or applicant
-- `POST /api/auth/login` — Authenticate and receive session/token
-- `POST /api/auth/logout` — Invalidate user session
-- `GET /api/auth/me` — Retrieve current authenticated user profile
-
-### Jobs
-
-- `GET /api/jobs` — List jobs (with search and status filters)
-- `GET /api/jobs/:id` — Get job details
-- `POST /api/jobs` — Create a new job opening
-- `PATCH /api/jobs/:id` — Update job details
-- `DELETE /api/jobs/:id` — Delete a job opening
-- `PATCH /api/jobs/:id/status` — Update job lifecycle status
-
-### Applications
-
-- `GET /api/applications` — List applications (filtered by job/applicant)
-- `GET /api/applications/:id` — Get application details
-- `POST /api/applications` — Submit a new job application
-- `PATCH /api/applications/:id/status` — Update application stage
-
-### Candidates
-
-- `GET /api/candidates` — Search and filter candidate profiles
-- `GET /api/candidates/:id` — Get candidate profile
-- `GET /api/candidates/:id/applications` — Get candidate application history
-
-### Resumes
-
-- `POST /api/resumes/upload` — Upload and trigger document extraction
-- `GET /api/resumes/:id` — Get resume details and signed download URL
-- `DELETE /api/resumes/:id` — Remove resume document
-
-### Candidate Analysis
-
-- `POST /api/analysis/resume` — Parse and extract structured resume data
-- `POST /api/analysis/match` — Run semantic matching between candidate and job
-- `GET /api/analysis/:applicationId` — Retrieve analysis and explainable match breakdown
-
-### Pipeline
-
-- `GET /api/pipeline` — Get pipeline board metrics and categorized stages
-- `PATCH /api/pipeline/:applicationId` — Move application stage
-
----
-
-## Environment Variables
-
-Create a `.env` file in the root directory (refer to `.env.example`):
-
-```env
-NODE_ENV=development
-PORT=5000
-
-MONGODB_URI=
-
-SESSION_SECRET=
-
-AWS_REGION=
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_S3_BUCKET=
-
-OPENAI_API_KEY=
-# OR
-GEMINI_API_KEY=
-
-SMTP_HOST=
-SMTP_PORT=
-SMTP_USER=
-SMTP_PASSWORD=
-
-VITE_API_URL=http://localhost:5000/api
-```
-
----
-
-## TalentTrack AI Admin Module (Enterprise Foundation)
-
-The TalentTrack AI Administrative Module provides a comprehensive suite of control-plane capabilities for platform super administrators, security auditors, and system operators.
-
-### Admin Foundation Roadmap Implementation Status
-
-| Roadmap Phase | Milestone & Scope | Status | Verification |
-| :--- | :--- | :--- | :--- |
-| **Phase 1 — Admin Foundation** | Dedicated Admin role, Admin login, Admin layout, sidebar, header, dashboard UI, stat cards, growth charts, system health, and responsive navigation. | ✅ Completed | Verified via routing, responsive tests, and component architecture |
-| **Phase 2 — User Management** | User table, full-text search, role filter, status filter, email verification filter, pagination, user drawer, activate/suspend/deactivate actions, confirmation dialogs, admin authorization guard, password-hash stripping, and sole active admin account safeguard. | ✅ Completed | 22 API & unit tests passing with zero regressions |
-| **Phase 3 — Dashboard Completion** | Date-range metric scaling (7d, 30d, 90d, 1y), refresh actions, error/empty/loading skeleton states, quick actions, recruitment pipeline overview, and system health status. | ✅ Completed | Dynamic state toggles and live metric scaling verified |
-| **Phase 4 — User Management Completion** | Multi-user bulk selection, bulk status actions, user activity history timeline, user detail drawer tabs (Overview, Activity, Security), advanced filters, CSV/JSON export, and sole active admin bulk safeguards. | ✅ Completed | Tested with single and bulk status mutations |
-| **Phase 5 — System Activity & Audit Logs** | `/admin/activity` route, chronological audit log table/timeline, event category filtering (User, Job, Application, Company, System, Security), actor & date filtering, text search, and activity detail drawer. | ✅ Completed | Unit tests #27-#31 verifying filtering and search logic |
-| **Phase 6 — Reports & Analytics** | `/admin/reports` route, platform-level analytics (Growth, User Distribution, Sourcing Channels, Pipeline conversion), timeframe selection, compliance audit report modal (AI bias neutrality & EEOC adherence), and CSV/JSON export. | ✅ Completed | Verified metrics, sourcing charts, and compliance modal |
-| **Phase 7 — Admin Settings** | `/admin/settings` route with 7 comprehensive tabs: General, Authentication, Notifications, File Upload, AI Configuration, Security, and Platform Preferences. Full validation, test SMTP/AI buttons, reset/cancel workflows, and masked secrets. | ✅ Completed | Unit tests #32-#36 validating constraints & integrity |
-| **Phase 8 — Security & Access UI** | Protected Admin routes (`ProtectedRoute`), 401 unauthenticated redirect with return path, 403 Access Restricted page (`/unauthorized` & `UnauthorizedView`), session expiry tracking, sensitive action confirmations, sole admin protections, and compliance audit tracking. | ✅ Completed | Unit tests #23-#26 and security guard checks passing |
-| **Phase 9 — UI/UX Polish** | Clean enterprise SaaS design tokens, responsive sidebar, keyboard accessibility, loading skeletons, consistent empty/error states, and Sonner toast notifications. | ✅ Completed | Zero UI lints, strict typographic hierarchy, responsive layouts |
-| **Phase 10 — Final Admin QA** | Full Admin lifecycle verification: Login → Dashboard → Users → Activity → Reports → Settings → Logout. Zero lints, zero TypeScript errors, clean production build, and 38 passing automated tests. | ✅ Completed | 38/38 tests passing, clean Vite build, tsc clean |
-
----
-
-### In-Memory Architecture & MongoDB Integration Notes
-
-> [!IMPORTANT]
-> **MongoDB Intentionally Unimplemented in this Phase:**
-> MongoDB integration is intentionally unimplemented in the current release. The codebase does **not** install, require, or run MongoDB or Mongoose.
-> 
-> **Current In-Memory Architecture:**
-> - All platform data operations utilize a robust in-memory repository pattern (`src/server/db/user-repository.ts`).
-> - The in-memory data store natively enforces **24-character hexadecimal MongoDB ObjectIds** (`isValidObjectId`), Mongoose-ready entity interfaces (`IUser`, `SafeUser`, `RecruiterProfile`, `ApplicantProfile`, `AdminProfile`), and query parameter simulation (pagination, search, role/status filtering, sorting, and projection).
-> - Audit events are tracked in-memory through `src/server/services/audit-service.ts` and `src/data/activityData.ts`.
-> - Platform settings are managed in-memory via `src/data/adminSettingsData.ts`.
->
-> **Known Limitations & Production Readiness Notice:**
-> 1. **In-Memory Volatility:** In-memory user mutations, status updates, settings adjustments, and audit log entries reset when the development server restarts.
-> 2. **Authentication & Session Tokens:** The current authentication implementation uses demo bearer tokens and local storage session persistence for developmental validation and QA walkthroughs. It is **not** presented as a production-grade identity provider (OAuth/OpenID Connect) or persistent JWT backend.
-> 3. **Future MongoDB Migration:** The repository abstraction and TypeScript models are designed specifically to be drop-in compatible with future Mongoose schemas and MongoDB collections without requiring changes to frontend components or API consumer contracts.
-
----
-
-## Development Roadmap & Status
-
-| Phase        | Milestone                                                | Status                  |
-| :----------- | :------------------------------------------------------- | :---------------------- |
-| **Phase 1**  | Frontend Foundation (Homepage, Dashboard, UI Components) | Completed / In Progress |
-| **Phase 2**  | Authentication & Role-Based Access                       | In Progress             |
-| **Phase 3**  | Job Management & MongoDB Integration                     | Planned                 |
-| **Phase 4**  | Application Management & History                         | Planned                 |
-| **Phase 5**  | Resume Storage & Document Processing                     | Planned                 |
-| **Phase 6**  | Candidate Analysis & Semantic Matching                   | Planned                 |
-| **Phase 7**  | Recruitment Pipeline & Kanban Board                      | Planned                 |
-| **Phase 8**  | Communication & Notification System                      | Planned                 |
-| **Phase 9**  | Analytics, Funnels & Reporting                           | Planned                 |
-| **Phase 10** | End-to-End Testing & Deployment                          | Planned                 |
-
----
-
-## Four-Week Implementation Plan
-
-### Week 1 — Portals and Job Management
-
-- **Days 1–2:** Database schema design (Recruiter, Applicant, Job, Application).
-- **Days 3–5:** Authentication, RBAC, Job APIs (creation, editing, archiving).
-- **Days 6–7:** Recruiter dashboard, public job board, job detail pages.
-
-### Week 2 — Applications and Storage
-
-- **Days 1–3:** AWS S3 integration, Multer file upload validation, secure storage.
-- **Days 4–5:** Application submission workflows, application history, candidate profiles.
-- **Days 6–7:** Application pipeline stages (`Applied`, `Screening`, `Interview`, `Offered`, `Rejected`).
-
-### Week 3 — Resume Processing and Analysis
-
-- **Days 1–3:** PDF & DOCX extraction and text normalization.
-- **Days 4–6:** Information extraction, job requirement parsing, semantic candidate matching.
-- **Day 7:** Persist analysis results and link to application records.
-
-### Week 4 — Ranking, Communication and Deployment
-
-- **Days 1–3:** Explainable candidate ranking, advanced filtering, candidate comparison.
-- **Days 4–5:** Email notifications, interview invitations, status updates.
-- **Days 6–7:** End-to-end testing, security audit, S3 access control verification, deployment.
-
----
-
-## Git Workflow & Commit Conventions
-
-Recommended branch structure: `main` ➔ `develop` ➔ `feature/<feature-name>`
-
-### Commit Conventions
-
-- `feat: implement recruiter authentication`
-- `feat: add job creation workflow`
-- `feat: create application submission API`
-- `feat: integrate secure resume uploads`
-- `feat: implement resume text extraction`
-- `feat: add candidate matching service`
-- `feat: implement recruitment pipeline`
-- `feat: add interview notification workflow`
-- `test: add application API integration tests`
-- `fix: restrict unauthorized resume access`
-- `refactor: separate candidate analysis service`
-- `docs: update API documentation`
-
----
-
-## Non-Functional Requirements & Design Principles
-
-- **Visual Direction:** Enterprise SaaS UI, clean light content areas, deep navy navigation (`#10213D`), blue primary actions (`#1264F5`), pastel stage badges, soft elevation, and crisp typographic hierarchy.
-- **Performance:** Optimized document processing, smart client caching with React Query, minimal re-renders.
-- **Reliability:** Graceful API failures, retry strategies for AI/cloud services, and clear user-facing error boundaries.
-
----
-
-## License & Contributors
-
-This project is developed for educational, research, and demonstration purposes unless a separate commercial license is provided.
+This project is developed for educational, research, and demonstration purposes.
 
 ### Contributors
 
-- **Project Lead: SOHAM GHOSH**
-- **Team Members: Jevin Parmar, Nayesha Suhail Ahmed Bijapure, Shubham Tiwari.**
-- **Internship: Zaalima Development Pvt. Ltd.**
+- **Project Lead:** SOHAM GHOSH
+- **Team Members:** Jevin Parmar, Nayesha Suhail Ahmed Bijapure, Shubham Tiwari
+- **Internship:** Zaalima Development Pvt. Ltd.
 
 ---
 

@@ -6,14 +6,14 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import type { Plugin, ViteDevServer } from "vite";
-import { handleAdminApiRequest } from "./src/server/routes/admin-users-handler";
+import { handleApiRequest } from "./src/server/routes/index";
 
-function adminApiDevPlugin(): Plugin {
+function apiDevPlugin(): Plugin {
   return {
-    name: "admin-api-dev-middleware",
+    name: "api-dev-middleware",
     configureServer(server: ViteDevServer) {
       server.middlewares.use(async (req, res, next) => {
-        if (req.url && req.url.startsWith("/api/admin")) {
+        if (req.url && req.url.startsWith("/api")) {
           try {
             const host = req.headers.host || "localhost:5173";
             const protocol = req.headers["x-forwarded-proto"] || "http";
@@ -42,7 +42,7 @@ function adminApiDevPlugin(): Plugin {
               ...(body !== undefined && { body }),
             });
 
-            const response = await handleAdminApiRequest(standardReq);
+            const response = await handleApiRequest(standardReq);
             if (response) {
               res.statusCode = response.status;
               response.headers.forEach((val, key) => {
@@ -53,7 +53,7 @@ function adminApiDevPlugin(): Plugin {
               return;
             }
           } catch (e) {
-            console.error("Admin API dev middleware error:", e);
+            console.error("API dev middleware error:", e);
             res.statusCode = 500;
             res.setHeader("Content-Type", "application/json");
             res.end(JSON.stringify({ error: "Internal server error" }));
@@ -73,6 +73,6 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    plugins: [adminApiDevPlugin()],
+    plugins: [apiDevPlugin()],
   },
 });

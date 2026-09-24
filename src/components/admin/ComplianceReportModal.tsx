@@ -41,7 +41,7 @@ export function ComplianceReportModal({
                 AI & Hiring Compliance Audit Report
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500">
-                SOC2 Type II, EEOC, and Algorithmic Bias Neutrality Audit ({timeframe})
+                EEOC and Algorithmic Bias Neutrality Review ({timeframe})
               </DialogDescription>
             </div>
           </div>
@@ -92,7 +92,8 @@ export function ComplianceReportModal({
                   Data Security & Privacy (AES-256)
                 </span>
                 <span className="text-slate-500 dark:text-slate-400 text-[11px]">
-                  All candidate resumes and PII encryption keys pass quarterly SOC2 security audits.
+                  All candidate resumes and sensitive records are protected with industry-standard
+                  encryption protocols.
                 </span>
               </div>
             </div>

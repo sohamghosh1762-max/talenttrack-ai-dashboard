@@ -389,11 +389,11 @@ export function AdminReportsView() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-emerald-950 dark:text-emerald-200">
-                  Platform Equal Opportunity & AI Neutrality Certified
+                  Equal Opportunity & AI Neutrality Monitoring
                 </h3>
                 <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-0.5">
-                  Algorithmic bias score: <strong>{metrics.biasAuditScore}</strong>. Fully compliant
-                  with SOC2 Type II data security standards and EEOC fair-hiring guidelines.
+                  Algorithmic bias score: <strong>{metrics.biasAuditScore}</strong>. Designed
+                  following data protection principles and EEOC fair-hiring guidelines.
                 </p>
               </div>
             </div>
