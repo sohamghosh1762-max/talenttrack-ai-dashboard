@@ -35,12 +35,32 @@ const STATUS_CONFIG: Record<
     actionLabel: "Suspend Account",
     actionClass: "bg-amber-600 hover:bg-amber-700 focus:ring-amber-500 text-white",
   },
+  LOCKED: {
+    title: "Lock Account",
+    description: (name) =>
+      `This will temporarily lock ${name}'s account. They will not be able to authenticate.`,
+    actionLabel: "Lock Account",
+    actionClass: "bg-red-600 hover:bg-red-700 focus:ring-red-500 text-white",
+  },
+  DEACTIVATED: {
+    title: "Deactivate Account",
+    description: (name) =>
+      `This will deactivate ${name}'s account and revoke access. This action can be reversed by an administrator.`,
+    actionLabel: "Deactivate Account",
+    actionClass: "bg-rose-600 hover:bg-rose-700 focus:ring-rose-500 text-white",
+  },
   INACTIVE: {
     title: "Deactivate Account",
     description: (name) =>
       `This will permanently deactivate ${name}'s account. The account will be set to INACTIVE and access will be revoked. This action can be reversed by an administrator.`,
     actionLabel: "Deactivate Account",
     actionClass: "bg-rose-600 hover:bg-rose-700 focus:ring-rose-500 text-white",
+  },
+  PENDING_VERIFICATION: {
+    title: "Set Pending Verification",
+    description: (name) => `This will mark ${name}'s account as pending email verification.`,
+    actionLabel: "Set Pending",
+    actionClass: "bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500 text-white",
   },
   ACTIVE: {
     title: "Activate Account",
@@ -62,6 +82,7 @@ export function UserStatusConfirmDialog({
   if (!targetStatus) return null;
 
   const config = STATUS_CONFIG[targetStatus];
+  if (!config) return null;
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

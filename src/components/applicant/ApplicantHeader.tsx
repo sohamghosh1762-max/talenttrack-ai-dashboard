@@ -1,13 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell, ChevronDown, LogOut, Menu, Search, Settings, User as UserIcon } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import {
+  Bell,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  LogOut,
+  Menu,
+  Search,
+  Settings,
+  Sparkles,
+  User as UserIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -20,8 +32,33 @@ interface ApplicantHeaderProps {
   onSearchChange?: ((val: string) => void) | undefined;
 }
 
+const applicantNotifications = [
+  {
+    id: "notif-app-1",
+    title: "Interview Invitation Received",
+    description: "TalentTrack Technologies invited you for Technical Deep Dive.",
+    timeAgo: "25m ago",
+    unread: true,
+  },
+  {
+    id: "notif-app-2",
+    title: "Application Status Update",
+    description: "CloudScale Systems marked your Staff React Architect application as Shortlisted.",
+    timeAgo: "2h ago",
+    unread: true,
+  },
+  {
+    id: "notif-app-3",
+    title: "New AI Role Match",
+    description: "Frontend Developer opening at Nexus AI matches 94% of your profile.",
+    timeAgo: "1d ago",
+    unread: false,
+  },
+];
+
 export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notifications, setNotifications] = useState(applicantNotifications);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -31,6 +68,11 @@ export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantH
   };
 
   const initial = user?.name ? user.name.charAt(0).toUpperCase() : "A";
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  };
 
   return (
     <header
@@ -72,15 +114,60 @@ export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantH
       </div>
 
       <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative size-10 rounded-full hover:bg-muted"
-          aria-label="Notifications"
-        >
-          <Bell className="size-5 text-muted-foreground" />
-          <span className="absolute right-2 top-2 grid size-2 place-items-center rounded-full bg-brand-blue" />
-        </Button>
+        {/* Notifications Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative size-10 rounded-full hover:bg-muted"
+              aria-label={`Notifications, ${unreadCount} unread`}
+            >
+              <Bell className="size-5 text-muted-foreground" />
+              {unreadCount > 0 && (
+                <span className="absolute right-2 top-2 grid size-2 place-items-center rounded-full bg-brand-blue" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80 p-2 shadow-xl">
+            <div className="flex items-center justify-between px-2 py-1.5">
+              <DropdownMenuLabel className="p-0 text-xs font-bold">
+                Applicant Notifications
+              </DropdownMenuLabel>
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-[10px] font-medium text-brand-blue hover:underline cursor-pointer"
+                >
+                  Mark all as read
+                </button>
+              )}
+            </div>
+            <DropdownMenuSeparator />
+            <div className="space-y-1">
+              {notifications.map((notif) => (
+                <div
+                  key={notif.id}
+                  className="flex flex-col items-start gap-1 p-2.5 rounded-lg hover:bg-muted/70 transition-colors"
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">{notif.title}</span>
+                    {notif.unread && (
+                      <span className="size-2 rounded-full bg-brand-blue shrink-0" />
+                    )}
+                  </div>
+                  <span className="text-[11px] text-muted-foreground line-clamp-2">
+                    {notif.description}
+                  </span>
+                  <span className="flex items-center gap-1 text-[9px] text-muted-foreground/80 mt-0.5">
+                    <Clock className="size-3" />
+                    {notif.timeAgo}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Avatar */}
         <div className="grid size-9.5 place-items-center rounded-full bg-brand-green text-sm font-bold text-primary-foreground shadow-sm ring-2 ring-background">
@@ -116,14 +203,14 @@ export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantH
               className="cursor-pointer gap-2"
             >
               <UserIcon className="size-4 text-muted-foreground" />
-              <span>My Profile</span>
+              <span>My Profile & Resume</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onSelect={() => navigate({ to: "/applicant/settings" })}
+              onSelect={() => navigate({ to: "/applicant/interviews" })}
               className="cursor-pointer gap-2"
             >
-              <Settings className="size-4 text-muted-foreground" />
-              <span>Account Settings</span>
+              <Sparkles className="size-4 text-muted-foreground" />
+              <span>Interviews</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

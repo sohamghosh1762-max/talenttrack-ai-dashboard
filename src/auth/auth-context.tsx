@@ -13,16 +13,27 @@ export interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
   register: (data: RegisterData) => Promise<AuthResponse>;
   logout: () => Promise<void>;
-  switchDemoRole: (role: UserRole) => Promise<void>;
+  switchDemoRole: (role: UserRole | string) => Promise<void>;
   checkSessionExpiry: () => boolean;
+
   expireSession: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => authStorage.getCurrentUser());
   const [isLoading, setIsLoading] = useState(true);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const activeUser = await authService.getMe();
+      setUser(activeUser);
+    } catch {
+      setUser(null);
+    }
+  }, []);
 
   const checkSessionExpiry = useCallback((): boolean => {
     const session = authStorage.getSession();
@@ -42,20 +53,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Check initial session
-    const existing = authStorage.getCurrentUser();
-    if (existing) {
-      setUser(existing);
-    }
-    setIsLoading(false);
+    let isMounted = true;
 
-    // Set up periodic session check every 10 seconds
-    const interval = setInterval(() => {
-      const session = authStorage.getSession();
-      if (!session && user) {
-        setUser(null);
+    // Verify session with server on initial application load
+    async function initAuth() {
+      try {
+        const activeUser = await authService.getMe();
+        if (isMounted) {
+          setUser(activeUser);
+        }
+      } catch {
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    }, 10000);
+    }
+
+    initAuth();
 
     // Listen for custom session-expired event
     const handleExpiredEvent = () => {
@@ -75,13 +93,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return () => {
-      clearInterval(interval);
+      isMounted = false;
       if (typeof window !== "undefined") {
         window.removeEventListener("talenttrack:auth-session-expired", handleExpiredEvent);
         window.removeEventListener("storage", handleStorageChange);
       }
     };
-  }, [user]);
+  }, []);
 
   const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
     setIsLoading(true);
@@ -119,9 +137,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const switchDemoRole = async (targetRole: UserRole): Promise<void> => {
-    const creds = authService.getDemoCredentials(targetRole);
-    await login(creds);
+  const switchDemoRole = async (targetRole: UserRole | string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      await authService.logout();
+      setUser(null);
+      const creds = authService.getDemoCredentials(targetRole);
+      const res = await authService.login(creds);
+      if (res.success && res.user) {
+        setUser(res.user);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -137,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         switchDemoRole,
         checkSessionExpiry,
         expireSession,
+        refreshUser,
       }}
     >
       {children}

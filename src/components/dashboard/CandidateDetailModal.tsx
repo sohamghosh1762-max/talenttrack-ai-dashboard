@@ -4,6 +4,8 @@ import {
   Brain,
   Calendar,
   CheckCircle2,
+  Download,
+  FileText,
   Mail,
   MapPin,
   Phone,
@@ -21,8 +23,26 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Applicant } from "@/data/mockData";
 
+export interface CandidateModalData {
+  id?: string | undefined;
+  name?: string | undefined;
+  email?: string | undefined;
+  phone?: string | undefined;
+  job?: string | undefined;
+  location?: string | undefined;
+  score?: number | undefined;
+  status?: string | undefined;
+  initials?: string | undefined;
+  appliedOn?: string | undefined;
+  experience?: string | undefined;
+  skills?: string[] | undefined;
+  summary?: string | undefined;
+  resumeId?: string | undefined;
+  resumeFileName?: string | undefined;
+}
+
 interface CandidateDetailModalProps {
-  candidate: Applicant | null;
+  candidate: CandidateModalData | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -30,10 +50,11 @@ interface CandidateDetailModalProps {
 export function CandidateDetailModal({ candidate, open, onOpenChange }: CandidateDetailModalProps) {
   if (!candidate) return null;
 
+  const score = candidate.score ?? 85;
   const scoreColor =
-    candidate.score >= 90
+    score >= 90
       ? "bg-surface-green text-brand-green border-brand-green/30"
-      : candidate.score >= 70
+      : score >= 70
         ? "bg-surface-purple text-brand-purple border-brand-purple/30"
         : "bg-surface-peach text-brand-orange border-brand-orange/30";
 
@@ -114,6 +135,34 @@ export function CandidateDetailModal({ candidate, open, onOpenChange }: Candidat
               </div>
             </div>
           )}
+
+          {/* Attached Resume */}
+          <div className="rounded-lg border border-border p-3 bg-muted/20 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="grid size-8 place-items-center rounded-lg bg-surface-blue text-brand-blue">
+                <FileText className="size-4" />
+              </div>
+              <div>
+                <span className="block font-semibold text-xs text-foreground">
+                  {candidate.resumeFileName || `${candidate.name?.replace(/\s+/g, "_")}_Resume.pdf`}
+                </span>
+                <span className="text-[10px] text-muted-foreground">Attached Document</span>
+              </div>
+            </div>
+            {candidate.resumeId ? (
+              <a
+                href={`/api/resumes/${candidate.resumeId}/download`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-md border border-input bg-background h-7 px-2.5 text-[11px] font-semibold text-foreground hover:bg-accent gap-1 transition-colors"
+              >
+                <Download className="size-3" />
+                Download
+              </a>
+            ) : (
+              <span className="text-[10.5px] text-muted-foreground italic">Standard Profile</span>
+            )}
+          </div>
         </div>
 
         <DialogFooter className="flex justify-between sm:justify-between items-center pt-2">

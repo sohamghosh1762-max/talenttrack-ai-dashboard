@@ -42,6 +42,27 @@ const BULK_STATUS_CONFIG: Record<
     actionLabel: "Deactivate Accounts",
     actionClass: "bg-rose-600 hover:bg-rose-700 focus:ring-rose-500 text-white",
   },
+  DEACTIVATED: {
+    title: "Bulk Deactivate Accounts",
+    description: (count) =>
+      `Are you sure you want to deactivate ${count} selected user accounts? Their status will be updated to DEACTIVATED and access will be revoked.`,
+    actionLabel: "Deactivate Accounts",
+    actionClass: "bg-rose-600 hover:bg-rose-700 focus:ring-rose-500 text-white",
+  },
+  LOCKED: {
+    title: "Bulk Lock Accounts",
+    description: (count) =>
+      `Are you sure you want to lock ${count} selected user accounts? Locked users will be prevented from authenticating.`,
+    actionLabel: "Lock Accounts",
+    actionClass: "bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 text-white",
+  },
+  PENDING_VERIFICATION: {
+    title: "Bulk Set Pending Verification",
+    description: (count) =>
+      `Are you sure you want to mark ${count} selected user accounts as pending email verification?`,
+    actionLabel: "Set Pending",
+    actionClass: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 text-white",
+  },
   ACTIVE: {
     title: "Bulk Activate Accounts",
     description: (count) =>

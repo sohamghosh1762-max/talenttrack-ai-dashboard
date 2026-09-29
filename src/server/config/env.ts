@@ -9,7 +9,8 @@ const envSchema = z.object({
   APP_URL: z.string().url().default("http://localhost:3000"),
   API_URL: z.string().url().default("http://localhost:3000"),
 
-  // Database (Phase 4)
+  // Database (MongoDB)
+  MONGODB_URI: z.string().optional().default("mongodb://127.0.0.1:27017/talenttrack"),
   DATABASE_URL: z.string().optional(),
 
   // Authentication & Security (Phase 2)
@@ -42,6 +43,14 @@ const envSchema = z.object({
 export type EnvConfig = z.infer<typeof envSchema>;
 
 function loadAndValidateEnv(): EnvConfig {
+  if (typeof process !== "undefined" && typeof (process as any).loadEnvFile === "function") {
+    try {
+      (process as any).loadEnvFile();
+    } catch {
+      // .env file might not exist in some environments, ignore
+    }
+  }
+
   const envSource = typeof process !== "undefined" && process.env ? process.env : {};
   const result = envSchema.safeParse(envSource);
 

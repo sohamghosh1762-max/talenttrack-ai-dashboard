@@ -1,24 +1,33 @@
-export type UserRole = "recruiter" | "applicant" | "admin";
+export type CanonicalRole =
+  | "SUPER_ADMIN"
+  | "ORG_ADMIN"
+  | "RECRUITER"
+  | "HIRING_MANAGER"
+  | "INTERVIEWER"
+  | "APPLICANT"
+  | "ADMIN";
+
+export type UserRole = CanonicalRole | "recruiter" | "applicant" | "admin";
 
 export interface RecruiterProfile {
   companyName: string;
   jobTitle: string;
-  department?: string;
+  department?: string | undefined;
 }
 
 export interface ApplicantProfile {
-  headline?: string;
-  location?: string;
-  phone?: string;
-  skills?: string[];
-  experienceYears?: string;
-  resumeFileName?: string;
+  headline?: string | undefined;
+  location?: string | undefined;
+  phone?: string | undefined;
+  skills?: string[] | undefined;
+  experienceYears?: string | undefined;
+  resumeFileName?: string | undefined;
 }
 
 export interface AdminProfile {
-  platformRole?: string;
-  permissions?: string[];
-  lastLogin?: string;
+  platformRole?: string | undefined;
+  permissions?: string[] | undefined;
+  lastLogin?: string | undefined;
 }
 
 export interface User {
@@ -26,6 +35,8 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  status?: string | undefined;
+  emailVerified?: boolean | undefined;
   avatarUrl?: string | undefined;
   recruiterProfile?: RecruiterProfile | undefined;
   applicantProfile?: ApplicantProfile | undefined;
@@ -36,21 +47,23 @@ export interface User {
 export interface LoginCredentials {
   email: string;
   password: string;
-  rememberMe?: boolean;
+  rememberMe?: boolean | undefined;
 }
 
 export interface RegisterData {
   name: string;
   email: string;
   password: string;
-  confirmPassword?: string;
+  confirmPassword?: string | undefined;
   role: UserRole;
   // Recruiter fields
-  companyName?: string;
-  jobTitle?: string;
+  companyName?: string | undefined;
+  jobTitle?: string | undefined;
+  department?: string | undefined;
   // Applicant fields
-  headline?: string;
-  location?: string;
+  headline?: string | undefined;
+  location?: string | undefined;
+  phone?: string | undefined;
 }
 
 export interface AuthSession {
@@ -61,7 +74,7 @@ export interface AuthSession {
 
 export interface AuthResponse {
   success: boolean;
-  message?: string;
-  user?: User;
-  token?: string;
+  message?: string | undefined;
+  user?: User | undefined;
+  token?: string | undefined;
 }

@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { authStorage } from "@/auth/auth-storage";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -12,5 +13,20 @@ export const Route = createFileRoute("/admin")({
       },
     ],
   }),
+  beforeLoad: ({ location }) => {
+    if (typeof window !== "undefined") {
+      const user = authStorage.getCurrentUser();
+      if (!user) {
+        throw redirect({
+          to: "/login",
+          search: {
+            redirect: location.pathname,
+            role: "admin",
+            intent: "admin",
+          },
+        });
+      }
+    }
+  },
   component: AdminLayout,
 });

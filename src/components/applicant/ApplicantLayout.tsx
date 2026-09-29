@@ -4,6 +4,7 @@ import { type ReactNode } from "react";
 import { ApplicantSidebar } from "./ApplicantSidebar";
 import { ApplicantHeader } from "./ApplicantHeader";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { USER_ROLES } from "@/auth/route-access";
 
 interface ApplicantLayoutProps {
   children: ReactNode;
@@ -13,7 +14,7 @@ interface ApplicantLayoutProps {
 
 export function ApplicantLayout({ children, searchQuery, onSearchChange }: ApplicantLayoutProps) {
   return (
-    <ProtectedRoute allowedRoles={["applicant"]}>
+    <ProtectedRoute allowedRoles={[USER_ROLES.APPLICANT]}>
       <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[255px_minmax(0,1fr)]">
         {/* Desktop Fixed Left Sidebar */}
         <div className="fixed inset-y-0 left-0 z-30 hidden w-[255px] lg:block">

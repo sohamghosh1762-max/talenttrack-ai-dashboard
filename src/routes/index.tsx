@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthProvider";
+import { getDefaultRouteForRole } from "@/auth/route-access";
+
 import {
   GoogleLogo,
   MicrosoftLogo,
@@ -210,12 +212,7 @@ function PublicHomePage() {
                 className="h-10 px-5 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground font-semibold text-xs gap-1.5 rounded-lg shadow-sm"
                 onClick={() =>
                   navigate({
-                    to:
-                      user.role === "admin"
-                        ? "/admin"
-                        : user.role === "recruiter"
-                          ? "/dashboard"
-                          : "/applicant",
+                    to: getDefaultRouteForRole(user.role),
                   })
                 }
               >

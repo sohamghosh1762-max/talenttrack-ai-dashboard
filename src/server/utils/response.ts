@@ -59,6 +59,26 @@ export function errorResponse(
     if (config.app.isDevelopment) {
       stack = error.stack;
     }
+  } else if (
+    error &&
+    typeof error === "object" &&
+    ("status" in error || "statusCode" in error)
+  ) {
+    const errObj = error as Record<string, unknown>;
+    status = Number(errObj["status"] || errObj["statusCode"]) || fallbackStatus;
+    code =
+      typeof errObj["code"] === "string"
+        ? errObj["code"]
+        : status === 401
+          ? "UNAUTHORIZED"
+          : status === 403
+            ? "FORBIDDEN"
+            : status === 404
+              ? "NOT_FOUND"
+              : status === 400
+                ? "VALIDATION_ERROR"
+                : "APP_ERROR";
+    message = typeof errObj["message"] === "string" ? errObj["message"] : message;
   } else if (error instanceof Error) {
     message = error.message;
     if (config.app.isDevelopment) {
@@ -68,8 +88,9 @@ export function errorResponse(
     message = error;
   }
 
-  const body: ApiErrorResponse = {
+  const body: ApiErrorResponse & { message?: string } = {
     success: false,
+    message,
     error: {
       code,
       message,

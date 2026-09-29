@@ -152,38 +152,6 @@ export function AdminReportsView() {
           >
             <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />
           </Button>
-
-          {/* Demo state toggles */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg dark:bg-slate-800 text-[11px]">
-            <button
-              type="button"
-              onClick={() => {
-                setSimulateError((prev) => !prev);
-                setSimulateEmpty(false);
-              }}
-              className={`px-2 py-0.5 rounded font-medium transition-colors ${
-                simulateError
-                  ? "bg-rose-600 text-white"
-                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400"
-              }`}
-            >
-              Error
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSimulateEmpty((prev) => !prev);
-                setSimulateError(false);
-              }}
-              className={`px-2 py-0.5 rounded font-medium transition-colors ${
-                simulateEmpty
-                  ? "bg-amber-600 text-white"
-                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400"
-              }`}
-            >
-              Empty
-            </button>
-          </div>
         </div>
       </div>
 

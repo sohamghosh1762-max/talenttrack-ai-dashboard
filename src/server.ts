@@ -45,12 +45,23 @@ function isH3SwallowedErrorBody(body: string): boolean {
 }
 
 import { handleApiRequest } from "./server/routes/index.ts";
+import { connectToDatabase, isDatabaseConnected } from "./server/db/mongodb.ts";
+
+// Initialize database connection in background
+if (typeof process !== "undefined" && process.env?.["NODE_ENV"] !== "test") {
+  connectToDatabase().catch((err) => {
+    console.warn("[Server] MongoDB background connection notice:", err.message || err);
+  });
+}
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const url = new URL(request.url);
       if (url.pathname.startsWith("/api")) {
+        if (!isDatabaseConnected()) {
+          await connectToDatabase().catch(() => {});
+        }
         const apiResponse = await handleApiRequest(request);
         if (apiResponse) {
           return apiResponse;

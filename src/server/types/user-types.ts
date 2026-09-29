@@ -1,5 +1,14 @@
-export type UserRole = "ADMIN" | "RECRUITER" | "APPLICANT";
-export type UserStatus = "ACTIVE" | "SUSPENDED" | "INACTIVE";
+export type UserRole =
+  | "SUPER_ADMIN"
+  | "ORG_ADMIN"
+  | "RECRUITER"
+  | "HIRING_MANAGER"
+  | "INTERVIEWER"
+  | "APPLICANT"
+  | "ADMIN"; // Legacy alias
+
+export type UserStatus =
+  "ACTIVE" | "PENDING_VERIFICATION" | "SUSPENDED" | "LOCKED" | "DEACTIVATED" | "INACTIVE"; // Legacy alias
 
 export interface RecruiterProfileInfo {
   companyName: string;
@@ -25,11 +34,16 @@ export interface AdminProfileInfo {
 export interface IUser {
   id: string; // 24-character hexadecimal MongoDB ObjectId
   name: string;
-  email: string;
-  passwordHash: string;
+  email: string; // Normalized lowercase
+  passwordHash: string; // Hashed password
   role: UserRole;
   status: UserStatus;
   emailVerified: boolean;
+  emailVerifiedAt?: string | undefined;
+  avatarUrl?: string | undefined;
+  lastLoginAt?: string | undefined;
+  failedLoginAttempts?: number | undefined;
+  lockedUntil?: string | null | undefined;
   createdAt: string;
   updatedAt: string;
   lastActive?: string | undefined;

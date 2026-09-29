@@ -7,4 +7,7 @@ export * from "./repositories/index.ts";
 export * from "./validators/index.ts";
 export * from "./models/index.ts";
 export * from "./utils/index.ts";
+export * from "./permissions/index.ts";
+export * from "./auth/session-service.ts";
+export * from "./auth/password.ts";
 export * from "./workers/index.ts";

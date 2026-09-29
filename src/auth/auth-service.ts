@@ -1,59 +1,5 @@
-import type { AuthResponse, AuthSession, LoginCredentials, RegisterData, User } from "./auth-types";
+import type { AuthResponse, LoginCredentials, RegisterData, User, UserRole } from "./auth-types";
 import { authStorage } from "./auth-storage";
-
-// Demo pre-seeded accounts for Phase 2 prototype
-const DEMO_USERS: User[] = [
-  {
-    id: "65f1a2b3c4d5e6f7a8b9c001",
-    name: "Admin",
-    email: "admin@talenttrack.ai",
-    role: "admin",
-    adminProfile: {
-      platformRole: "Super Administrator",
-      permissions: ["all"],
-      lastLogin: "Just now",
-    },
-    createdAt: "2025-01-01T00:00:00Z",
-  },
-  {
-    id: "65f1a2b3c4d5e6f7a8b9c003",
-    name: "Rahul Mehta",
-    email: "rahul.mehta@talenttrack.ai",
-    role: "recruiter",
-    recruiterProfile: {
-      companyName: "TalentTrack Technologies",
-      jobTitle: "Senior Technical Recruiter",
-      department: "Global Talent Acquisition",
-    },
-    createdAt: "2025-08-01T00:00:00Z",
-  },
-  {
-    id: "65f1a2b3c4d5e6f7a8b9c008",
-    name: "Aarav Mehta",
-    email: "aarav.mehta@example.com",
-    role: "applicant",
-    applicantProfile: {
-      headline: "Senior Frontend Engineer | React, TypeScript & Next.js",
-      location: "San Jose, CA",
-      phone: "+1 (555) 234-5678",
-      skills: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Redux"],
-      experienceYears: "4 years",
-      resumeFileName: "Aarav_Mehta_Resume_2025.pdf",
-    },
-    createdAt: "2025-08-10T00:00:00Z",
-  },
-];
-
-// In-memory registered user database for this session
-const registeredUsers: Map<string, { user: User; passwordHash: string }> = new Map();
-
-// Initialize demo accounts with known hash simulation
-DEMO_USERS.forEach((u) => {
-  registeredUsers.set(u.email.toLowerCase(), {
-    user: u,
-    passwordHash: "password123",
-  });
-});
 
 export const authService = {
   /**
@@ -65,142 +11,282 @@ export const authService = {
   },
 
   /**
-   * Authenticate user with email and password
+   * Authenticate user with email and password via real /api/auth/login API
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // Artificial network latency simulation (250ms)
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email: credentials.email.trim(),
+          password: credentials.password,
+          rememberMe: !!credentials.rememberMe,
+        }),
+      });
 
-    const email = credentials.email.trim().toLowerCase();
-    const password = credentials.password;
+      const data = await res.json();
 
-    if (!email || !this.isValidEmail(email)) {
-      return { success: false, message: "Please enter a valid email address." };
+      if (!res.ok || !data.success) {
+        const errorMsg = data?.error?.message || data?.message || "Invalid email or password.";
+        return { success: false, message: errorMsg };
+      }
+
+      const user = data.data.user as User;
+      const token = data.data.token as string;
+
+      // Save token in client storage for Authorization header fallback
+      authStorage.setSession(
+        {
+          token,
+          user,
+          expiresAt: Date.now() + (credentials.rememberMe ? 30 * 86400000 : 86400000),
+        },
+        !!credentials.rememberMe,
+      );
+
+      return {
+        success: true,
+        user,
+        token,
+      };
+    } catch {
+      return {
+        success: false,
+        message: "Failed to connect to authentication service. Please try again.",
+      };
     }
-
-    if (!password || password.length < 6) {
-      return { success: false, message: "Password must contain at least 6 characters." };
-    }
-
-    const account = registeredUsers.get(email);
-    if (!account || account.passwordHash !== password) {
-      return { success: false, message: "Email or password is incorrect." };
-    }
-
-    const session: AuthSession = {
-      token: `jwt_mock_${account.user.id}_${Date.now()}`,
-      user: account.user,
-      expiresAt:
-        Date.now() + (credentials.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000),
-    };
-
-    authStorage.setSession(session, !!credentials.rememberMe);
-
-    return {
-      success: true,
-      user: account.user,
-      token: session.token,
-    };
   },
 
   /**
-   * Register a new Recruiter or Applicant
+   * Register a new Recruiter or Applicant via real /api/auth/register API
    */
   async register(data: RegisterData): Promise<AuthResponse> {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: data.name.trim(),
+          email: data.email.trim(),
+          password: data.password,
+          confirmPassword: data.confirmPassword,
+          role: data.role,
+          companyName: data.companyName,
+          jobTitle: data.jobTitle,
+          department: data.department,
+          headline: data.headline,
+          location: data.location,
+          phone: data.phone,
+        }),
+      });
 
-    const name = data.name.trim();
-    const email = data.email.trim().toLowerCase();
-    const password = data.password;
+      const json = await res.json();
 
-    if (!name) {
-      return { success: false, message: "Full name is required." };
+      if (!res.ok || !json.success) {
+        const errorMsg = json?.error?.message || json?.message || "Failed to create account.";
+        return { success: false, message: errorMsg };
+      }
+
+      const user = json.data.user as User;
+      const token = json.data.token as string;
+
+      authStorage.setSession(
+        {
+          token,
+          user,
+          expiresAt: Date.now() + 86400000,
+        },
+        true,
+      );
+
+      return {
+        success: true,
+        user,
+        token,
+      };
+    } catch {
+      return {
+        success: false,
+        message: "Failed to connect to registration service. Please try again.",
+      };
     }
-
-    if (!email || !this.isValidEmail(email)) {
-      return { success: false, message: "Please enter a valid email address." };
-    }
-
-    if (registeredUsers.has(email)) {
-      return { success: false, message: "An account with this email already exists." };
-    }
-
-    if (!password || password.length < 8) {
-      return { success: false, message: "Password must contain at least 8 characters." };
-    }
-
-    if (data.confirmPassword && data.confirmPassword !== password) {
-      return { success: false, message: "Passwords do not match." };
-    }
-
-    if (data.role === "recruiter" && !data.companyName?.trim()) {
-      return { success: false, message: "Company name is required for recruiters." };
-    }
-
-    const newUser: User = {
-      id: `user_${data.role}_${Date.now()}`,
-      name,
-      email,
-      role: data.role,
-      recruiterProfile:
-        data.role === "recruiter"
-          ? {
-              companyName: data.companyName?.trim() || "Independent Hiring",
-              jobTitle: data.jobTitle?.trim() || "Recruiter",
-            }
-          : undefined,
-      applicantProfile:
-        data.role === "applicant"
-          ? {
-              headline: data.headline?.trim() || "Job Seeker",
-              location: data.location?.trim() || "Remote",
-            }
-          : undefined,
-      createdAt: new Date().toISOString(),
-    };
-
-    registeredUsers.set(email, { user: newUser, passwordHash: password });
-
-    const session: AuthSession = {
-      token: `jwt_mock_${newUser.id}_${Date.now()}`,
-      user: newUser,
-      expiresAt: Date.now() + 24 * 60 * 60 * 1000,
-    };
-
-    authStorage.setSession(session, true);
-
-    return {
-      success: true,
-      user: newUser,
-      token: session.token,
-    };
   },
 
   /**
-   * Log out and destroy session
+   * Check current session on server via /api/auth/me
+   */
+  async getMe(): Promise<User | null> {
+    try {
+      const session = authStorage.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.token) {
+        headers["Authorization"] = `Bearer ${session.token}`;
+      }
+
+      const res = await fetch("/api/auth/me", {
+        method: "GET",
+        headers,
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        authStorage.clearSession();
+        return null;
+      }
+
+      const json = await res.json();
+      if (json.success && json.data?.user) {
+        return json.data.user as User;
+      }
+      return null;
+    } catch {
+      return authStorage.getCurrentUser();
+    }
+  },
+
+  /**
+   * Log out and invalidate server session via /api/auth/logout
    */
   async logout(): Promise<void> {
-    authStorage.clearSession();
+    try {
+      const session = authStorage.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.token) {
+        headers["Authorization"] = `Bearer ${session.token}`;
+      }
+
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers,
+        credentials: "include",
+      });
+    } catch {
+      // Ignore network errors during logout
+    } finally {
+      authStorage.clearSession();
+    }
   },
 
   /**
-   * Retrieve active authenticated user
+   * Request password reset link via /api/auth/forgot-password
+   */
+  async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const json = await res.json();
+      return {
+        success: json.success ?? true,
+        message:
+          json.message ||
+          "If an account with that email exists, password reset instructions have been sent.",
+      };
+    } catch {
+      return {
+        success: false,
+        message: "Failed to process request. Please try again.",
+      };
+    }
+  },
+
+  /**
+   * Reset password via /api/auth/reset-password
+   */
+  async resetPassword(
+    token: string,
+    password: string,
+    confirmPassword?: string,
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password, confirmPassword }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        return {
+          success: false,
+          message: json?.error?.message || json?.message || "Failed to reset password.",
+        };
+      }
+
+      return {
+        success: true,
+        message:
+          json.message ||
+          "Password has been successfully reset. Please log in with your new password.",
+      };
+    } catch {
+      return {
+        success: false,
+        message: "Failed to connect to reset service. Please try again.",
+      };
+    }
+  },
+
+  /**
+   * Verify email via /api/auth/verify-email
+   */
+  async verifyEmail(token: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const res = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        return {
+          success: false,
+          message: json?.error?.message || json?.message || "Failed to verify email.",
+        };
+      }
+
+      return {
+        success: true,
+        message: json.message || "Email address successfully verified.",
+      };
+    } catch {
+      return {
+        success: false,
+        message: "Failed to connect to verification service. Please try again.",
+      };
+    }
+  },
+
+  /**
+   * Retrieve active authenticated user from storage
    */
   getCurrentUser(): User | null {
     return authStorage.getCurrentUser();
   },
 
   /**
-   * Get demo credentials for instant testing
+   * Get seed credentials for quick demo access
    */
-  getDemoCredentials(role: "recruiter" | "applicant" | "admin") {
-    if (role === "admin") {
+  getDemoCredentials(role: UserRole | string) {
+    const raw = String(role).trim().toUpperCase();
+    if (raw === "ADMIN" || raw === "SUPER_ADMIN" || raw === "ORG_ADMIN") {
       return {
         email: "admin@talenttrack.ai",
         password: "password123",
       };
     }
-    if (role === "recruiter") {
+    if (raw === "RECRUITER" || raw === "HIRING_MANAGER" || raw === "INTERVIEWER") {
       return {
         email: "rahul.mehta@talenttrack.ai",
         password: "password123",

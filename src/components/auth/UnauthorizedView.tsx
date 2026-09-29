@@ -1,41 +1,30 @@
-import { ShieldAlert, ArrowLeft, LogIn, Lock, HelpCircle, UserCheck, Shield } from "lucide-react";
+import { ShieldAlert, ArrowLeft, LogIn, Lock, HelpCircle, Shield } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getResourceContext, getWorkspaceInfoForRole, normalizeRole } from "@/auth/route-access";
 
 interface UnauthorizedViewProps {
-  requiredRole?: string;
-  attemptedPath?: string;
+  requiredRole?: string | undefined;
+  attemptedPath?: string | undefined;
 }
 
 export function UnauthorizedView({
-  requiredRole = "ADMIN",
+  requiredRole,
   attemptedPath = "/admin",
 }: UnauthorizedViewProps) {
-  const { user, role, logout, switchDemoRole } = useAuth();
+  const { user, role, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleSwitchToAdmin = async () => {
-    await switchDemoRole("admin");
-    navigate({ to: "/admin" });
-  };
+  const activeRole = role || user?.role || null;
+  const normalizedUserRole = normalizeRole(activeRole);
+  const resourceContext = getResourceContext(attemptedPath, requiredRole);
+  const userWorkspace = getWorkspaceInfoForRole(activeRole);
 
   const handleLogout = async () => {
     await logout();
     navigate({ to: "/login", search: { redirect: attemptedPath } as Record<string, string> });
-  };
-
-  const getWorkspaceLink = () => {
-    if (role === "applicant") return "/applicant";
-    if (role === "recruiter") return "/dashboard";
-    return "/";
-  };
-
-  const getWorkspaceName = () => {
-    if (role === "applicant") return "Applicant Workspace";
-    if (role === "recruiter") return "Recruiter Dashboard";
-    return "Home Page";
   };
 
   return (
@@ -50,7 +39,7 @@ export function UnauthorizedView({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
-                  Access Restricted
+                  {resourceContext.title}
                 </h1>
                 <Badge
                   variant="outline"
@@ -60,7 +49,7 @@ export function UnauthorizedView({
                 </Badge>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Administrative authorization required for this resource
+                {resourceContext.subtitle}
               </p>
             </div>
           </div>
@@ -85,7 +74,7 @@ export function UnauthorizedView({
                 Current Assigned Role:
               </span>
               <span className="inline-flex items-center gap-1 rounded bg-slate-200/80 px-2 py-0.5 font-mono text-[11px] font-bold text-slate-800 dark:bg-slate-800 dark:text-slate-200 uppercase">
-                {role || "Unauthenticated"}
+                {normalizedUserRole || "UNAUTHENTICATED"}
               </span>
             </div>
             <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
@@ -94,7 +83,7 @@ export function UnauthorizedView({
               </span>
               <span className="inline-flex items-center gap-1 rounded bg-purple-100 px-2 py-0.5 font-mono text-[11px] font-bold text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 uppercase">
                 <Shield className="size-3" />
-                {requiredRole.toUpperCase()}
+                {resourceContext.requiredRoleLabel}
               </span>
             </div>
             <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
@@ -108,17 +97,14 @@ export function UnauthorizedView({
           </div>
 
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            You do not have permission to view or manage the TalentTrack AI platform administrative
-            console. Platform security policies restrict this area exclusively to accounts with
-            verified <strong>Administrator</strong> credentials.
+            {resourceContext.description}
           </p>
 
           <div className="rounded-lg bg-amber-50/60 border border-amber-200/70 p-3 text-[11px] text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300 flex items-start gap-2">
             <HelpCircle className="size-4 shrink-0 mt-0.5 text-amber-600" />
             <div>
-              <span className="font-semibold">Security & Audit Notice:</span> All unauthorized
-              access attempts to administrative endpoints are captured with timestamp and IP origin
-              in the platform compliance log.
+              <span className="font-semibold">Security & Audit Notice:</span>{" "}
+              {resourceContext.securityNotice}
             </div>
           </div>
         </div>
@@ -126,42 +112,37 @@ export function UnauthorizedView({
         {/* Action Buttons */}
         <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <Link to={getWorkspaceLink()}>
+            <Link to={userWorkspace.path}>
               <Button
                 variant="default"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-1.5 h-9"
               >
                 <ArrowLeft className="size-3.5" />
-                Return to {getWorkspaceName()}
+                Return to {userWorkspace.name}
               </Button>
             </Link>
 
-            <Button
-              variant="outline"
-              onClick={handleSwitchToAdmin}
-              className="w-full text-xs font-semibold gap-1.5 h-9 border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-purple-900 dark:text-purple-300 dark:hover:bg-purple-950/40"
-            >
-              <UserCheck className="size-3.5 text-purple-600" />
-              Switch to Demo Admin
-            </Button>
+            <Link to="/">
+              <Button
+                variant="outline"
+                className="w-full text-xs font-semibold gap-1.5 h-9 border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Return to Home
+              </Button>
+            </Link>
           </div>
 
           <div className="flex items-center justify-between pt-2">
             <button
               type="button"
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 underline"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 underline cursor-pointer"
             >
               <LogIn className="size-3.5" />
               Sign in with a different account
             </button>
 
-            <Link
-              to="/"
-              className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-            >
-              TalentTrack AI Home
-            </Link>
+            <span className="text-xs text-slate-400">TalentTrack AI Security</span>
           </div>
         </div>
       </div>

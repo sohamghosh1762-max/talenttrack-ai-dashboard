@@ -67,7 +67,10 @@ export function AdminHeader({
 
   const handleLogout = async () => {
     await logout();
-    navigate({ to: "/login" });
+    void navigate({
+      to: "/login",
+      search: { redirect: "/admin", role: "admin", intent: "admin" } as Record<string, string>,
+    });
   };
 
   return (

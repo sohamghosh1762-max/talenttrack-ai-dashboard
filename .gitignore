@@ -12,10 +12,13 @@ node_modules/
 # Production builds
 dist/
 dist-ssr/
+build/
 .output/
 .vinxi/
 .tanstack/
 .nitro/
+.next/
+.vite/
 coverage/
 
 # Environment configuration
@@ -32,13 +35,32 @@ coverage/
 *- Copy/
 * - Copy/
 
+# Credentials & Keys
+*.pem
+*.key
+credentials.json
+service-account*.json
+
+# SQLite
+*.sqlite
+*.sqlite3
+
+# Python (if any scripts run)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
 # Editor & OS files
 .DS_Store
-.idea
+Thumbs.db
+.idea/
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+

@@ -5,6 +5,7 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { USER_ROLES } from "@/auth/route-access";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -16,7 +17,15 @@ export function DashboardLayout({ children, searchQuery, onSearchChange }: Dashb
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   return (
-    <ProtectedRoute allowedRoles={["recruiter"]}>
+    <ProtectedRoute
+      allowedRoles={[
+        USER_ROLES.RECRUITER,
+        USER_ROLES.HIRING_MANAGER,
+        USER_ROLES.ORG_ADMIN,
+        USER_ROLES.ADMIN,
+        USER_ROLES.SUPER_ADMIN,
+      ]}
+    >
       <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[255px_minmax(0,1fr)]">
         {/* Desktop Fixed Left Sidebar */}
         <div className="fixed inset-y-0 left-0 z-30 hidden w-[255px] lg:block">

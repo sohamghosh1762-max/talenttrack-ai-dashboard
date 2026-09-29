@@ -59,15 +59,35 @@ function formatDateShort(iso: string | undefined): string {
 }
 
 function RoleBadge({ role }: { role: SafeUser["role"] }) {
-  const map: Record<SafeUser["role"], { label: string; cls: string; Icon: typeof Shield }> = {
+  const map: Record<string, { label: string; cls: string; Icon: typeof Shield }> = {
+    SUPER_ADMIN: {
+      label: "Super Admin",
+      cls: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800",
+      Icon: Shield,
+    },
     ADMIN: {
       label: "Admin",
       cls: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800",
       Icon: Shield,
     },
+    ORG_ADMIN: {
+      label: "Org Admin",
+      cls: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800",
+      Icon: Shield,
+    },
     RECRUITER: {
       label: "Recruiter",
       cls: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+      Icon: UserCheck,
+    },
+    HIRING_MANAGER: {
+      label: "Hiring Manager",
+      cls: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800",
+      Icon: UserCheck,
+    },
+    INTERVIEWER: {
+      label: "Interviewer",
+      cls: "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800",
       Icon: UserCheck,
     },
     APPLICANT: {
@@ -76,7 +96,11 @@ function RoleBadge({ role }: { role: SafeUser["role"] }) {
       Icon: UserRound,
     },
   };
-  const { label, cls, Icon } = map[role];
+  const { label, cls, Icon } = map[role] || {
+    label: role,
+    cls: "bg-slate-50 text-slate-700 border-slate-200",
+    Icon: UserRound,
+  };
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold ${cls}`}
@@ -88,16 +112,31 @@ function RoleBadge({ role }: { role: SafeUser["role"] }) {
 }
 
 function StatusDot({ status }: { status: SafeUser["status"] }) {
-  const map: Record<SafeUser["status"], { label: string; dot: string; cls: string }> = {
+  const map: Record<string, { label: string; dot: string; cls: string }> = {
     ACTIVE: {
       label: "Active",
       dot: "bg-emerald-500",
       cls: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
     },
+    PENDING_VERIFICATION: {
+      label: "Pending Verification",
+      dot: "bg-yellow-500",
+      cls: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/40 dark:text-yellow-300 dark:border-yellow-800",
+    },
     SUSPENDED: {
       label: "Suspended",
       dot: "bg-amber-500",
       cls: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+    },
+    LOCKED: {
+      label: "Locked",
+      dot: "bg-red-500",
+      cls: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800",
+    },
+    DEACTIVATED: {
+      label: "Deactivated",
+      dot: "bg-slate-400",
+      cls: "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
     },
     INACTIVE: {
       label: "Inactive",
@@ -105,7 +144,11 @@ function StatusDot({ status }: { status: SafeUser["status"] }) {
       cls: "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
     },
   };
-  const { label, dot, cls } = map[status];
+  const { label, dot, cls } = map[status] || {
+    label: status,
+    dot: "bg-slate-400",
+    cls: "bg-slate-50 text-slate-600 border-slate-200",
+  };
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold ${cls}`}

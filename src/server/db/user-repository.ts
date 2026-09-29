@@ -1,9 +1,18 @@
+import crypto from "node:crypto";
+import { User, type IUserDocument } from "../models/User.ts";
+import { Recruiter } from "../models/Recruiter.ts";
+import { Applicant } from "../models/Applicant.ts";
+import { isDatabaseConnected } from "./mongodb.ts";
 import type {
   IUser,
   SafeUser,
   UserQueryParams,
   PaginatedUsersResponse,
   UserStatus,
+  UserRole,
+  RecruiterProfileInfo,
+  ApplicantProfileInfo,
+  AdminProfileInfo,
   UserSummaryStats,
   BulkUpdateStatusResult,
   UserActivityItem,
@@ -15,6 +24,15 @@ export function isValidObjectId(id: string): boolean {
   return /^[0-9a-fA-F]{24}$/.test(id);
 }
 
+// Generate valid 24-character hexadecimal MongoDB ObjectId
+export function generateObjectId(): string {
+  const timestamp = Math.floor(Date.now() / 1000)
+    .toString(16)
+    .padStart(8, "0");
+  const random = crypto.randomBytes(8).toString("hex");
+  return `${timestamp}${random}`;
+}
+
 // Convert full internal user entity to safe external user (exclude passwordHash)
 export function toSafeUser(user: IUser): SafeUser {
   const { passwordHash: _hash, ...safe } = user;
@@ -22,8 +40,8 @@ export function toSafeUser(user: IUser): SafeUser {
 }
 
 // Pre-seeded database records with genuine 24-hex MongoDB ObjectIds
-const DEFAULT_SEED_USERS: IUser[] = [
-  // Administrators (Multiple to allow test cases for multi-admin vs sole active admin)
+export const DEFAULT_SEED_USERS: IUser[] = [
+  // Administrators
   {
     id: "65f1a2b3c4d5e6f7a8b9c001",
     name: "Platform Administrator",
@@ -583,6 +601,12 @@ class UserRepository {
     user.status = newStatus;
     user.updatedAt = new Date().toISOString();
 
+    if (isDatabaseConnected() && isValidObjectId(id)) {
+      User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch((err) => {
+        console.error(`[MongoDB] Error updating status for user ${id}:`, err);
+      });
+    }
+
     return {
       user: toSafeUser(user),
       previousStatus,
@@ -614,12 +638,6 @@ class UserRepository {
       const totalActiveAdmins = this.countActiveAdmins();
       // If updating all targeted active admins leaves fewer than 1 active admin overall
       if (totalActiveAdmins - activeAdminsTargeted.length < 1) {
-        // Protect sole active admin account(s)
-        const currentActiveAdmins = Array.from(this.users.values()).filter(
-          (u) => u.role === "ADMIN" && u.status === "ACTIVE",
-        );
-        // If there's only 1 active admin total, do not change that single active admin
-        // Mark active admins that cannot be changed as failed
         const remainingAllowed = totalActiveAdmins - 1;
         let adminSkipCount = 0;
 
@@ -646,6 +664,10 @@ class UserRepository {
           u.status = newStatus;
           u.updatedAt = new Date().toISOString();
           updatedCount++;
+
+          if (isDatabaseConnected() && isValidObjectId(id)) {
+            User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch(console.error);
+          }
 
           auditService.recordStatusChange({
             adminId,
@@ -681,6 +703,10 @@ class UserRepository {
       u.status = newStatus;
       u.updatedAt = new Date().toISOString();
       updatedCount++;
+
+      if (isDatabaseConnected() && isValidObjectId(id)) {
+        User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch(console.error);
+      }
 
       auditService.recordStatusChange({
         adminId,
@@ -723,7 +749,6 @@ class UserRepository {
       timestamp: log.timestamp,
     }));
 
-    // If user has createdAt, add Account Created baseline event
     if (targetUser) {
       activities.push({
         id: `activity_created_${targetUser.id}`,
@@ -736,10 +761,227 @@ class UserRepository {
       });
     }
 
-    // Sort newest activity first
     activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     return activities;
+  }
+
+  /**
+   * Create and persist a new user entity
+   */
+  public createUser(userData: {
+    name: string;
+    email: string;
+    passwordHash: string;
+    role: UserRole;
+    status?: UserStatus;
+    emailVerified?: boolean;
+    recruiterProfile?: RecruiterProfileInfo;
+    applicantProfile?: ApplicantProfileInfo;
+    adminProfile?: AdminProfileInfo;
+  }): IUser {
+    const normalizedEmail = userData.email.trim().toLowerCase();
+    const existing = this.findByEmail(normalizedEmail);
+    if (existing) {
+      throw new Error("An account with this email address already exists.");
+    }
+
+    const id = generateObjectId();
+    const now = new Date().toISOString();
+    const newUser: IUser = {
+      id,
+      name: userData.name.trim(),
+      email: normalizedEmail,
+      passwordHash: userData.passwordHash,
+      role: userData.role,
+      status: userData.status || "ACTIVE",
+      emailVerified: userData.emailVerified ?? false,
+      emailVerifiedAt: userData.emailVerified ? now : undefined,
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      createdAt: now,
+      updatedAt: now,
+      lastActive: now,
+      ...(userData.recruiterProfile ? { recruiterProfile: userData.recruiterProfile } : {}),
+      ...(userData.applicantProfile ? { applicantProfile: userData.applicantProfile } : {}),
+      ...(userData.adminProfile ? { adminProfile: userData.adminProfile } : {}),
+    };
+
+    if (isDatabaseConnected()) {
+      User.create({
+        _id: id,
+        name: newUser.name,
+        email: newUser.email,
+        passwordHash: newUser.passwordHash,
+        role: newUser.role,
+        status: newUser.status,
+        emailVerified: newUser.emailVerified,
+        emailVerifiedAt: newUser.emailVerifiedAt,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        recruiterProfile: newUser.recruiterProfile,
+        applicantProfile: newUser.applicantProfile,
+        adminProfile: newUser.adminProfile,
+      })
+        .then(async (createdUserDoc) => {
+          if (newUser.role === "RECRUITER" && newUser.recruiterProfile) {
+            await Recruiter.create({
+              userId: createdUserDoc._id,
+              companyName: newUser.recruiterProfile.companyName,
+              designation: newUser.recruiterProfile.jobTitle,
+              department: newUser.recruiterProfile.department || "Talent Acquisition",
+            } as any).catch(console.error);
+          } else if (newUser.role === "APPLICANT" && newUser.applicantProfile) {
+            await Applicant.create({
+              userId: createdUserDoc._id,
+              headline: newUser.applicantProfile.headline,
+              location: newUser.applicantProfile.location,
+              phone: newUser.applicantProfile.phone,
+              skills: newUser.applicantProfile.skills || [],
+              experience: newUser.applicantProfile.experienceYears,
+              resume: newUser.applicantProfile.resumeFileName,
+            } as any).catch(console.error);
+          }
+        })
+        .catch((err) => {
+          console.error(`[MongoDB] Error saving user ${newUser.email}:`, err);
+        });
+    }
+
+    this.users.set(id, newUser);
+    return { ...newUser };
+  }
+
+  /**
+   * Update password hash for a user and touch updatedAt
+   */
+  public updatePassword(userId: string, newPasswordHash: string): boolean {
+    const user = this.users.get(userId);
+    if (!user) return false;
+
+    user.passwordHash = newPasswordHash;
+    user.updatedAt = new Date().toISOString();
+
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      User.findByIdAndUpdate(userId, {
+        $set: { passwordHash: newPasswordHash, updatedAt: new Date() },
+      }).catch(console.error);
+    }
+
+    return true;
+  }
+
+  /**
+   * Update email verification state
+   */
+  public updateEmailVerification(userId: string, verified: boolean): boolean {
+    const user = this.users.get(userId);
+    if (!user) return false;
+
+    user.emailVerified = verified;
+    user.emailVerifiedAt = verified ? new Date().toISOString() : undefined;
+    if (verified && user.status === "PENDING_VERIFICATION") {
+      user.status = "ACTIVE";
+    }
+    user.updatedAt = new Date().toISOString();
+
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      User.findByIdAndUpdate(userId, {
+        $set: {
+          emailVerified: verified,
+          emailVerifiedAt: user.emailVerifiedAt,
+          status: user.status,
+          updatedAt: new Date(),
+        },
+      }).catch(console.error);
+    }
+
+    return true;
+  }
+
+  /**
+   * Record a successful login event (reset failed attempts, touch timestamps)
+   */
+  public recordLoginSuccess(userId: string): void {
+    const user = this.users.get(userId);
+    if (!user) return;
+
+    user.failedLoginAttempts = 0;
+    user.lockedUntil = null;
+    if (user.status === "LOCKED") {
+      user.status = "ACTIVE";
+    }
+    user.lastLoginAt = new Date().toISOString();
+    user.lastActive = new Date().toISOString();
+
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      User.findByIdAndUpdate(userId, {
+        $set: {
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          status: user.status,
+          lastLoginAt: user.lastLoginAt,
+          lastActive: user.lastActive,
+        },
+      }).catch(console.error);
+    }
+  }
+
+  /**
+   * Record a failed login attempt; temporarily lock account after 5 failed attempts
+   */
+  public recordLoginFailure(userId: string): { locked: boolean; lockedUntil?: string | undefined } {
+    const user = this.users.get(userId);
+    if (!user) return { locked: false };
+
+    user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+    let isLocked = false;
+    let lockUntil: string | undefined = undefined;
+
+    if (user.failedLoginAttempts >= 5) {
+      lockUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      user.lockedUntil = lockUntil;
+      user.status = "LOCKED";
+      isLocked = true;
+    }
+
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      User.findByIdAndUpdate(userId, {
+        $set: {
+          failedLoginAttempts: user.failedLoginAttempts,
+          lockedUntil: user.lockedUntil,
+          status: user.status,
+        },
+      }).catch(console.error);
+    }
+
+    return { locked: isLocked, lockedUntil: lockUntil };
+  }
+
+  /**
+   * Unlock a temporarily locked account
+   */
+  public unlockAccount(userId: string): boolean {
+    const user = this.users.get(userId);
+    if (!user) return false;
+
+    user.failedLoginAttempts = 0;
+    user.lockedUntil = null;
+    if (user.status === "LOCKED") {
+      user.status = "ACTIVE";
+    }
+
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      User.findByIdAndUpdate(userId, {
+        $set: {
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          status: user.status,
+        },
+      }).catch(console.error);
+    }
+
+    return true;
   }
 }
 

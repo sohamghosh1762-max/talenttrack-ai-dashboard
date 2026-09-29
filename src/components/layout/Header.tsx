@@ -57,10 +57,15 @@ export function Header({ searchQuery = "", onSearchChange, onUpgradeClick }: Hea
   const navigate = useNavigate();
 
   const displayName = user?.name || recruiterProfile.name;
+  const userNormRole = user?.role ? user.role.toUpperCase() : "";
   const displayRole =
-    user?.recruiterProfile?.jobTitle || user?.role === "recruiter"
+    user?.recruiterProfile?.jobTitle ||
+    (userNormRole === "RECRUITER"
       ? "Recruiter"
-      : recruiterProfile.role;
+      : userNormRole === "ADMIN"
+        ? "Admin"
+        : recruiterProfile.role);
+
   const displayEmail = user?.email || recruiterProfile.email;
   const displayDept =
     user?.recruiterProfile?.department ||

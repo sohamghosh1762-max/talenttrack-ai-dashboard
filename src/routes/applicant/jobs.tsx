@@ -1,8 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { Bookmark, Building, CheckCircle2, Filter, MapPin, Search, Sparkles } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  Bookmark,
+  Building,
+  CheckCircle2,
+  DollarSign,
+  Filter,
+  Loader2,
+  MapPin,
+  Search,
+  Sparkles,
+} from "lucide-react";
 import { ApplicantLayout } from "@/components/applicant/ApplicantLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +23,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { jobOpeningsData, type JobOpening } from "@/data/mockData";
+import { useJobs } from "@/hooks/api/useJobs";
+import type { IJob } from "@/server/types/job-types";
 
 export const Route = createFileRoute("/applicant/jobs")({
   head: () => ({
@@ -26,20 +37,19 @@ export const Route = createFileRoute("/applicant/jobs")({
 });
 
 function ApplicantJobsPage() {
-  const [jobs] = useState<JobOpening[]>(jobOpeningsData);
   const [search, setSearch] = useState("");
   const [selectedDept, setSelectedDept] = useState("All");
-  const [selectedJob, setSelectedJob] = useState<JobOpening | null>(null);
-  const [savedJobIds, setSavedJobIds] = useState<string[]>(["job-1", "job-4"]);
+  const [selectedJob, setSelectedJob] = useState<IJob | null>(null);
+  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [appliedSuccess, setAppliedSuccess] = useState(false);
 
-  const filteredJobs = jobs.filter((j) => {
-    const matchesSearch =
-      j.title.toLowerCase().includes(search.toLowerCase()) ||
-      j.location.toLowerCase().includes(search.toLowerCase());
-    const matchesDept = selectedDept === "All" || j.department === selectedDept;
-    return matchesSearch && matchesDept;
+  const { data: jobsResponse, isLoading, error } = useJobs({
+    status: "PUBLISHED",
+    search: search.trim() || undefined,
+    department: selectedDept === "All" ? undefined : selectedDept,
   });
+
+  const jobs: IJob[] = jobsResponse?.jobs || jobsResponse?.data || [];
 
   const toggleSave = (jobId: string) => {
     setSavedJobIds((prev) =>
@@ -85,77 +95,119 @@ function ApplicantJobsPage() {
               <option value="Research">Research</option>
               <option value="Design">Design</option>
               <option value="Infrastructure">Infrastructure</option>
+              <option value="Product">Product</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Analytics">Analytics</option>
             </select>
           </div>
         </div>
 
         {/* Job Listings Grid */}
-        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredJobs.map((job) => {
-            const isSaved = savedJobIds.includes(job.id);
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground text-xs gap-2">
+            <Loader2 className="size-8 animate-spin text-brand-blue" />
+            <span>Loading published job openings...</span>
+          </div>
+        ) : error ? (
+          <div className="dashboard-card p-8 text-center text-xs text-destructive">
+            Failed to load jobs: {(error as Error).message}
+          </div>
+        ) : jobs.length === 0 ? (
+          <div className="dashboard-card p-12 text-center text-xs text-muted-foreground">
+            No published jobs found matching your criteria.
+          </div>
+        ) : (
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+            {jobs.map((job) => {
+              const isSaved = savedJobIds.includes(job.id);
 
-            return (
-              <div
-                key={job.id}
-                className="dashboard-card flex flex-col justify-between p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <span className="rounded bg-surface-blue px-2 py-0.5 text-[9.5px] font-semibold text-brand-blue">
-                        {job.department}
-                      </span>
-                      <h3 className="text-sm font-bold text-foreground mt-1.5">{job.title}</h3>
+              return (
+                <div
+                  key={job.id}
+                  className="dashboard-card flex flex-col justify-between p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="rounded bg-surface-blue px-2 py-0.5 text-[9.5px] font-semibold text-brand-blue">
+                          {job.department}
+                        </span>
+                        <Link to="/applicant/jobs/$jobId" params={{ jobId: job.id }}>
+                          <h3 className="text-sm font-bold text-foreground mt-1.5 hover:text-brand-blue transition-colors">
+                            {job.title}
+                          </h3>
+                        </Link>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleSave(job.id)}
+                        className={`p-1.5 rounded-md transition-colors ${
+                          isSaved
+                            ? "text-brand-purple bg-surface-purple"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        aria-label="Save job"
+                      >
+                        <Bookmark className={`size-4 ${isSaved ? "fill-current" : ""}`} />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSave(job.id)}
-                      className={`p-1.5 rounded-md transition-colors ${
-                        isSaved
-                          ? "text-brand-purple bg-surface-purple"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                      aria-label="Save job"
-                    >
-                      <Bookmark className={`size-4 ${isSaved ? "fill-current" : ""}`} />
-                    </button>
+
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                      {job.description}
+                    </p>
+
+                    <div className="space-y-1 text-[11px] text-muted-foreground pt-1">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="size-3.5 text-muted-foreground shrink-0" />
+                        <span className="truncate">{job.location}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Building className="size-3.5 text-muted-foreground shrink-0" />
+                        <span>
+                          {job.employmentType} {job.experienceRequired ? `• ${job.experienceRequired}` : ""}
+                        </span>
+                      </div>
+                      {job.salaryRange && (job.salaryRange.min || job.salaryRange.max) && (
+                        <div className="flex items-center gap-1.5 text-brand-green font-medium">
+                          <DollarSign className="size-3.5 shrink-0" />
+                          <span>
+                            ${job.salaryRange.min?.toLocaleString()}
+                            {job.salaryRange.max ? ` - $${job.salaryRange.max?.toLocaleString()}` : "+"} / yr
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                    {job.description}
-                  </p>
-
-                  <div className="space-y-1 text-[11px] text-muted-foreground pt-1">
+                  <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3">
+                    <span className="flex items-center gap-1 text-[10.5px] font-bold text-brand-green">
+                      <Sparkles className="size-3" />
+                      90%+ Match
+                    </span>
                     <div className="flex items-center gap-1.5">
-                      <MapPin className="size-3.5 text-muted-foreground shrink-0" />
-                      <span className="truncate">{job.location}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Building className="size-3.5 text-muted-foreground shrink-0" />
-                      <span>
-                        {job.type} • {job.experience}
-                      </span>
+                      <Link to="/applicant/jobs/$jobId" params={{ jobId: job.id }}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7.5 px-2.5 text-xs font-semibold"
+                        >
+                          Details
+                        </Button>
+                      </Link>
+                      <Button
+                        size="sm"
+                        className="h-7.5 px-3 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold"
+                        onClick={() => setSelectedJob(job)}
+                      >
+                        Apply Now
+                      </Button>
                     </div>
                   </div>
                 </div>
-
-                <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3">
-                  <span className="flex items-center gap-1 text-[10.5px] font-bold text-brand-green">
-                    <Sparkles className="size-3" />
-                    90%+ Match
-                  </span>
-                  <Button
-                    size="sm"
-                    className="h-7.5 px-3 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold"
-                    onClick={() => setSelectedJob(job)}
-                  >
-                    Apply Now
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Apply Dialog */}
         <Dialog open={selectedJob !== null} onOpenChange={(open) => !open && setSelectedJob(null)}>
@@ -175,12 +227,16 @@ function ApplicantJobsPage() {
                   <CheckCircle2 className="size-6" />
                 </div>
                 <h4 className="text-sm font-bold text-foreground">Application Sent!</h4>
+                <p className="text-xs text-muted-foreground">
+                  Your profile and resume were submitted for {selectedJob?.title}.
+                </p>
               </div>
             ) : (
               <div className="space-y-3 py-2 text-xs">
                 <div className="rounded-lg bg-muted/40 p-3">
                   <div className="font-semibold text-foreground">{selectedJob?.title}</div>
                   <div className="text-muted-foreground text-[11px]">{selectedJob?.location}</div>
+                  <div className="text-[11px] text-brand-blue mt-1">{selectedJob?.department}</div>
                 </div>
                 <DialogFooter className="flex justify-end gap-2 pt-2">
                   <Button variant="outline" size="sm" onClick={() => setSelectedJob(null)}>
@@ -194,7 +250,7 @@ function ApplicantJobsPage() {
                       setTimeout(() => {
                         setAppliedSuccess(false);
                         setSelectedJob(null);
-                      }, 1000);
+                      }, 1200);
                     }}
                   >
                     Submit Application

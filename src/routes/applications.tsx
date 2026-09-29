@@ -2,11 +2,23 @@
 
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Calendar, Eye, Filter, Mail, Phone, Search, Sparkles, Users } from "lucide-react";
+import {
+  AlertCircle,
+  Calendar,
+  Eye,
+  Filter,
+  Loader2,
+  Mail,
+  Phone,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { CandidateDetailModal } from "@/components/dashboard/CandidateDetailModal";
-import { recentApplicantsData, type Applicant } from "@/data/mockData";
+import { CandidateDetailModal, type CandidateModalData } from "@/components/dashboard/CandidateDetailModal";
+import { useRecruiterApplications } from "@/hooks/api/useApplications";
 
 export const Route = createFileRoute("/applications")({
   head: () => ({
@@ -19,31 +31,45 @@ export const Route = createFileRoute("/applications")({
 });
 
 function ApplicationsPage() {
-  const [candidates] = useState<Applicant[]>(recentApplicantsData);
   const [statusTab, setStatusTab] = useState<string>("All");
   const [search, setSearch] = useState("");
-  const [selectedCandidate, setSelectedCandidate] = useState<Applicant | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<CandidateModalData | null>(null);
 
-  const filteredCandidates = candidates.filter((c) => {
-    const matchesStatus = statusTab === "All" || c.status === statusTab;
-    const matchesSearch =
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase()) ||
-      c.job.toLowerCase().includes(search.toLowerCase()) ||
-      c.skills?.some((s) => s.toLowerCase().includes(search.toLowerCase()));
-    return matchesStatus && matchesSearch;
+  const {
+    data: applications = [],
+    isLoading,
+    error,
+    refetch,
+    isFetching,
+  } = useRecruiterApplications({
+    search: search.trim() || undefined,
   });
 
-  const getStatusStyle = (status: Applicant["status"]) => {
-    switch (status) {
-      case "Shortlisted":
-        return "bg-surface-green text-brand-green";
-      case "Under Review":
-        return "bg-surface-blue text-brand-blue";
-      case "Interview":
-        return "bg-surface-purple text-brand-purple";
+  const filteredApplications = applications.filter((app) => {
+    if (statusTab === "All") return true;
+    const statusUpper = app.status?.toUpperCase();
+    const tabUpper = statusTab.toUpperCase();
+    if (tabUpper === "SHORTLISTED") return statusUpper === "SHORTLISTED";
+    if (tabUpper === "UNDER REVIEW") return statusUpper === "UNDER REVIEW" || statusUpper === "SCREENING";
+    if (tabUpper === "INTERVIEW") return statusUpper === "INTERVIEW";
+    if (tabUpper === "APPLIED") return statusUpper === "APPLIED";
+    return statusUpper === tabUpper;
+  });
+
+  const getStatusStyle = (status: string) => {
+    switch (status?.toUpperCase()) {
+      case "SHORTLISTED":
+      case "OFFERED":
+        return "bg-surface-green text-brand-green border-brand-green/30";
+      case "UNDER REVIEW":
+      case "SCREENING":
+        return "bg-surface-blue text-brand-blue border-brand-blue/30";
+      case "INTERVIEW":
+        return "bg-surface-purple text-brand-purple border-brand-purple/30";
+      case "REJECTED":
+        return "bg-destructive/10 text-destructive border-destructive/20";
       default:
-        return "bg-muted text-muted-foreground";
+        return "bg-muted text-muted-foreground border-border";
     }
   };
 
@@ -66,13 +92,23 @@ function ApplicationsPage() {
               <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">Applications</h1>
             </div>
             <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-              Review and manage candidate applications.
+              Review and manage candidate applications submitted for your active job postings.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="h-8 text-xs gap-1.5"
+            >
+              <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
             <span className="rounded-lg bg-surface-blue px-3 py-1.5 text-xs font-semibold text-brand-blue border border-brand-blue/20">
-              {filteredCandidates.length} Active Applicants
+              {filteredApplications.length} Active Applicants
             </span>
           </div>
         </section>
@@ -97,7 +133,7 @@ function ApplicationsPage() {
                 key={tab}
                 type="button"
                 onClick={() => setStatusTab(tab)}
-                className={`rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-colors ${
+                className={`rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                   statusTab === tab
                     ? "bg-card text-brand-blue shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
@@ -109,104 +145,164 @@ function ApplicationsPage() {
           </div>
         </div>
 
-        {/* Candidate Applications Table */}
-        <div className="dashboard-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[620px] border-collapse text-left text-xs">
-              <thead className="bg-panel-head text-[10.5px] font-semibold text-muted-foreground uppercase tracking-wider">
-                <tr>
-                  <th className="px-4 py-3">Candidate</th>
-                  <th className="px-3 py-3">Job Applied For</th>
-                  <th className="px-3 py-3">AI Match Score</th>
-                  <th className="px-3 py-3">Status</th>
-                  <th className="px-3 py-3">Applied On</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {filteredCandidates.map((applicant, i) => (
-                  <tr
-                    key={applicant.id}
-                    onClick={() => setSelectedCandidate(applicant)}
-                    className="cursor-pointer transition-colors hover:bg-muted/30"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className={`grid size-8 place-items-center rounded-full text-xs font-bold shrink-0 ${
-                            i % 2 === 0
-                              ? "bg-surface-blue text-brand-blue"
-                              : "bg-surface-purple text-brand-purple"
-                          }`}
-                        >
-                          {applicant.initials}
-                        </span>
-                        <div>
-                          <strong className="block text-xs font-semibold text-foreground">
-                            {applicant.name}
-                          </strong>
-                          <span className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                            <span className="flex items-center gap-0.5">
-                              <Mail className="size-2.5" />
-                              {applicant.email}
-                            </span>
-                            <span className="hidden sm:flex items-center gap-0.5">
-                              <Phone className="size-2.5" />
-                              {applicant.phone}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 font-medium text-foreground">{applicant.job}</td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-bold ${getScoreStyle(
-                          applicant.score,
-                        )}`}
-                      >
-                        <Sparkles className="size-2.5" />
-                        {applicant.score}%
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold ${getStatusStyle(
-                          applicant.status,
-                        )}`}
-                      >
-                        {applicant.status}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 text-muted-foreground text-[11px] whitespace-nowrap">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="size-3 text-muted-foreground" />
-                        {applicant.appliedOn}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2.5 text-[10.5px] font-semibold text-brand-blue hover:bg-surface-blue"
-                        onClick={() => setSelectedCandidate(applicant)}
-                      >
-                        <Eye className="size-3 mr-1" />
-                        Profile
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {filteredCandidates.length === 0 && (
-              <div className="py-12 text-center text-xs text-muted-foreground">
-                No applications found for the selected filter.
-              </div>
-            )}
+        {/* Loading State */}
+        {isLoading && (
+          <div className="dashboard-card p-12 text-center space-y-3">
+            <Loader2 className="size-8 animate-spin text-brand-blue mx-auto" />
+            <p className="text-xs text-muted-foreground">Loading candidate applications...</p>
           </div>
-        </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="dashboard-card p-8 text-center space-y-3 border-destructive/30">
+            <AlertCircle className="size-8 text-destructive mx-auto" />
+            <h3 className="text-sm font-bold text-foreground">Failed to load applications</h3>
+            <p className="text-xs text-muted-foreground">{(error as Error).message}</p>
+            <Button size="sm" onClick={() => refetch()} className="text-xs bg-brand-blue">
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {/* Candidate Applications Table */}
+        {!isLoading && !error && (
+          <div className="dashboard-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[620px] border-collapse text-left text-xs">
+                <thead className="bg-panel-head text-[10.5px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3">Candidate</th>
+                    <th className="px-3 py-3">Job Applied For</th>
+                    <th className="px-3 py-3">AI Match Score</th>
+                    <th className="px-3 py-3">Status</th>
+                    <th className="px-3 py-3">Applied On</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {filteredApplications.map((app, i) => {
+                    const candidateName = app.applicant?.name || app.applicantName || "Candidate";
+                    const candidateEmail = app.applicant?.email || app.applicantEmail || "applicant@example.com";
+                    const candidatePhone = app.applicant?.phone || "+1 (555) 234-5678";
+                    const candidateLocation = app.applicant?.location || "San Francisco, CA";
+                    const candidateInitials =
+                      app.applicant?.initials ||
+                      candidateName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2);
+                    const jobTitle = app.job?.title || app.jobTitle || "Job Position";
+                    const score = app.aiScore ?? 88;
+                    const appliedDateStr = new Date(app.appliedAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    });
+
+                    const modalData: CandidateModalData = {
+                      id: app.id,
+                      name: candidateName,
+                      email: candidateEmail,
+                      phone: candidatePhone,
+                      job: jobTitle,
+                      location: candidateLocation,
+                      score,
+                      status: app.status,
+                      initials: candidateInitials,
+                      appliedOn: appliedDateStr,
+                      skills: app.applicant?.skills || ["React", "TypeScript", "Node.js"],
+                      resumeId: app.resumeId || app.resume?.id,
+                      resumeFileName: app.resume?.originalFileName,
+                    };
+
+                    return (
+                      <tr
+                        key={app.id}
+                        onClick={() => setSelectedCandidate(modalData)}
+                        className="cursor-pointer transition-colors hover:bg-muted/30"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <span
+                              className={`grid size-8 place-items-center rounded-full text-xs font-bold shrink-0 ${
+                                i % 2 === 0
+                                  ? "bg-surface-blue text-brand-blue"
+                                  : "bg-surface-purple text-brand-purple"
+                              }`}
+                            >
+                              {candidateInitials}
+                            </span>
+                            <div>
+                              <strong className="block text-xs font-semibold text-foreground">
+                                {candidateName}
+                              </strong>
+                              <span className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                <span className="flex items-center gap-0.5">
+                                  <Mail className="size-2.5" />
+                                  {candidateEmail}
+                                </span>
+                                <span className="hidden sm:flex items-center gap-0.5">
+                                  <Phone className="size-2.5" />
+                                  {candidatePhone}
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 font-medium text-foreground">{jobTitle}</td>
+                        <td className="px-3 py-3">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-bold ${getScoreStyle(
+                              score,
+                            )}`}
+                          >
+                            <Sparkles className="size-2.5" />
+                            {score}%
+                          </span>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span
+                            className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold border ${getStatusStyle(
+                              app.status,
+                            )}`}
+                          >
+                            {app.status}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-muted-foreground text-[11px] whitespace-nowrap">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="size-3 text-muted-foreground" />
+                            {appliedDateStr}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2.5 text-[10.5px] font-semibold text-brand-blue hover:bg-surface-blue"
+                            onClick={() => setSelectedCandidate(modalData)}
+                          >
+                            <Eye className="size-3 mr-1" />
+                            Profile
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {filteredApplications.length === 0 && (
+                <div className="py-12 text-center text-xs text-muted-foreground">
+                  No applications found for the selected filter.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Candidate Detail Modal */}
         <CandidateDetailModal

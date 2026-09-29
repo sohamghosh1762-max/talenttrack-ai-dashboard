@@ -1,6 +1,7 @@
 import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { userRepository } from "../db/user-repository.ts";
+import { sessionRepository } from "../db/session-repository.ts";
 import { auditService } from "../services/audit-service.ts";
 import {
   handleGetUsers,
@@ -44,7 +45,7 @@ function createRequest(
 
 // Known test credentials from seed
 const ADMIN_TOKEN = "mock_admin_token"; // Admin user 65f1a2b3c4d5e6f7a8b9c001
-const ADMIN2_TOKEN = "65f1a2b3c4d5e6f7a8b9c002"; // Admin user Elena Rostova (direct ID token)
+const ADMIN2_TOKEN = "65f1a2b3c4d5e6f7a8b9c002"; // Admin user Elena Rostova
 const RECRUITER_TOKEN = "mock_recruiter_token"; // Recruiter user 65f1a2b3c4d5e6f7a8b9c003
 const APPLICANT_TOKEN = "mock_applicant_token"; // Applicant user 65f1a2b3c4d5e6f7a8b9c008
 
@@ -52,7 +53,14 @@ describe("ADMIN PHASE 2: User Management API Suite", () => {
   beforeEach(() => {
     // Reset DB state before every test to ensure strict test isolation
     userRepository.resetToDefaults();
+    sessionRepository.clearAll();
     auditService.clearLogs();
+
+    // Create active test sessions in session store
+    sessionRepository.createSession("65f1a2b3c4d5e6f7a8b9c001", ADMIN_TOKEN);
+    sessionRepository.createSession("65f1a2b3c4d5e6f7a8b9c002", ADMIN2_TOKEN);
+    sessionRepository.createSession("65f1a2b3c4d5e6f7a8b9c003", RECRUITER_TOKEN);
+    sessionRepository.createSession("65f1a2b3c4d5e6f7a8b9c008", APPLICANT_TOKEN);
   });
 
   // 1. Admin can retrieve users

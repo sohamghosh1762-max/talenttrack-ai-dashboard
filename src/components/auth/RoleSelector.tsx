@@ -50,7 +50,7 @@ export function RoleSelector({ value, onChange }: RoleSelectorProps) {
         </div>
       </button>
 
-      {/* Applicant / Job Seeker Option */}
+      {/* Applicant Option */}
       <button
         type="button"
         role="radio"
@@ -77,10 +77,10 @@ export function RoleSelector({ value, onChange }: RoleSelectorProps) {
               value === "applicant" ? "text-foreground" : "text-foreground/80"
             }`}
           >
-            I'm a Job Seeker
+            I'm an Applicant
           </strong>
           <span className="text-[11px] leading-tight text-muted-foreground block mt-0.5">
-            Find your next role & track your job applications.
+            Discover opportunities, apply for jobs, and track your applications.
           </span>
         </div>
       </button>

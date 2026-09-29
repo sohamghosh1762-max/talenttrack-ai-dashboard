@@ -15,5 +15,5 @@ export const Route = createFileRoute("/admin/activity")({
 });
 
 function AdminActivityPage() {
-  return <AdminLayout initialNav="System Activity" />;
+  return <AdminLayout initialNav="Audit Logs" />;
 }

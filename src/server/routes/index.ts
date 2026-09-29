@@ -1,4 +1,9 @@
 import { handleAdminApiRequest } from "./admin-users-handler.ts";
+import { handleAuthApiRequest } from "./auth-routes.ts";
+import { handleJobApiRequest } from "./job-routes.ts";
+import { handleApplicationApiRequest } from "./application-routes.ts";
+import { handleResumeApiRequest } from "./resume-routes.ts";
+import { getDatabaseStatus } from "../db/mongodb.ts";
 import { errorResponse, successResponse } from "../utils/response.ts";
 import { NotFoundError } from "../utils/errors.ts";
 import { createRequestLogger } from "../middleware/request-logger.ts";
@@ -21,9 +26,16 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
   try {
     // 1. Health check endpoint: GET /api/health
     if (pathname === "/api/health" && req.method === "GET") {
+      const dbStatus = getDatabaseStatus();
       const response = successResponse(
         {
           status: "healthy",
+          database: dbStatus.status,
+          databaseDetails: {
+            status: dbStatus.status,
+            readyState: dbStatus.readyState,
+            databaseName: dbStatus.name || "talenttrack",
+          },
           timestamp: new Date().toISOString(),
           version: "1.0.0",
           service: "talenttrack-ai-api",
@@ -34,7 +46,16 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       return response;
     }
 
-    // 2. Admin routes: /api/admin/*
+    // 2. Auth routes: /api/auth/*
+    if (pathname.startsWith("/api/auth")) {
+      const response = await handleAuthApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 3. Admin routes: /api/admin/*
     if (pathname.startsWith("/api/admin")) {
       const response = await handleAdminApiRequest(req);
       if (response) {
@@ -43,7 +64,34 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 3. Fallthrough for unhandled /api/* route
+    // 4. Job routes: /api/jobs/*
+    if (pathname.startsWith("/api/jobs")) {
+      const response = await handleJobApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 5. Resume routes: /api/resumes/*
+    if (pathname.startsWith("/api/resumes")) {
+      const response = await handleResumeApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 6. Application routes: /api/applications/* and /api/recruiter/*
+    if (pathname.startsWith("/api/applications") || pathname.startsWith("/api/recruiter")) {
+      const response = await handleApplicationApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 7. Fallthrough for unhandled /api/* route
     const notFoundErr = new NotFoundError(`API endpoint not found: ${req.method} ${pathname}`);
     const response = errorResponse(notFoundErr, 404);
     requestLogger(req, startTime, 404, notFoundErr.message);
@@ -61,3 +109,7 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
 }
 
 export * from "./admin-users-handler.ts";
+export * from "./auth-routes.ts";
+export * from "./job-routes.ts";
+export * from "./application-routes.ts";
+export * from "./resume-routes.ts";

@@ -24,7 +24,5 @@ export const Route = createFileRoute("/unauthorized")({
 function UnauthorizedPage() {
   const { from, requiredRole } = Route.useSearch();
 
-  return (
-    <UnauthorizedView attemptedPath={from || "/admin"} requiredRole={requiredRole || "ADMIN"} />
-  );
+  return <UnauthorizedView attemptedPath={from} requiredRole={requiredRole} />;
 }

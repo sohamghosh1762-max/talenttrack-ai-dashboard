@@ -28,6 +28,7 @@ import { useAdminDashboardData, mapDateRangeToTimeframe } from "@/hooks/use-admi
 import { AdminActivityView } from "./AdminActivityView";
 import { AdminReportsView } from "./AdminReportsView";
 import { AdminSettingsView } from "./AdminSettingsView";
+import { AdminOrganizationsView } from "./AdminOrganizationsView";
 
 interface AdminDashboardViewProps {
   activeNav?: AdminNavItemKey;
@@ -97,6 +98,8 @@ export function AdminDashboardView({
         {/* View content switch */}
         {activeNav === "Users" ? (
           <AdminUsersView />
+        ) : activeNav === "Organizations" || activeNav === "Companies" ? (
+          <AdminOrganizationsView />
         ) : activeNav === "Recruiters" || activeNav === "Applicants" ? (
           <div className="rounded-xl border border-slate-200/80 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-3">
             <div className="flex size-12 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/50 mx-auto">
@@ -114,33 +117,6 @@ export function AdminDashboardView({
               Use the <strong>Users</strong> section to manage all platform accounts in the
               meantime.
             </p>
-          </div>
-        ) : activeNav === "Companies" ? (
-          <div className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-            <div className="flex items-center gap-2">
-              <Building2 className="size-5 text-blue-600" />
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                Registered Companies & Employers
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500">
-              Audit corporate domains, active recruiter seats, and billing tiers across enterprise
-              organizations on TalentTrack AI.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="rounded-lg border border-slate-200 p-4 bg-slate-50/50">
-                <span className="text-xs text-slate-500 block">Verified Companies</span>
-                <span className="text-2xl font-bold text-slate-900">142</span>
-              </div>
-              <div className="rounded-lg border border-slate-200 p-4 bg-slate-50/50">
-                <span className="text-xs text-slate-500 block">Pending Verification</span>
-                <span className="text-2xl font-bold text-amber-600">6</span>
-              </div>
-              <div className="rounded-lg border border-slate-200 p-4 bg-slate-50/50">
-                <span className="text-xs text-slate-500 block">Avg Recruiters / Company</span>
-                <span className="text-2xl font-bold text-slate-900">2.4</span>
-              </div>
-            </div>
           </div>
         ) : activeNav === "Jobs" ? (
           <div className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
@@ -175,7 +151,7 @@ export function AdminDashboardView({
           </div>
         ) : activeNav === "Reports" ? (
           <AdminReportsView />
-        ) : activeNav === "System Activity" ? (
+        ) : activeNav === "Audit Logs" || activeNav === "System Activity" ? (
           <AdminActivityView />
         ) : (
           <AdminSettingsView />

@@ -74,5 +74,10 @@ export default defineConfig({
   },
   vite: {
     plugins: [apiDevPlugin()],
+    resolve: {
+      alias: {
+        "punycode/": "punycode",
+      },
+    },
   },
 });

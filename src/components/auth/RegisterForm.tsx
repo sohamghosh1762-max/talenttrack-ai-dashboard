@@ -19,12 +19,14 @@ import { Button } from "@/components/ui/button";
 import { RoleSelector } from "./RoleSelector";
 import { useAuth } from "@/auth/AuthProvider";
 import type { UserRole } from "@/auth/auth-types";
+import { getDefaultRouteForRole } from "@/auth/route-access";
 
 interface RegisterFormProps {
   initialRole?: UserRole;
+  onChangeRole?: () => void;
 }
 
-export function RegisterForm({ initialRole = "recruiter" }: RegisterFormProps) {
+export function RegisterForm({ initialRole = "recruiter", onChangeRole }: RegisterFormProps) {
   const { register, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -90,7 +92,7 @@ export function RegisterForm({ initialRole = "recruiter" }: RegisterFormProps) {
     if (res.success && res.user) {
       setIsSuccess(true);
       setTimeout(() => {
-        const dest = role === "recruiter" ? "/dashboard" : "/applicant";
+        const dest = getDefaultRouteForRole(res.user?.role || role);
         navigate({ to: dest });
       }, 1000);
     } else {
@@ -100,12 +102,26 @@ export function RegisterForm({ initialRole = "recruiter" }: RegisterFormProps) {
 
   return (
     <div className="w-full max-w-lg mx-auto space-y-5">
+      {onChangeRole && (
+        <div>
+          <button
+            type="button"
+            onClick={onChangeRole}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-blue hover:underline"
+          >
+            ← Choose a different account type
+          </button>
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-          Create your account
+          Create your {role === "recruiter" ? "Recruiter" : "Applicant"} account
         </h1>
         <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-          Join TalentTrack AI to experience smarter candidate screening.
+          {role === "recruiter"
+            ? "Create job postings, screen resumes with AI, and manage candidate pipelines."
+            : "Discover career opportunities, apply for roles, and track applications in real-time."}
         </p>
       </div>
 
@@ -316,7 +332,7 @@ export function RegisterForm({ initialRole = "recruiter" }: RegisterFormProps) {
           ) : (
             <>
               <Sparkles className="size-3.5" />
-              Create {role === "recruiter" ? "Recruiter" : "Job Seeker"} Account
+              Create {role === "recruiter" ? "Recruiter" : "Applicant"} Account
               <ArrowRight className="size-3.5" />
             </>
           )}

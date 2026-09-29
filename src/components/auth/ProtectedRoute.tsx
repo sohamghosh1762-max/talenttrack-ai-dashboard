@@ -1,16 +1,15 @@
-"use client";
-
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate, useLocation } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import type { UserRole } from "@/auth/auth-types";
+import { isRoleAllowed, getRouteAccessRule } from "@/auth/route-access";
 import { UnauthorizedView } from "./UnauthorizedView";
 import { toast } from "sonner";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  allowedRoles?: UserRole[];
+  allowedRoles?: (UserRole | string)[];
   fallback?: ReactNode;
 }
 
@@ -30,12 +29,18 @@ export function ProtectedRoute({ children, allowedRoles, fallback }: ProtectedRo
       toast.error("Your session has expired. Please sign in again.");
     }
 
-    // 1. Not authenticated (401) -> Redirect to /login
+    // 1. Not authenticated (401) -> Redirect to /login with route-aware intent
     if (!isAuthenticated || !user) {
+      const isAdministrative = location.pathname.startsWith("/admin");
+      const isApplicant = location.pathname.startsWith("/applicant");
+      const targetRole = isAdministrative ? "admin" : isApplicant ? "applicant" : "recruiter";
+
       navigate({
         to: "/login",
         search: {
           redirect: location.pathname,
+          role: targetRole,
+          intent: targetRole,
         } as Record<string, string>,
       });
       return;
@@ -56,7 +61,7 @@ export function ProtectedRoute({ children, allowedRoles, fallback }: ProtectedRo
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="size-8 text-brand-blue animate-spin" />
           <span className="text-xs text-muted-foreground font-medium">
-            Verifying administrative authorization...
+            Verifying session authorization...
           </span>
         </div>
       </div>
@@ -69,16 +74,21 @@ export function ProtectedRoute({ children, allowedRoles, fallback }: ProtectedRo
   }
 
   // 2. Role restriction check (403 Forbidden)
-  if (allowedRoles && allowedRoles.length > 0) {
-    const isRoleAllowed = role && allowedRoles.includes(role);
-    if (!isRoleAllowed) {
+  // Determine effective allowed roles (either explicitly provided or from centralized route configuration)
+  const routeRule = getRouteAccessRule(location.pathname);
+  const effectiveAllowedRoles =
+    allowedRoles && allowedRoles.length > 0 ? allowedRoles : routeRule?.allowedRoles;
+
+  if (effectiveAllowedRoles && effectiveAllowedRoles.length > 0) {
+    const isAllowed = isRoleAllowed(role, effectiveAllowedRoles);
+    if (!isAllowed) {
       if (fallback) {
         return <>{fallback}</>;
       }
       return (
         <UnauthorizedView
           attemptedPath={location.pathname}
-          requiredRole={allowedRoles.join(" or ")}
+          requiredRole={effectiveAllowedRoles.join(" or ")}
         />
       );
     }

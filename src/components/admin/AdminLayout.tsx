@@ -4,6 +4,7 @@ import { AdminSidebar, type AdminNavItemKey } from "./AdminSidebar";
 import { AdminHeader } from "./AdminHeader";
 import { AdminDashboardView } from "./AdminDashboardView";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { USER_ROLES } from "@/auth/route-access";
 
 export function AdminLayout({ initialNav = "Dashboard" }: { initialNav?: AdminNavItemKey }) {
   const location = useLocation();
@@ -12,13 +13,15 @@ export function AdminLayout({ initialNav = "Dashboard" }: { initialNav?: AdminNa
   const [activeNav, setActiveNav] = useState<AdminNavItemKey>(
     location.pathname === "/admin/users"
       ? "Users"
-      : location.pathname === "/admin/activity"
-        ? "System Activity"
-        : location.pathname === "/admin/reports"
-          ? "Reports"
-          : location.pathname === "/admin/settings"
-            ? "Settings"
-            : initialNav,
+      : location.pathname === "/admin/organizations"
+        ? "Organizations"
+        : location.pathname === "/admin/activity"
+          ? "Audit Logs"
+          : location.pathname === "/admin/reports"
+            ? "Reports"
+            : location.pathname === "/admin/settings"
+              ? "Settings"
+              : initialNav,
   );
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,7 +30,12 @@ export function AdminLayout({ initialNav = "Dashboard" }: { initialNav?: AdminNa
     setActiveNav(nav);
     if (nav === "Users" && location.pathname !== "/admin/users") {
       void navigate({ to: "/admin/users" });
-    } else if (nav === "System Activity" && location.pathname !== "/admin/activity") {
+    } else if (nav === "Organizations" && location.pathname !== "/admin/organizations") {
+      void navigate({ to: "/admin/organizations" });
+    } else if (
+      (nav === "Audit Logs" || nav === "System Activity") &&
+      location.pathname !== "/admin/activity"
+    ) {
       void navigate({ to: "/admin/activity" });
     } else if (nav === "Reports" && location.pathname !== "/admin/reports") {
       void navigate({ to: "/admin/reports" });
@@ -41,32 +49,36 @@ export function AdminLayout({ initialNav = "Dashboard" }: { initialNav?: AdminNa
   useEffect(() => {
     if (location.pathname === "/admin/users") {
       setActiveNav("Users");
+    } else if (location.pathname === "/admin/organizations") {
+      setActiveNav("Organizations");
     } else if (location.pathname === "/admin/activity") {
-      setActiveNav("System Activity");
+      setActiveNav("Audit Logs");
     } else if (location.pathname === "/admin/reports") {
       setActiveNav("Reports");
     } else if (location.pathname === "/admin/settings") {
       setActiveNav("Settings");
     } else if (location.pathname === "/admin") {
-      setActiveNav(initialNav);
+      setActiveNav("Dashboard");
     }
-  }, [location.pathname, initialNav]);
+  }, [location.pathname]);
 
   const pageSubtitles: Record<AdminNavItemKey, string> = {
     Dashboard: "Monitor and manage the TalentTrack AI platform.",
     Users: "Platform user accounts, roles, and status administration.",
+    Organizations: "Manage multi-tenant enterprise accounts, seats, and corporate domains.",
+    "Audit Logs": "Chronological audit log of all administrative and platform actions.",
+    Reports: "Generate compliance, diversity, and operational metric summaries.",
+    Settings: "Configure platform tolerances, notification preferences, and policies.",
+    "System Activity": "Chronological audit log of all administrative and platform actions.",
+    Companies: "Manage multi-tenant enterprise accounts, seats, and corporate domains.",
     Recruiters: "Audit verified recruiter permissions and employer affiliations.",
     Applicants: "Review registered candidates and application activity.",
-    Companies: "Manage enterprise accounts, departments, and corporate domains.",
     Jobs: "Oversee all active, draft, and closed job listings.",
     Applications: "Track platform-wide application pipeline throughput.",
-    Reports: "Generate compliance, diversity, and operational metric summaries.",
-    "System Activity": "Chronological audit log of all administrative and platform actions.",
-    Settings: "Configure platform tolerances, notification preferences, and policies.",
   };
 
   return (
-    <ProtectedRoute allowedRoles={["admin"]}>
+    <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN]}>
       <div className="flex min-h-screen w-full bg-slate-50/70 font-sans text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
         {/* Fixed Left Sidebar for Desktop */}
         <div className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:w-64 lg:flex-col">

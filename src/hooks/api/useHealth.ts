@@ -3,6 +3,7 @@ import { apiClient } from "../../lib/api/index.ts";
 
 export interface HealthStatus {
   status: string;
+  database?: string;
   timestamp: string;
   version: string;
   service: string;

@@ -10,34 +10,56 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as R403RouteImport } from './routes/403'
+import { Route as AccountTypeRouteImport } from './routes/account-type'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AiScreeningRouteImport } from './routes/ai-screening'
 import { Route as ApplicationsRouteImport } from './routes/applications'
 import { Route as CandidatesRouteImport } from './routes/candidates'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as InterviewsRouteImport } from './routes/interviews'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as UnauthorizedRouteImport } from './routes/unauthorized'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AdminActivityRouteImport } from './routes/admin/activity'
+import { Route as AdminOrganizationsRouteImport } from './routes/admin/organizations'
 import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ApplicantIndexRouteImport } from './routes/applicant/index'
 import { Route as ApplicantApplicationsRouteImport } from './routes/applicant/applications'
+import { Route as ApplicantInterviewsRouteImport } from './routes/applicant/interviews'
 import { Route as ApplicantJobsRouteImport } from './routes/applicant/jobs'
 import { Route as ApplicantMessagesRouteImport } from './routes/applicant/messages'
 import { Route as ApplicantProfileRouteImport } from './routes/applicant/profile'
 import { Route as ApplicantSavedJobsRouteImport } from './routes/applicant/saved-jobs'
 import { Route as ApplicantSettingsRouteImport } from './routes/applicant/settings'
+import { Route as CandidatesCandidateIdRouteImport } from './routes/candidates.$candidateId'
+import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
+import { Route as ApplicantJobsJobIdRouteImport } from './routes/applicant/jobs.$jobId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const R403Route = R403RouteImport.update({
+  id: '/403',
+  path: '/403',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountTypeRoute = AccountTypeRouteImport.update({
+  id: '/account-type',
+  path: '/account-type',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -63,6 +85,16 @@ const CandidatesRoute = CandidatesRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InterviewsRoute = InterviewsRouteImport.update({
+  id: '/interviews',
+  path: '/interviews',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JobsRoute = JobsRouteImport.update({
@@ -95,9 +127,19 @@ const ReportsRoute = ReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UnauthorizedRoute = UnauthorizedRouteImport.update({
@@ -105,9 +147,19 @@ const UnauthorizedRoute = UnauthorizedRouteImport.update({
   path: '/unauthorized',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminActivityRoute = AdminActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOrganizationsRoute = AdminOrganizationsRouteImport.update({
+  id: '/organizations',
+  path: '/organizations',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
@@ -135,6 +187,11 @@ const ApplicantApplicationsRoute = ApplicantApplicationsRouteImport.update({
   path: '/applicant/applications',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApplicantInterviewsRoute = ApplicantInterviewsRouteImport.update({
+  id: '/applicant/interviews',
+  path: '/applicant/interviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApplicantJobsRoute = ApplicantJobsRouteImport.update({
   id: '/applicant/jobs',
   path: '/applicant/jobs',
@@ -160,190 +217,285 @@ const ApplicantSettingsRoute = ApplicantSettingsRouteImport.update({
   path: '/applicant/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CandidatesCandidateIdRoute = CandidatesCandidateIdRouteImport.update({
+  id: '/$candidateId',
+  path: '/$candidateId',
+  getParentRoute: () => CandidatesRoute,
+} as any)
+const JobsJobIdRoute = JobsJobIdRouteImport.update({
+  id: '/$jobId',
+  path: '/$jobId',
+  getParentRoute: () => JobsRoute,
+} as any)
+const ApplicantJobsJobIdRoute = ApplicantJobsJobIdRouteImport.update({
+  id: '/$jobId',
+  path: '/$jobId',
+  getParentRoute: () => ApplicantJobsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/403': typeof R403Route
+  '/account-type': typeof AccountTypeRoute
   '/admin': typeof AdminRouteWithChildren
   '/ai-screening': typeof AiScreeningRoute
   '/applications': typeof ApplicationsRoute
-  '/candidates': typeof CandidatesRoute
+  '/candidates': typeof CandidatesRouteWithChildren
   '/dashboard': typeof DashboardRoute
-  '/jobs': typeof JobsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/interviews': typeof InterviewsRoute
+  '/jobs': typeof JobsRouteWithChildren
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/pipeline': typeof PipelineRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/unauthorized': typeof UnauthorizedRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/activity': typeof AdminActivityRoute
+  '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/applicant/applications': typeof ApplicantApplicationsRoute
-  '/applicant/jobs': typeof ApplicantJobsRoute
+  '/applicant/interviews': typeof ApplicantInterviewsRoute
+  '/applicant/jobs': typeof ApplicantJobsRouteWithChildren
   '/applicant/messages': typeof ApplicantMessagesRoute
   '/applicant/profile': typeof ApplicantProfileRoute
   '/applicant/saved-jobs': typeof ApplicantSavedJobsRoute
   '/applicant/settings': typeof ApplicantSettingsRoute
+  '/candidates/$candidateId': typeof CandidatesCandidateIdRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
   '/applicant/': typeof ApplicantIndexRoute
+  '/applicant/jobs/$jobId': typeof ApplicantJobsJobIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/403': typeof R403Route
+  '/account-type': typeof AccountTypeRoute
   '/admin': typeof AdminRouteWithChildren
   '/ai-screening': typeof AiScreeningRoute
   '/applications': typeof ApplicationsRoute
-  '/candidates': typeof CandidatesRoute
+  '/candidates': typeof CandidatesRouteWithChildren
   '/dashboard': typeof DashboardRoute
-  '/jobs': typeof JobsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/interviews': typeof InterviewsRoute
+  '/jobs': typeof JobsRouteWithChildren
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/pipeline': typeof PipelineRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/unauthorized': typeof UnauthorizedRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/activity': typeof AdminActivityRoute
+  '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/applicant/applications': typeof ApplicantApplicationsRoute
-  '/applicant/jobs': typeof ApplicantJobsRoute
+  '/applicant/interviews': typeof ApplicantInterviewsRoute
+  '/applicant/jobs': typeof ApplicantJobsRouteWithChildren
   '/applicant/messages': typeof ApplicantMessagesRoute
   '/applicant/profile': typeof ApplicantProfileRoute
   '/applicant/saved-jobs': typeof ApplicantSavedJobsRoute
   '/applicant/settings': typeof ApplicantSettingsRoute
+  '/candidates/$candidateId': typeof CandidatesCandidateIdRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
   '/applicant': typeof ApplicantIndexRoute
+  '/applicant/jobs/$jobId': typeof ApplicantJobsJobIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/403': typeof R403Route
+  '/account-type': typeof AccountTypeRoute
   '/admin': typeof AdminRouteWithChildren
   '/ai-screening': typeof AiScreeningRoute
   '/applications': typeof ApplicationsRoute
-  '/candidates': typeof CandidatesRoute
+  '/candidates': typeof CandidatesRouteWithChildren
   '/dashboard': typeof DashboardRoute
-  '/jobs': typeof JobsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/interviews': typeof InterviewsRoute
+  '/jobs': typeof JobsRouteWithChildren
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/pipeline': typeof PipelineRoute
   '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/unauthorized': typeof UnauthorizedRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/activity': typeof AdminActivityRoute
+  '/admin/organizations': typeof AdminOrganizationsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/applicant/applications': typeof ApplicantApplicationsRoute
-  '/applicant/jobs': typeof ApplicantJobsRoute
+  '/applicant/interviews': typeof ApplicantInterviewsRoute
+  '/applicant/jobs': typeof ApplicantJobsRouteWithChildren
   '/applicant/messages': typeof ApplicantMessagesRoute
   '/applicant/profile': typeof ApplicantProfileRoute
   '/applicant/saved-jobs': typeof ApplicantSavedJobsRoute
   '/applicant/settings': typeof ApplicantSettingsRoute
+  '/candidates/$candidateId': typeof CandidatesCandidateIdRoute
+  '/jobs/$jobId': typeof JobsJobIdRoute
   '/applicant/': typeof ApplicantIndexRoute
+  '/applicant/jobs/$jobId': typeof ApplicantJobsJobIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/403'
+    | '/account-type'
     | '/admin'
     | '/ai-screening'
     | '/applications'
     | '/candidates'
     | '/dashboard'
+    | '/forgot-password'
+    | '/interviews'
     | '/jobs'
     | '/login'
     | '/messages'
     | '/pipeline'
     | '/register'
     | '/reports'
+    | '/reset-password'
     | '/settings'
+    | '/signup'
     | '/unauthorized'
+    | '/verify-email'
     | '/admin/activity'
+    | '/admin/organizations'
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/users'
     | '/applicant/applications'
+    | '/applicant/interviews'
     | '/applicant/jobs'
     | '/applicant/messages'
     | '/applicant/profile'
     | '/applicant/saved-jobs'
     | '/applicant/settings'
+    | '/candidates/$candidateId'
+    | '/jobs/$jobId'
     | '/applicant/'
+    | '/applicant/jobs/$jobId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/403'
+    | '/account-type'
     | '/admin'
     | '/ai-screening'
     | '/applications'
     | '/candidates'
     | '/dashboard'
+    | '/forgot-password'
+    | '/interviews'
     | '/jobs'
     | '/login'
     | '/messages'
     | '/pipeline'
     | '/register'
     | '/reports'
+    | '/reset-password'
     | '/settings'
+    | '/signup'
     | '/unauthorized'
+    | '/verify-email'
     | '/admin/activity'
+    | '/admin/organizations'
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/users'
     | '/applicant/applications'
+    | '/applicant/interviews'
     | '/applicant/jobs'
     | '/applicant/messages'
     | '/applicant/profile'
     | '/applicant/saved-jobs'
     | '/applicant/settings'
+    | '/candidates/$candidateId'
+    | '/jobs/$jobId'
     | '/applicant'
+    | '/applicant/jobs/$jobId'
   id:
     | '__root__'
     | '/'
+    | '/403'
+    | '/account-type'
     | '/admin'
     | '/ai-screening'
     | '/applications'
     | '/candidates'
     | '/dashboard'
+    | '/forgot-password'
+    | '/interviews'
     | '/jobs'
     | '/login'
     | '/messages'
     | '/pipeline'
     | '/register'
     | '/reports'
+    | '/reset-password'
     | '/settings'
+    | '/signup'
     | '/unauthorized'
+    | '/verify-email'
     | '/admin/activity'
+    | '/admin/organizations'
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/users'
     | '/applicant/applications'
+    | '/applicant/interviews'
     | '/applicant/jobs'
     | '/applicant/messages'
     | '/applicant/profile'
     | '/applicant/saved-jobs'
     | '/applicant/settings'
+    | '/candidates/$candidateId'
+    | '/jobs/$jobId'
     | '/applicant/'
+    | '/applicant/jobs/$jobId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  R403Route: typeof R403Route
+  AccountTypeRoute: typeof AccountTypeRoute
   AdminRoute: typeof AdminRouteWithChildren
   AiScreeningRoute: typeof AiScreeningRoute
   ApplicationsRoute: typeof ApplicationsRoute
-  CandidatesRoute: typeof CandidatesRoute
+  CandidatesRoute: typeof CandidatesRouteWithChildren
   DashboardRoute: typeof DashboardRoute
-  JobsRoute: typeof JobsRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  InterviewsRoute: typeof InterviewsRoute
+  JobsRoute: typeof JobsRouteWithChildren
   LoginRoute: typeof LoginRoute
   MessagesRoute: typeof MessagesRoute
   PipelineRoute: typeof PipelineRoute
   RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
+  SignupRoute: typeof SignupRoute
   UnauthorizedRoute: typeof UnauthorizedRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   ApplicantApplicationsRoute: typeof ApplicantApplicationsRoute
-  ApplicantJobsRoute: typeof ApplicantJobsRoute
+  ApplicantInterviewsRoute: typeof ApplicantInterviewsRoute
+  ApplicantJobsRoute: typeof ApplicantJobsRouteWithChildren
   ApplicantMessagesRoute: typeof ApplicantMessagesRoute
   ApplicantProfileRoute: typeof ApplicantProfileRoute
   ApplicantSavedJobsRoute: typeof ApplicantSavedJobsRoute
@@ -358,6 +510,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/403': {
+      id: '/403'
+      path: '/403'
+      fullPath: '/403'
+      preLoaderRoute: typeof R403RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account-type': {
+      id: '/account-type'
+      path: '/account-type'
+      fullPath: '/account-type'
+      preLoaderRoute: typeof AccountTypeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -393,6 +559,20 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interviews': {
+      id: '/interviews'
+      path: '/interviews'
+      fullPath: '/interviews'
+      preLoaderRoute: typeof InterviewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/jobs': {
@@ -437,11 +617,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/unauthorized': {
@@ -451,11 +645,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnauthorizedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/activity': {
       id: '/admin/activity'
       path: '/activity'
       fullPath: '/admin/activity'
       preLoaderRoute: typeof AdminActivityRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/organizations': {
+      id: '/admin/organizations'
+      path: '/organizations'
+      fullPath: '/admin/organizations'
+      preLoaderRoute: typeof AdminOrganizationsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/reports': {
@@ -493,6 +701,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApplicantApplicationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/applicant/interviews': {
+      id: '/applicant/interviews'
+      path: '/applicant/interviews'
+      fullPath: '/applicant/interviews'
+      preLoaderRoute: typeof ApplicantInterviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/applicant/jobs': {
       id: '/applicant/jobs'
       path: '/applicant/jobs'
@@ -528,11 +743,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApplicantSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/candidates/$candidateId': {
+      id: '/candidates/$candidateId'
+      path: '/$candidateId'
+      fullPath: '/candidates/$candidateId'
+      preLoaderRoute: typeof CandidatesCandidateIdRouteImport
+      parentRoute: typeof CandidatesRoute
+    }
+    '/jobs/$jobId': {
+      id: '/jobs/$jobId'
+      path: '/$jobId'
+      fullPath: '/jobs/$jobId'
+      preLoaderRoute: typeof JobsJobIdRouteImport
+      parentRoute: typeof JobsRoute
+    }
+    '/applicant/jobs/$jobId': {
+      id: '/applicant/jobs/$jobId'
+      path: '/$jobId'
+      fullPath: '/applicant/jobs/$jobId'
+      preLoaderRoute: typeof ApplicantJobsJobIdRouteImport
+      parentRoute: typeof ApplicantJobsRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
   AdminActivityRoute: typeof AdminActivityRoute
+  AdminOrganizationsRoute: typeof AdminOrganizationsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -540,6 +777,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminActivityRoute: AdminActivityRoute,
+  AdminOrganizationsRoute: AdminOrganizationsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
@@ -547,23 +785,65 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface CandidatesRouteChildren {
+  CandidatesCandidateIdRoute: typeof CandidatesCandidateIdRoute
+}
+
+const CandidatesRouteChildren: CandidatesRouteChildren = {
+  CandidatesCandidateIdRoute: CandidatesCandidateIdRoute,
+}
+
+const CandidatesRouteWithChildren = CandidatesRoute._addFileChildren(
+  CandidatesRouteChildren,
+)
+
+interface JobsRouteChildren {
+  JobsJobIdRoute: typeof JobsJobIdRoute
+}
+
+const JobsRouteChildren: JobsRouteChildren = {
+  JobsJobIdRoute: JobsJobIdRoute,
+}
+
+const JobsRouteWithChildren = JobsRoute._addFileChildren(JobsRouteChildren)
+
+interface ApplicantJobsRouteChildren {
+  ApplicantJobsJobIdRoute: typeof ApplicantJobsJobIdRoute
+}
+
+const ApplicantJobsRouteChildren: ApplicantJobsRouteChildren = {
+  ApplicantJobsJobIdRoute: ApplicantJobsJobIdRoute,
+}
+
+const ApplicantJobsRouteWithChildren = ApplicantJobsRoute._addFileChildren(
+  ApplicantJobsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  R403Route: R403Route,
+  AccountTypeRoute: AccountTypeRoute,
   AdminRoute: AdminRouteWithChildren,
   AiScreeningRoute: AiScreeningRoute,
   ApplicationsRoute: ApplicationsRoute,
-  CandidatesRoute: CandidatesRoute,
+  CandidatesRoute: CandidatesRouteWithChildren,
   DashboardRoute: DashboardRoute,
-  JobsRoute: JobsRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  InterviewsRoute: InterviewsRoute,
+  JobsRoute: JobsRouteWithChildren,
   LoginRoute: LoginRoute,
   MessagesRoute: MessagesRoute,
   PipelineRoute: PipelineRoute,
   RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
+  SignupRoute: SignupRoute,
   UnauthorizedRoute: UnauthorizedRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   ApplicantApplicationsRoute: ApplicantApplicationsRoute,
-  ApplicantJobsRoute: ApplicantJobsRoute,
+  ApplicantInterviewsRoute: ApplicantInterviewsRoute,
+  ApplicantJobsRoute: ApplicantJobsRouteWithChildren,
   ApplicantMessagesRoute: ApplicantMessagesRoute,
   ApplicantProfileRoute: ApplicantProfileRoute,
   ApplicantSavedJobsRoute: ApplicantSavedJobsRoute,

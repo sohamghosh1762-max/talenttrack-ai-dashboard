@@ -1,8 +1,10 @@
 export * from "./common.ts";
+export * from "./auth.ts";
+export * from "./job.ts";
 
 /**
  * Phase 2+ Module Validator Export Registry:
- * - Phase 2: Auth validators (loginSchema, registerSchema, sessionSchema)
+ * - Phase 2: Auth validators (loginSchema, registerSchema, sessionSchema) - COMPLETED
  * - Phase 3: Organization validators (orgCreateSchema, orgUpdateSchema)
  * - Phase 4: Job & Candidate validators (jobCreateSchema, candidateSchema)
  * - Phase 5: Resume validators (resumeUploadSchema, parserSchema)
