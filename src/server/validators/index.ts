@@ -1,6 +1,7 @@
 export * from "./common.ts";
 export * from "./auth.ts";
 export * from "./job.ts";
+export * from "./application.ts";
 
 /**
  * Phase 2+ Module Validator Export Registry:
@@ -8,7 +9,7 @@ export * from "./job.ts";
  * - Phase 3: Organization validators (orgCreateSchema, orgUpdateSchema)
  * - Phase 4: Job & Candidate validators (jobCreateSchema, candidateSchema)
  * - Phase 5: Resume validators (resumeUploadSchema, parserSchema)
- * - Phase 6: Application & Pipeline validators (applicationStatusSchema)
+ * - Phase 6: Application & Pipeline validators (applicationStatusSchema, updateApplicationStageSchema)
  * - Phase 7: AI Screening validators (screeningPromptSchema)
  * - Phase 8: Interview & Messaging validators (interviewScheduleSchema, messageSendSchema)
  */

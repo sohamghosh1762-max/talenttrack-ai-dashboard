@@ -156,3 +156,39 @@ export function useUpdateApplicationStatus() {
     },
   });
 }
+
+/**
+ * TanStack Mutation hook to update candidate application pipeline stage
+ * Sends PATCH /api/recruiter/applications/:id/stage
+ * Updates MongoDB and synchronizes React Query cache
+ */
+export function useUpdateApplicationStage() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    IApplication,
+    Error,
+    { applicationId?: string; id?: string; stage: string }
+  >({
+    mutationFn: async ({ applicationId, id, stage }) => {
+      const targetId = applicationId || id;
+      if (!targetId) throw new Error("Application ID is required");
+
+      const res = await apiClient.patch<
+        { application: IApplication; stage: string; status: string } | IApplication
+      >(`/api/recruiter/applications/${targetId}/stage`, { stage });
+
+      if (res && "application" in res) {
+        return res.application;
+      }
+      return res as IApplication;
+    },
+    onSuccess: (data, variables) => {
+      const targetId = variables.applicationId || variables.id || data?.id;
+      queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+      if (targetId) {
+        queryClient.invalidateQueries({ queryKey: applicationKeys.detail(targetId) });
+      }
+    },
+  });
+}

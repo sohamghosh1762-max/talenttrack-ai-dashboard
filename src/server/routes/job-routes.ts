@@ -35,7 +35,7 @@ export async function handleGetJobs(req: Request): Promise<Response> {
   };
 
   const validatedParams = validateSchema(jobQuerySchema, rawParams);
-  const authUser = authenticateOptional(req);
+  const authUser = await authenticateOptional(req);
 
   const filters: JobQueryParams = {
     page: validatedParams.page,
@@ -89,7 +89,7 @@ export async function handleGetJobById(req: Request, jobId: string): Promise<Res
     throw new NotFoundError(`Job opening with ID ${jobId} not found.`);
   }
 
-  const authUser = authenticateOptional(req);
+  const authUser = await authenticateOptional(req);
   const isOwnerOrAdmin =
     authUser &&
     (authUser.role === "ADMIN" ||
@@ -112,7 +112,7 @@ export async function handleGetJobById(req: Request, jobId: string): Promise<Res
  * - recruiterId is strictly bound to authUser.id (never trusted from body).
  */
 export async function handleCreateJob(req: Request): Promise<Response> {
-  const user = authenticate(req);
+  const user = await authenticate(req);
   if (user.role === "APPLICANT") {
     throw new ForbiddenError("Applicants are not authorized to post job openings.");
   }
@@ -155,7 +155,7 @@ export async function handleCreateJob(req: Request): Promise<Response> {
  * - Prevents modifying recruiter ownership.
  */
 export async function handleUpdateJob(req: Request, jobId: string): Promise<Response> {
-  const user = authenticate(req);
+  const user = await authenticate(req);
   const existingJob = await jobRepository.findById(jobId);
   if (!existingJob) {
     throw new NotFoundError(`Job opening with ID ${jobId} not found.`);
@@ -208,7 +208,7 @@ export async function handleUpdateJob(req: Request, jobId: string): Promise<Resp
  * - Soft-archives the job in MongoDB (status = "ARCHIVED"). Does not delete the document.
  */
 export async function handleArchiveJob(req: Request, jobId: string): Promise<Response> {
-  const user = authenticate(req);
+  const user = await authenticate(req);
   const existingJob = await jobRepository.findById(jobId);
   if (!existingJob) {
     throw new NotFoundError(`Job opening with ID ${jobId} not found.`);
@@ -230,7 +230,7 @@ export async function handleArchiveJob(req: Request, jobId: string): Promise<Res
  * Handle DELETE /api/jobs/:id (Hard delete for admin cleanup if needed)
  */
 export async function handleDeleteJob(req: Request, jobId: string): Promise<Response> {
-  const user = authenticate(req);
+  const user = await authenticate(req);
   const existingJob = await jobRepository.findById(jobId);
   if (!existingJob) {
     throw new NotFoundError(`Job opening with ID ${jobId} not found.`);

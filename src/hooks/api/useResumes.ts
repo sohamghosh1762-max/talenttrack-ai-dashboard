@@ -27,25 +27,15 @@ export function useUploadResume() {
         formData.append("resume", payload);
       }
 
-      // Upload via fetch to preserve multipart boundary headers
-      const res = await fetch("/api/resumes", {
-        method: "POST",
-        body: formData,
-      });
-
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        const errorMsg =
-          json.error?.message ||
-          (typeof json.message === "string" ? json.message : "Failed to upload resume file.");
-        throw new Error(errorMsg);
+      const res = await apiClient.post<{ resume?: IResume } | IResume>("/api/resumes", formData);
+      if (res && typeof res === "object" && "resume" in res && res.resume) {
+        return res.resume as IResume;
       }
-
-      return (json.data.resume || json.data) as IResume;
+      return res as IResume;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: resumeKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["applicant", "ats-score"] });
     },
   });
 }
@@ -86,6 +76,27 @@ export function useResumeDownloadUrl(id: string | undefined, options: { enabled?
 }
 
 /**
+ * TanStack Mutation hook to parse resume and extract structured profile via Gemini AI
+ */
+export function useParseResume() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (resumeId: string) => {
+      const res = await apiClient.post<any>(`/api/resumes/${resumeId}/parse`);
+      return res;
+    },
+    onSuccess: (_data, resumeId) => {
+      queryClient.invalidateQueries({ queryKey: resumeKeys.all });
+      queryClient.invalidateQueries({ queryKey: resumeKeys.detail(resumeId) });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["applicant", "ats-score"] });
+    },
+  });
+}
+
+/**
  * TanStack Mutation hook to delete a resume
  */
 export function useDeleteResume() {
@@ -97,6 +108,8 @@ export function useDeleteResume() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: resumeKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["applicant", "ats-score"] });
     },
   });
 }
+

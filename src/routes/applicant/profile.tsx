@@ -1,38 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertCircle,
   Award,
   Briefcase,
   Check,
-  Download,
-  Eye,
   FileCheck,
-  FileText,
   GraduationCap,
   Loader2,
   Plus,
+  RefreshCw,
   Save,
   Sparkles,
   Trash2,
-  Upload,
   User,
 } from "lucide-react";
 import { ApplicantLayout } from "@/components/applicant/ApplicantLayout";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthProvider";
-import { useUploadResume } from "@/hooks/api/useResumes";
+import {
+  useApplicantProfile,
+  useUpdateApplicantProfile,
+} from "@/hooks/api/useApplicantProfile";
+import { calculateProfileCompletion } from "@/lib/applicant-utils";
+import type {
+  ApplicantExperienceItem,
+  ApplicantEducationItem,
+  ApplicantCertificationItem,
+  ApplicantProjectItem,
+} from "@/server/types/user-types";
 
 export const Route = createFileRoute("/applicant/profile")({
   head: () => ({
     meta: [
-      { title: "My Profile & Resume — TalentTrack AI" },
+      { title: "My Profile — TalentTrack AI" },
       {
         name: "description",
         content:
-          "Manage your professional profile, experience, education, skills, and resume for AI matching.",
+          "Manage your professional profile, experience, education, skills, certifications, and portfolio projects for recruiter discovery.",
       },
     ],
   }),
@@ -40,169 +47,130 @@ export const Route = createFileRoute("/applicant/profile")({
 });
 
 type ProfileTab =
-  "personal" | "experience" | "education" | "skills" | "certifications" | "projects" | "resume";
+  | "personal"
+  | "experience"
+  | "education"
+  | "skills"
+  | "certifications"
+  | "projects";
 
 export function ApplicantProfilePage() {
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
+  const {
+    data: profileData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useApplicantProfile();
+  const updateProfileMutation = useUpdateApplicantProfile();
+
   const [activeTab, setActiveTab] = useState<ProfileTab>("personal");
-  const [isSaved, setIsSaved] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Form states
+  // Form states initialized empty, populated on fetch
   const [personalInfo, setPersonalInfo] = useState({
-    name: user?.name || "Aarav Mehta",
-    email: user?.email || "aarav.mehta@example.com",
-    phone: "+1 (555) 234-5678",
-    headline: user?.applicantProfile?.headline || "Senior Frontend Engineer | React & TypeScript",
-    location: user?.applicantProfile?.location || "San Jose, CA (Hybrid / Remote)",
-    bio: "Passionate software engineer with 5+ years of experience crafting modern, accessible web applications and scalable front-end systems.",
+    name: "",
+    email: "",
+    phone: "",
+    headline: "",
+    location: "",
+    bio: "",
   });
 
-  const [skillsList, setSkillsList] = useState<string[]>([
-    "React",
-    "TypeScript",
-    "Next.js",
-    "Tailwind CSS",
-    "Redux Toolkit",
-    "Node.js",
-    "GraphQL",
-    "Jest / Playwright",
-  ]);
+  const [skillsList, setSkillsList] = useState<string[]>([]);
   const [newSkillInput, setNewSkillInput] = useState("");
+  const [experiences, setExperiences] = useState<ApplicantExperienceItem[]>([]);
+  const [education, setEducation] = useState<ApplicantEducationItem[]>([]);
+  const [certifications, setCertifications] = useState<ApplicantCertificationItem[]>([]);
+  const [projects, setProjects] = useState<ApplicantProjectItem[]>([]);
 
-  const [experiences, setExperiences] = useState([
-    {
-      id: "exp-1",
-      title: "Senior Frontend Engineer",
-      company: "CloudTech Solutions",
-      location: "San Francisco, CA",
-      period: "2022 - Present",
-      description:
-        "Architected core dashboard UI components, improved page performance by 40%, and led a team of 4 front-end engineers.",
-    },
-    {
-      id: "exp-2",
-      title: "Fullstack Web Developer",
-      company: "Innovate Labs",
-      location: "San Jose, CA",
-      period: "2019 - 2022",
-      description:
-        "Developed responsive user interfaces and backend REST endpoints utilizing React, Node.js, and PostgreSQL.",
-    },
-  ]);
+  // Synchronize local form state with fetched profile data
+  useEffect(() => {
+    if (profileData) {
+      const appProfile = profileData.applicantProfile || (profileData as any) || {};
+      setPersonalInfo({
+        name: profileData.name || authUser?.name || "",
+        email: profileData.email || authUser?.email || "",
+        phone: appProfile.phone || "",
+        headline: appProfile.headline || "",
+        location: appProfile.location || "",
+        bio: appProfile.bio || appProfile.summary || "",
+      });
 
-  const [education, setEducation] = useState([
-    {
-      id: "edu-1",
-      degree: "B.S. in Computer Science",
-      institution: "San Jose State University",
-      period: "2015 - 2019",
-      grade: "GPA 3.8 / 4.0",
-    },
-  ]);
+      setSkillsList(appProfile.skills || []);
 
-  const [certifications, setCertifications] = useState([
-    {
-      id: "cert-1",
-      name: "AWS Certified Developer – Associate",
-      issuer: "Amazon Web Services",
-      year: "2024",
-    },
-    {
-      id: "cert-2",
-      name: "Meta Certified Front-End Developer",
-      issuer: "Meta / Coursera",
-      year: "2023",
-    },
-  ]);
+      if (Array.isArray(appProfile.experiences) && appProfile.experiences.length > 0) {
+        setExperiences(appProfile.experiences);
+      } else if (Array.isArray((appProfile as any).experience) && (appProfile as any).experience.length > 0) {
+        setExperiences(
+          (appProfile as any).experience.map((exp: any, i: number) => ({
+            id: exp.id || `exp-${i}`,
+            title: exp.title || exp.role || "",
+            company: exp.company || "",
+            location: exp.location || "",
+            period: exp.period || `${exp.startDate || ""} - ${exp.endDate || "Present"}`.trim(),
+            description: exp.description || "",
+          })),
+        );
+      } else {
+        setExperiences([]);
+      }
 
-  const [projects, setProjects] = useState([
-    {
-      id: "proj-1",
-      name: "Design System UI Kit",
-      tech: "React, Tailwind, Radix UI",
-      description: "Open-source accessible component library downloaded over 20k times.",
-    },
-    {
-      id: "proj-2",
-      name: "Real-time Collaboration Canvas",
-      tech: "TypeScript, WebSockets, Canvas API",
-      description: "Interactive multi-user whiteboard with sub-50ms latency synchronization.",
-    },
-  ]);
+      if (Array.isArray(appProfile.education)) {
+        setEducation(appProfile.education);
+      } else {
+        setEducation([]);
+      }
 
-  const [resumeInfo, setResumeInfo] = useState({
-    id: (user?.applicantProfile as Record<string, any>)?.[
-      "resumeId"
-    ] || "",
-    fileName: user?.applicantProfile?.resumeFileName || "Aarav_Mehta_Resume_2025.pdf",
-    uploadedDate: "Sep 10, 2025",
-    fileSize: "1.2 MB",
-    mimeType: "application/pdf",
-    parsingStatus: "Parsed & Vectorized",
-    extractedSkillsCount: 14,
-  });
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+      if (Array.isArray(appProfile.certifications)) {
+        setCertifications(appProfile.certifications);
+      } else {
+        setCertifications([]);
+      }
 
-  const uploadResumeMutation = useUploadResume();
-
-  const handleResumeFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadError(null);
-    setUploadSuccess(null);
-
-    // Frontend validation
-    const allowedTypes = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/msword",
-    ];
-    const allowedExts = [".pdf", ".docx", ".doc"];
-    const hasValidExt = allowedExts.some((ext) => file.name.toLowerCase().endsWith(ext));
-
-    if (!allowedTypes.includes(file.type) && !hasValidExt) {
-      setUploadError("Invalid file type. Only PDF (.pdf) and Word (.docx) documents are supported.");
-      return;
+      if (Array.isArray(appProfile.projects)) {
+        setProjects(appProfile.projects);
+      } else {
+        setProjects([]);
+      }
     }
+  }, [profileData, authUser]);
 
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadError("File size exceeds 10 MB limit.");
-      return;
-    }
+  // Handle Save
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setSaveError(null);
+    setSaveSuccess(null);
 
     try {
-      const uploaded = await uploadResumeMutation.mutateAsync(file);
-      const sizeInMB = (uploaded.fileSize / (1024 * 1024)).toFixed(1);
-      setResumeInfo({
-        id: uploaded.id,
-        fileName: uploaded.originalFileName,
-        uploadedDate: new Date(uploaded.uploadedAt || uploaded.createdAt || Date.now()).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }),
-        fileSize: `${sizeInMB} MB`,
-        mimeType: uploaded.mimeType,
-        parsingStatus: "Uploaded & Persisted",
-        extractedSkillsCount: 12,
+      await updateProfileMutation.mutateAsync({
+        name: personalInfo.name.trim(),
+        phone: personalInfo.phone.trim(),
+        headline: personalInfo.headline.trim(),
+        location: personalInfo.location.trim(),
+        bio: personalInfo.bio.trim(),
+        summary: personalInfo.bio.trim(),
+        skills: skillsList,
+        experiences,
+        education,
+        certifications,
+        projects,
       });
-      setUploadSuccess(`Resume "${uploaded.originalFileName}" uploaded and saved to private storage!`);
+
+      setSaveSuccess("Profile saved successfully");
+      setTimeout(() => setSaveSuccess(null), 3500);
     } catch (err: any) {
-      setUploadError(err.message || "Failed to upload resume.");
+      setSaveError(err.message || "Failed to save profile. Please try again.");
     }
   };
 
-  const handleSave = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
-  };
-
+  // Skill management
   const handleAddSkill = () => {
-    if (newSkillInput.trim() && !skillsList.includes(newSkillInput.trim())) {
-      setSkillsList([...skillsList, newSkillInput.trim()]);
+    const trimmed = newSkillInput.trim();
+    if (trimmed && !skillsList.includes(trimmed)) {
+      setSkillsList([...skillsList, trimmed]);
       setNewSkillInput("");
     }
   };
@@ -218,8 +186,60 @@ export function ApplicantProfilePage() {
     { key: "skills", label: "Skills", icon: Sparkles },
     { key: "certifications", label: "Certifications", icon: Award },
     { key: "projects", label: "Projects", icon: FileCheck },
-    { key: "resume", label: "Resume & Documents", icon: FileText },
   ];
+
+  // Loading Skeleton State
+  if (isLoading) {
+    return (
+      <ApplicantLayout>
+        <div className="space-y-5 max-w-4xl animate-pulse">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-2">
+              <div className="h-7 w-48 bg-muted rounded" />
+              <div className="h-4 w-72 bg-muted/60 rounded" />
+            </div>
+            <div className="h-9 w-32 bg-muted rounded" />
+          </div>
+          <div className="h-20 bg-muted/50 rounded-xl border border-border" />
+          <div className="h-10 bg-muted/40 rounded-lg" />
+          <div className="h-96 bg-muted/30 rounded-xl border border-border p-6 space-y-4">
+            <div className="h-4 w-36 bg-muted rounded" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-10 bg-muted/60 rounded" />
+              <div className="h-10 bg-muted/60 rounded" />
+            </div>
+            <div className="h-20 bg-muted/60 rounded" />
+          </div>
+        </div>
+      </ApplicantLayout>
+    );
+  }
+
+  // Error State
+  if (isError) {
+    return (
+      <ApplicantLayout>
+        <div className="max-w-2xl mx-auto py-12 text-center space-y-4">
+          <div className="grid size-12 place-items-center rounded-full bg-destructive/10 text-destructive mx-auto">
+            <AlertCircle className="size-6" />
+          </div>
+          <h2 className="text-lg font-bold text-foreground">Unable to load your profile</h2>
+          <p className="text-xs text-muted-foreground">
+            {error instanceof Error ? error.message : "A connection error occurred while loading your profile."}
+          </p>
+          <Button
+            onClick={() => refetch()}
+            className="h-9 px-4 bg-brand-blue text-primary-foreground text-xs font-semibold gap-1.5"
+          >
+            <RefreshCw className="size-3.5" />
+            Try Again
+          </Button>
+        </div>
+      </ApplicantLayout>
+    );
+  }
+
+  const completion = calculateProfileCompletion(profileData || authUser);
 
   return (
     <ApplicantLayout>
@@ -232,7 +252,7 @@ export function ApplicantProfilePage() {
                 <User className="size-5" />
               </span>
               <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">
-                My Profile & Resume
+                My Profile
               </h1>
             </div>
             <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
@@ -242,14 +262,43 @@ export function ApplicantProfilePage() {
 
           <Button
             onClick={() => handleSave()}
-            className="h-9 px-4 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold gap-1.5 shadow-sm"
+            disabled={updateProfileMutation.isPending}
+            className="h-9 px-4 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold gap-1.5 shadow-sm cursor-pointer"
           >
-            {isSaved ? <Check className="size-4" /> : <Save className="size-4" />}
-            {isSaved ? "Saved Successfully" : "Save Changes"}
+            {updateProfileMutation.isPending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Saving...
+              </>
+            ) : saveSuccess ? (
+              <>
+                <Check className="size-4" />
+                Saved Successfully
+              </>
+            ) : (
+              <>
+                <Save className="size-4" />
+                Save Changes
+              </>
+            )}
           </Button>
         </section>
 
-        {/* Profile Completion Callout */}
+        {/* Global Save Feedback */}
+        {saveSuccess && (
+          <div className="flex items-center gap-2 rounded-lg bg-surface-green border border-brand-green/30 p-3 text-xs text-brand-green">
+            <Check className="size-4 shrink-0" />
+            <span>{saveSuccess}</span>
+          </div>
+        )}
+        {saveError && (
+          <div className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>{saveError}</span>
+          </div>
+        )}
+
+        {/* Profile Strength Callout */}
         <div className="dashboard-card p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 border-brand-blue/20">
           <div className="flex items-center gap-3">
             <div className="grid size-10 place-items-center rounded-xl bg-surface-blue text-brand-blue shrink-0">
@@ -258,29 +307,32 @@ export function ApplicantProfilePage() {
             <div>
               <div className="flex items-center gap-2">
                 <strong className="text-xs sm:text-sm font-bold text-foreground">
-                  AI Profile Strength: 85% Completed
+                  Profile Strength: {completion.percentage}%
                 </strong>
-                <span className="rounded bg-surface-green px-2 py-0.5 text-[10px] font-bold text-brand-green">
-                  High Match Potential
+                <span
+                  className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                    completion.percentage >= 80
+                      ? "bg-surface-green text-brand-green"
+                      : completion.percentage >= 50
+                      ? "bg-surface-amber text-brand-amber"
+                      : "bg-surface-peach text-brand-red"
+                  }`}
+                >
+                  {completion.percentage >= 80
+                    ? "High Profile Strength"
+                    : completion.percentage >= 50
+                    ? "Moderate Profile Strength"
+                    : "Incomplete Profile"}
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Your resume and skills are parsed. Adding more project details will increase match
-                relevance.
+                {completion.nextSuggestion}
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setActiveTab("resume")}
-            className="text-xs font-semibold shrink-0"
-          >
-            View Parsed Resume
-          </Button>
         </div>
 
-        {/* Tab Navigation Navigation Bar */}
+        {/* Tab Navigation Bar */}
         <div className="flex items-center gap-1.5 overflow-x-auto border-b border-border/80 pb-2">
           {tabs.map(({ key, label, icon: TabIcon }) => {
             const isActive = activeTab === key;
@@ -318,6 +370,7 @@ export function ApplicantProfilePage() {
                   <input
                     type="text"
                     value={personalInfo.name}
+                    placeholder="e.g. Jane Doe"
                     onChange={(e) => setPersonalInfo({ ...personalInfo, name: e.target.value })}
                     className="h-9.5 w-full rounded-md border border-input bg-card px-3 text-xs outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
                   />
@@ -330,6 +383,7 @@ export function ApplicantProfilePage() {
                     type="email"
                     value={personalInfo.email}
                     disabled
+                    placeholder="Not provided"
                     className="h-9.5 w-full rounded-md border border-input bg-muted px-3 text-xs text-muted-foreground outline-none cursor-not-allowed"
                   />
                 </div>
@@ -340,6 +394,7 @@ export function ApplicantProfilePage() {
                   <input
                     type="tel"
                     value={personalInfo.phone}
+                    placeholder="e.g. +1 (555) 000-0000"
                     onChange={(e) => setPersonalInfo({ ...personalInfo, phone: e.target.value })}
                     className="h-9.5 w-full rounded-md border border-input bg-card px-3 text-xs outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
                   />
@@ -351,6 +406,7 @@ export function ApplicantProfilePage() {
                   <input
                     type="text"
                     value={personalInfo.location}
+                    placeholder="e.g. New York, NY (Remote / Hybrid)"
                     onChange={(e) => setPersonalInfo({ ...personalInfo, location: e.target.value })}
                     className="h-9.5 w-full rounded-md border border-input bg-card px-3 text-xs outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
                   />
@@ -364,6 +420,7 @@ export function ApplicantProfilePage() {
                 <input
                   type="text"
                   value={personalInfo.headline}
+                  placeholder="e.g. Fullstack Engineer | TypeScript & Cloud"
                   onChange={(e) => setPersonalInfo({ ...personalInfo, headline: e.target.value })}
                   className="h-9.5 w-full rounded-md border border-input bg-card px-3 text-xs outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
                 />
@@ -376,6 +433,7 @@ export function ApplicantProfilePage() {
                 <textarea
                   rows={3}
                   value={personalInfo.bio}
+                  placeholder="Briefly describe your background, core focus, and career goals..."
                   onChange={(e) => setPersonalInfo({ ...personalInfo, bio: e.target.value })}
                   className="w-full rounded-md border border-input bg-card p-3 text-xs outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20"
                 />
@@ -391,11 +449,11 @@ export function ApplicantProfilePage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 text-xs gap-1.5"
+                  className="h-8 text-xs gap-1.5 cursor-pointer"
                   onClick={() => {
-                    const newExp = {
+                    const newExp: ApplicantExperienceItem = {
                       id: `exp-${Date.now()}`,
-                      title: "New Role",
+                      title: "Role Title",
                       company: "Company Name",
                       location: "City, Country",
                       period: "2024 - Present",
@@ -409,31 +467,40 @@ export function ApplicantProfilePage() {
                 </Button>
               </div>
 
-              <div className="space-y-4">
-                {experiences.map((exp, i) => (
-                  <div key={exp.id} className="rounded-lg border border-border p-4 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-sm font-bold text-foreground">{exp.title}</h3>
-                        <p className="text-xs font-semibold text-brand-blue">
-                          {exp.company} • {exp.location}
-                        </p>
-                        <span className="text-[11px] text-muted-foreground">{exp.period}</span>
+              {experiences.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  No work experience added yet. Click &quot;Add Position&quot; to add your career history.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {experiences.map((exp) => (
+                    <div key={exp.id} className="rounded-lg border border-border p-4 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-sm font-bold text-foreground">{exp.title || "Untitled Role"}</h3>
+                          <p className="text-xs font-semibold text-brand-blue">
+                            {exp.company || "Company"} {exp.location ? `• ${exp.location}` : ""}
+                          </p>
+                          <span className="text-[11px] text-muted-foreground">{exp.period || "Period"}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setExperiences(experiences.filter((e) => e.id !== exp.id))}
+                          className="text-muted-foreground hover:text-destructive transition-colors p-1 cursor-pointer"
+                          aria-label="Remove experience"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setExperiences(experiences.filter((e) => e.id !== exp.id))}
-                        className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
+                      {exp.description && (
+                        <p className="text-xs text-muted-foreground leading-relaxed pt-1">
+                          {exp.description}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed pt-1">
-                      {exp.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -445,9 +512,9 @@ export function ApplicantProfilePage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 text-xs gap-1.5"
+                  className="h-8 text-xs gap-1.5 cursor-pointer"
                   onClick={() => {
-                    const newEdu = {
+                    const newEdu: ApplicantEducationItem = {
                       id: `edu-${Date.now()}`,
                       degree: "Degree / Field of Study",
                       institution: "University / Institution",
@@ -462,29 +529,36 @@ export function ApplicantProfilePage() {
                 </Button>
               </div>
 
-              <div className="space-y-3">
-                {education.map((edu) => (
-                  <div
-                    key={edu.id}
-                    className="rounded-lg border border-border p-4 flex items-start justify-between"
-                  >
-                    <div>
-                      <h3 className="text-sm font-bold text-foreground">{edu.degree}</h3>
-                      <p className="text-xs text-brand-blue font-semibold">{edu.institution}</p>
-                      <span className="text-[11px] text-muted-foreground">
-                        {edu.period} • {edu.grade}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setEducation(education.filter((e) => e.id !== edu.id))}
-                      className="text-muted-foreground hover:text-destructive transition-colors p-1"
+              {education.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  No education history added yet. Click &quot;Add Education&quot; to list your degrees.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {education.map((edu) => (
+                    <div
+                      key={edu.id}
+                      className="rounded-lg border border-border p-4 flex items-start justify-between"
                     >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-foreground">{edu.degree || "Degree"}</h3>
+                        <p className="text-xs text-brand-blue font-semibold">{edu.institution || "Institution"}</p>
+                        <span className="text-[11px] text-muted-foreground">
+                          {edu.period} {edu.grade ? `• ${edu.grade}` : ""}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEducation(education.filter((e) => e.id !== edu.id))}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1 cursor-pointer"
+                        aria-label="Remove education"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -510,36 +584,43 @@ export function ApplicantProfilePage() {
                       handleAddSkill();
                     }
                   }}
-                  placeholder="Type a skill and press Enter (e.g. Docker, Python)..."
+                  placeholder="Type a skill and press Enter (e.g. React, Node.js, Python)..."
                   className="h-9 w-full max-w-sm rounded-md border border-input bg-card px-3 text-xs outline-none focus:border-brand-blue"
                 />
                 <Button
                   type="button"
                   onClick={handleAddSkill}
                   size="sm"
-                  className="bg-brand-blue text-primary-foreground text-xs"
+                  className="bg-brand-blue text-primary-foreground text-xs cursor-pointer"
                 >
                   Add Skill
                 </Button>
               </div>
 
-              <div className="flex flex-wrap gap-2 pt-2">
-                {skillsList.map((skill) => (
-                  <span
-                    key={skill}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-surface-blue px-3 py-1.5 text-xs font-semibold text-brand-blue border border-brand-blue/20"
-                  >
-                    <span>{skill}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSkill(skill)}
-                      className="hover:text-destructive focus:outline-none cursor-pointer"
+              {skillsList.length === 0 ? (
+                <div className="py-6 text-center text-xs text-muted-foreground">
+                  No skills listed yet. Type a skill above to add to your profile.
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {skillsList.map((skill) => (
+                    <span
+                      key={skill}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-surface-blue px-3 py-1.5 text-xs font-semibold text-brand-blue border border-brand-blue/20"
                     >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
+                      <span>{skill}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSkill(skill)}
+                        className="hover:text-destructive focus:outline-none cursor-pointer"
+                        aria-label={`Remove skill ${skill}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -551,13 +632,13 @@ export function ApplicantProfilePage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 text-xs gap-1.5"
+                  className="h-8 text-xs gap-1.5 cursor-pointer"
                   onClick={() => {
-                    const newCert = {
+                    const newCert: ApplicantCertificationItem = {
                       id: `cert-${Date.now()}`,
                       name: "Certification Name",
                       issuer: "Issuing Organization",
-                      year: "2024",
+                      year: new Date().getFullYear().toString(),
                     };
                     setCertifications([...certifications, newCert]);
                   }}
@@ -567,31 +648,40 @@ export function ApplicantProfilePage() {
                 </Button>
               </div>
 
-              <div className="space-y-3">
-                {certifications.map((cert) => (
-                  <div
-                    key={cert.id}
-                    className="rounded-lg border border-border p-4 flex items-start justify-between"
-                  >
-                    <div>
-                      <h3 className="text-sm font-bold text-foreground">{cert.name}</h3>
-                      <p className="text-xs text-brand-purple font-semibold">{cert.issuer}</p>
-                      <span className="text-[11px] text-muted-foreground">
-                        Issued in {cert.year}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCertifications(certifications.filter((c) => c.id !== cert.id))
-                      }
-                      className="text-muted-foreground hover:text-destructive transition-colors p-1"
+              {certifications.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  No certifications listed yet.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {certifications.map((cert) => (
+                    <div
+                      key={cert.id}
+                      className="rounded-lg border border-border p-4 flex items-start justify-between"
                     >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-foreground">{cert.name}</h3>
+                        <p className="text-xs text-brand-purple font-semibold">{cert.issuer}</p>
+                        {cert.year && (
+                          <span className="text-[11px] text-muted-foreground">
+                            Issued in {cert.year}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCertifications(certifications.filter((c) => c.id !== cert.id))
+                        }
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1 cursor-pointer"
+                        aria-label="Remove certification"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -603,9 +693,9 @@ export function ApplicantProfilePage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 text-xs gap-1.5"
+                  className="h-8 text-xs gap-1.5 cursor-pointer"
                   onClick={() => {
-                    const newProj = {
+                    const newProj: ApplicantProjectItem = {
                       id: `proj-${Date.now()}`,
                       name: "Project Title",
                       tech: "Tech Stack Used",
@@ -619,147 +709,41 @@ export function ApplicantProfilePage() {
                 </Button>
               </div>
 
-              <div className="space-y-3">
-                {projects.map((proj) => (
-                  <div key={proj.id} className="rounded-lg border border-border p-4 space-y-1.5">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-sm font-bold text-foreground">{proj.name}</h3>
-                        <span className="text-[11px] font-semibold text-brand-blue">
-                          {proj.tech}
-                        </span>
+              {projects.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  No portfolio projects added yet.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {projects.map((proj) => (
+                    <div key={proj.id} className="rounded-lg border border-border p-4 space-y-1.5">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-sm font-bold text-foreground">{proj.name}</h3>
+                          {proj.tech && (
+                            <span className="text-[11px] font-semibold text-brand-blue">
+                              {proj.tech}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setProjects(projects.filter((p) => p.id !== proj.id))}
+                          className="text-muted-foreground hover:text-destructive transition-colors p-1 cursor-pointer"
+                          aria-label="Remove project"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setProjects(projects.filter((p) => p.id !== proj.id))}
-                        className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
+                      {proj.description && (
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {proj.description}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {proj.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 7. Resume & Documents */}
-          {activeTab === "resume" && (
-            <div className="space-y-5">
-              <h2 className="text-sm font-bold text-foreground border-b border-border/60 pb-3 flex items-center gap-2">
-                <FileText className="size-4 text-brand-blue" />
-                Resume Management & Parsing
-              </h2>
-
-              {/* Feedback messages */}
-              {uploadError && (
-                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive">
-                  <AlertCircle className="size-4 shrink-0" />
-                  <span>{uploadError}</span>
+                  ))}
                 </div>
               )}
-              {uploadSuccess && (
-                <div className="flex items-center gap-2 rounded-lg bg-surface-green border border-brand-green/30 p-3 text-xs text-brand-green">
-                  <Check className="size-4 shrink-0" />
-                  <span>{uploadSuccess}</span>
-                </div>
-              )}
-
-              {/* Active Resume Card */}
-              <div className="rounded-xl border border-brand-blue/30 bg-surface-blue/30 p-4 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="grid size-11 place-items-center rounded-xl bg-brand-blue text-primary-foreground shrink-0 shadow-xs">
-                      <FileText className="size-6" />
-                    </div>
-                    <div>
-                      <strong className="block text-sm font-bold text-foreground">
-                        {resumeInfo.fileName}
-                      </strong>
-                      <span className="text-[11px] text-muted-foreground">
-                        Uploaded on {resumeInfo.uploadedDate} • {resumeInfo.fileSize} • {resumeInfo.mimeType.includes("pdf") ? "PDF Format" : "DOCX Format"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {resumeInfo.id ? (
-                      <a
-                        href={`/api/resumes/${resumeInfo.id}/download`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center justify-center rounded-md border border-input bg-background h-8 px-3 text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground gap-1 transition-colors"
-                      >
-                        <Download className="size-3.5" />
-                        Download
-                      </a>
-                    ) : (
-                      <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
-                        <Download className="size-3.5" />
-                        Download
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-brand-blue/15 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-foreground">AI Extraction Status:</span>
-                    <span className="rounded bg-surface-green px-2 py-0.5 text-[10px] font-bold text-brand-green">
-                      {resumeInfo.parsingStatus}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-foreground">Extracted Skills:</span>
-                    <span>{resumeInfo.extractedSkillsCount} competencies identified</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Upload New Resume Box */}
-              <label
-                htmlFor="profile-resume-upload"
-                className={`rounded-xl border-2 border-dashed p-6 text-center space-y-3 block cursor-pointer transition-colors ${
-                  uploadResumeMutation.isPending
-                    ? "border-brand-blue bg-brand-blue/5 cursor-wait"
-                    : "border-border hover:border-brand-blue/60"
-                }`}
-              >
-                <input
-                  id="profile-resume-upload"
-                  type="file"
-                  accept=".pdf,.docx,.doc,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  onChange={handleResumeFileSelect}
-                  disabled={uploadResumeMutation.isPending}
-                  className="hidden"
-                />
-                <div className="grid size-12 place-items-center rounded-full bg-muted mx-auto text-muted-foreground">
-                  {uploadResumeMutation.isPending ? (
-                    <Loader2 className="size-6 animate-spin text-brand-blue" />
-                  ) : (
-                    <Upload className="size-6" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-foreground">
-                    {uploadResumeMutation.isPending ? "Uploading Resume to Secure S3..." : "Upload Updated Resume"}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Drag and drop your PDF or DOCX file here, or click to browse files (Max 10 MB)
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={uploadResumeMutation.isPending}
-                  className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs pointer-events-none"
-                >
-                  {uploadResumeMutation.isPending ? "Uploading..." : "Select File"}
-                </Button>
-              </label>
             </div>
           )}
         </div>

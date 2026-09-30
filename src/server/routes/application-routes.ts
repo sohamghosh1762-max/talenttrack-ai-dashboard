@@ -22,7 +22,7 @@ import type {
  * - Saves to MongoDB with status APPLIED
  */
 export async function handleCreateApplication(req: Request): Promise<Response> {
-  const user = authenticate(req);
+  const user = await authenticate(req);
 
   if (user.role !== "APPLICANT") {
     throw new ForbiddenError("Only applicant accounts are permitted to submit job applications.");
@@ -106,7 +106,7 @@ export async function handleCreateApplication(req: Request): Promise<Response> {
  * - Strictly filtered by authenticatedUser.id
  */
 export async function handleGetMyApplications(req: Request): Promise<Response> {
-  const user = authenticate(req);
+  const user = await authenticate(req);
 
   if (user.role !== "APPLICANT") {
     throw new ForbiddenError("Only applicant accounts can access personal application history.");
@@ -126,7 +126,7 @@ export async function handleGetMyApplications(req: Request): Promise<Response> {
  * - Recruiter sees only applications for their own jobs
  */
 export async function handleGetRecruiterApplications(req: Request): Promise<Response> {
-  const user = authenticate(req);
+  const user = await authenticate(req);
   const isRecruiterOrAdmin =
     user.role === "RECRUITER" ||
     user.role === "ADMIN" ||
@@ -164,7 +164,7 @@ export async function handleGetRecruiterApplications(req: Request): Promise<Resp
  * Handle GET /api/applications (General Applications List)
  */
 export async function handleGetApplications(req: Request): Promise<Response> {
-  const user = authenticate(req);
+  const user = await authenticate(req);
   const url = new URL(req.url);
   const searchParams = url.searchParams;
 
@@ -197,7 +197,7 @@ export async function handleGetApplications(req: Request): Promise<Response> {
  * - Admin: platform-wide access
  */
 export async function handleGetApplicationById(req: Request, appId: string): Promise<Response> {
-  const user = authenticate(req);
+  const user = await authenticate(req);
   const application = await applicationRepository.findById(appId);
   if (!application) {
     throw new NotFoundError(`Application with ID ${appId} not found.`);
@@ -217,22 +217,138 @@ export async function handleGetApplicationById(req: Request, appId: string): Pro
 }
 
 /**
+ * Handle PATCH /api/recruiter/applications/:id/stage (Recruiter Stage Update API)
+ * and PATCH /api/applications/:id/stage
+ * - Authenticated RECRUITER / ADMIN required
+ * - Validate 24-character hexadecimal Application ID
+ * - Validate requested stage against valid enum values
+ * - Enforce recruiter job ownership (derives recruiter from session, never client payload)
+ * - Returns 403 for unauthorized ownership access
+ * - Returns 404 for non-existent application
+ * - Returns 400 for invalid stage or malformed ID
+ * - Persists updated stage and status to MongoDB
+ */
+export async function handleUpdateApplicationStage(
+  req: Request,
+  appId: string,
+): Promise<Response> {
+  const user = await authenticate(req);
+  const isRecruiterOrAdmin =
+    user.role === "RECRUITER" ||
+    user.role === "ADMIN" ||
+    user.role === "SUPER_ADMIN" ||
+    user.role === "HIRING_MANAGER";
+
+  if (!isRecruiterOrAdmin) {
+    throw new ForbiddenError(
+      "Only recruiters and administrators are authorized to update candidate application stages.",
+    );
+  }
+
+  if (!appId || typeof appId !== "string" || !appId.trim()) {
+    throw new ValidationError("Application ID is required.");
+  }
+
+  const trimmedId = appId.trim();
+  if (!isValidObjectId(trimmedId)) {
+    throw new ValidationError(
+      "Invalid application ID format: must be a 24-character hexadecimal ObjectId.",
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    throw new ValidationError("Invalid JSON payload");
+  }
+
+  if (!body || typeof body !== "object") {
+    throw new ValidationError("Request body must be a JSON object containing 'stage'");
+  }
+
+  const raw = body as { stage?: unknown };
+  if (raw.stage === undefined || raw.stage === null || raw.stage === "") {
+    throw new ValidationError("Missing required field: stage");
+  }
+
+  if (typeof raw.stage !== "string") {
+    throw new ValidationError("Field 'stage' must be a string");
+  }
+
+  const trimmedStage = raw.stage.trim().toUpperCase();
+  const validStages: string[] = [
+    "APPLIED",
+    "SCREENING",
+    "INTERVIEW",
+    "OFFERED",
+    "REJECTED",
+    "WITHDRAWN",
+  ];
+
+  if (!validStages.includes(trimmedStage)) {
+    throw new ValidationError(
+      `Invalid stage '${raw.stage}'. Valid stages are: ${validStages.join(", ")}`,
+    );
+  }
+
+  // Verify application exists
+  const existing = await applicationRepository.findById(trimmedId);
+  if (!existing) {
+    throw new NotFoundError(`Application with ID ${trimmedId} not found.`);
+  }
+
+  // Enforce job ownership
+  const isRoleAdmin =
+    String(user.role).toUpperCase() === "ADMIN" ||
+    String(user.role).toUpperCase() === "SUPER_ADMIN";
+
+  if (!isRoleAdmin && existing.recruiterId !== user.id) {
+    throw new ForbiddenError(
+      "You are not authorized to update applications for jobs belonging to another recruiter.",
+    );
+  }
+
+  const updated = await applicationRepository.updateStage(
+    trimmedId,
+    trimmedStage as any,
+  );
+
+  if (!updated) {
+    throw new NotFoundError(`Application with ID ${trimmedId} could not be updated.`);
+  }
+
+  return successResponse(
+    {
+      application: updated,
+      stage: updated.currentStage,
+      status: updated.status,
+    },
+    `Application stage updated to ${trimmedStage} successfully.`,
+  );
+}
+
+/**
  * Handle PATCH /api/applications/:id
  */
 export async function handleUpdateApplicationStatus(
   req: Request,
   appId: string,
 ): Promise<Response> {
-  const user = authenticate(req);
+  const user = await authenticate(req);
   const existing = await applicationRepository.findById(appId);
   if (!existing) {
     throw new NotFoundError(`Application with ID ${appId} not found.`);
   }
 
-  const isRoleAdmin = String(user.role).toUpperCase() === "ADMIN" || String(user.role).toUpperCase() === "SUPER_ADMIN";
+  const isRoleAdmin =
+    String(user.role).toUpperCase() === "ADMIN" ||
+    String(user.role).toUpperCase() === "SUPER_ADMIN";
 
   if (!isRoleAdmin && existing.recruiterId !== user.id) {
-    throw new ForbiddenError("You are not authorized to update this candidate's application status.");
+    throw new ForbiddenError(
+      "You are not authorized to update this candidate's application status.",
+    );
   }
 
   let body: unknown;
@@ -276,7 +392,41 @@ export async function handleApplicationApiRequest(req: Request): Promise<Respons
       return await handleCreateApplication(req);
     }
 
-    // 5. Match /api/applications/:id
+    // 5. Match /api/recruiter/applications/:id/stage
+    const recruiterStageMatch = pathname.match(
+      /^\/api\/recruiter\/applications\/([a-zA-Z0-9_-]+)\/stage$/,
+    );
+    if (recruiterStageMatch && recruiterStageMatch[1]) {
+      if (req.method === "PATCH" || req.method === "PUT") {
+        return await handleUpdateApplicationStage(req, recruiterStageMatch[1]);
+      }
+    }
+
+    // 6. Match /api/applications/:id/stage
+    const appStageMatch = pathname.match(
+      /^\/api\/applications\/([a-zA-Z0-9_-]+)\/stage$/,
+    );
+    if (appStageMatch && appStageMatch[1]) {
+      if (req.method === "PATCH" || req.method === "PUT") {
+        return await handleUpdateApplicationStage(req, appStageMatch[1]);
+      }
+    }
+
+    // 7. Match /api/recruiter/applications/:id
+    const recruiterAppMatch = pathname.match(
+      /^\/api\/recruiter\/applications\/([a-zA-Z0-9_-]+)$/,
+    );
+    if (recruiterAppMatch && recruiterAppMatch[1]) {
+      const appId = recruiterAppMatch[1];
+      if (req.method === "GET") {
+        return await handleGetApplicationById(req, appId);
+      }
+      if (req.method === "PATCH" || req.method === "PUT") {
+        return await handleUpdateApplicationStatus(req, appId);
+      }
+    }
+
+    // 8. Match /api/applications/:id
     const match = pathname.match(/^\/api\/applications\/([a-zA-Z0-9_-]+)$/);
     if (match && match[1]) {
       const appId = match[1];

@@ -30,6 +30,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useJob } from "@/hooks/api/useJobs";
 import { useUploadResume } from "@/hooks/api/useResumes";
 import { useMyApplications, useCreateApplication } from "@/hooks/api/useApplications";
+import { useSavedJobs } from "@/hooks/useSavedJobs";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/applicant/jobs/$jobId")({
@@ -48,13 +49,14 @@ export const Route = createFileRoute("/applicant/jobs/$jobId")({
 function ApplicantJobDetailsPage() {
   const { jobId } = useParams({ from: "/applicant/jobs/$jobId" });
   const { user } = useAuth();
+  const { isSaved, toggleSave } = useSavedJobs();
 
   const { data: job, isLoading, error } = useJob(jobId);
   const { data: myApps } = useMyApplications();
   const uploadResumeMutation = useUploadResume();
   const createApplicationMutation = useCreateApplication();
 
-  const [isSaved, setIsSaved] = useState(false);
+  const saved = isSaved(jobId);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [coverLetter, setCoverLetter] = useState("");
@@ -219,11 +221,11 @@ function ApplicantJobDetailsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setIsSaved(!isSaved)}
-                className={`text-xs gap-1.5 ${isSaved ? "border-brand-blue text-brand-blue bg-surface-blue" : ""}`}
+                onClick={() => toggleSave(jobId)}
+                className={`text-xs gap-1.5 ${saved ? "border-brand-blue text-brand-blue bg-surface-blue" : ""}`}
               >
-                <Bookmark className="size-3.5" />
-                {isSaved ? "Saved" : "Save Role"}
+                <Bookmark className={`size-3.5 ${saved ? "fill-current" : ""}`} />
+                {saved ? "Saved" : "Save Role"}
               </Button>
               {isPublished ? (
                 <Button

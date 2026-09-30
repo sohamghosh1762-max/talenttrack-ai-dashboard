@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Bookmark,
@@ -12,6 +12,8 @@ import {
   MapPin,
   Search,
   Sparkles,
+  AlertCircle,
+  FileText,
 } from "lucide-react";
 import { ApplicantLayout } from "@/components/applicant/ApplicantLayout";
 import { Button } from "@/components/ui/button";
@@ -23,8 +25,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAuth } from "@/auth/AuthProvider";
 import { useJobs } from "@/hooks/api/useJobs";
+import { useMyApplications, useCreateApplication } from "@/hooks/api/useApplications";
+import { useSavedJobs } from "@/hooks/useSavedJobs";
+import { calculateJobMatch } from "@/lib/applicant-utils";
 import type { IJob } from "@/server/types/job-types";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/applicant/jobs")({
   head: () => ({
@@ -37,11 +44,15 @@ export const Route = createFileRoute("/applicant/jobs")({
 });
 
 function ApplicantJobsPage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [selectedDept, setSelectedDept] = useState("All");
   const [selectedJob, setSelectedJob] = useState<IJob | null>(null);
-  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
-  const [appliedSuccess, setAppliedSuccess] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+
+  const { isSaved, toggleSave } = useSavedJobs();
+  const { data: myApps = [] } = useMyApplications();
+  const createApplicationMutation = useCreateApplication();
 
   const { data: jobsResponse, isLoading, error } = useJobs({
     status: "PUBLISHED",
@@ -50,11 +61,34 @@ function ApplicantJobsPage() {
   });
 
   const jobs: IJob[] = jobsResponse?.jobs || jobsResponse?.data || [];
+  const userSkills = user?.applicantProfile?.skills || [];
 
-  const toggleSave = (jobId: string) => {
-    setSavedJobIds((prev) =>
-      prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId],
-    );
+  const appliedJobIds = useMemo(() => {
+    return new Set(myApps.map((a) => a.jobId));
+  }, [myApps]);
+
+  const handleApply = async () => {
+    if (!selectedJob) return;
+    setApplyError(null);
+
+    try {
+      const resumeId = (user?.applicantProfile as Record<string, unknown>)?.[
+        "resumeId"
+      ] as string | undefined;
+
+      await createApplicationMutation.mutateAsync({
+        jobId: selectedJob.id,
+        resumeId,
+      });
+
+      toast.success("Application submitted successfully!", {
+        description: `Submitted for ${selectedJob.title}.`,
+      });
+      setSelectedJob(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to submit application";
+      setApplyError(msg);
+    }
   };
 
   return (
@@ -119,7 +153,9 @@ function ApplicantJobsPage() {
         ) : (
           <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {jobs.map((job) => {
-              const isSaved = savedJobIds.includes(job.id);
+              const saved = isSaved(job.id);
+              const hasApplied = appliedJobIds.has(job.id);
+              const match = calculateJobMatch(job, userSkills);
 
               return (
                 <div
@@ -128,12 +164,12 @@ function ApplicantJobsPage() {
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
-                      <div>
+                      <div className="min-w-0">
                         <span className="rounded bg-surface-blue px-2 py-0.5 text-[9.5px] font-semibold text-brand-blue">
-                          {job.department}
+                          {job.department || "Engineering"}
                         </span>
                         <Link to="/applicant/jobs/$jobId" params={{ jobId: job.id }}>
-                          <h3 className="text-sm font-bold text-foreground mt-1.5 hover:text-brand-blue transition-colors">
+                          <h3 className="text-sm font-bold text-foreground mt-1.5 hover:text-brand-blue transition-colors truncate">
                             {job.title}
                           </h3>
                         </Link>
@@ -141,14 +177,14 @@ function ApplicantJobsPage() {
                       <button
                         type="button"
                         onClick={() => toggleSave(job.id)}
-                        className={`p-1.5 rounded-md transition-colors ${
-                          isSaved
+                        className={`p-1.5 rounded-md transition-colors cursor-pointer shrink-0 ${
+                          saved
                             ? "text-brand-purple bg-surface-purple"
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                         aria-label="Save job"
                       >
-                        <Bookmark className={`size-4 ${isSaved ? "fill-current" : ""}`} />
+                        <Bookmark className={`size-4 ${saved ? "fill-current" : ""}`} />
                       </button>
                     </div>
 
@@ -159,12 +195,12 @@ function ApplicantJobsPage() {
                     <div className="space-y-1 text-[11px] text-muted-foreground pt-1">
                       <div className="flex items-center gap-1.5">
                         <MapPin className="size-3.5 text-muted-foreground shrink-0" />
-                        <span className="truncate">{job.location}</span>
+                        <span className="truncate">{job.location || "Remote"}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Building className="size-3.5 text-muted-foreground shrink-0" />
                         <span>
-                          {job.employmentType} {job.experienceRequired ? `• ${job.experienceRequired}` : ""}
+                          {job.employmentType || "Full-time"} {job.experienceRequired ? `• ${job.experienceRequired}` : ""}
                         </span>
                       </div>
                       {job.salaryRange && (job.salaryRange.min || job.salaryRange.max) && (
@@ -180,10 +216,17 @@ function ApplicantJobsPage() {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3">
-                    <span className="flex items-center gap-1 text-[10.5px] font-bold text-brand-green">
-                      <Sparkles className="size-3" />
-                      90%+ Match
-                    </span>
+                    {match.isAvailable ? (
+                      <span className="flex items-center gap-1 text-[10.5px] font-bold text-brand-green">
+                        <Sparkles className="size-3" />
+                        {match.matchScore}% Match
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">
+                        {job.department || "Open Role"}
+                      </span>
+                    )}
+
                     <div className="flex items-center gap-1.5">
                       <Link to="/applicant/jobs/$jobId" params={{ jobId: job.id }}>
                         <Button
@@ -194,13 +237,30 @@ function ApplicantJobsPage() {
                           Details
                         </Button>
                       </Link>
-                      <Button
-                        size="sm"
-                        className="h-7.5 px-3 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold"
-                        onClick={() => setSelectedJob(job)}
-                      >
-                        Apply Now
-                      </Button>
+
+                      {hasApplied ? (
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="outline"
+                          className="h-7.5 px-2.5 text-xs font-semibold border-brand-green/30 bg-surface-green text-brand-green hover:bg-surface-green"
+                        >
+                          <Link to="/applicant/applications">
+                            <CheckCircle2 className="size-3 mr-1" /> Applied
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="h-7.5 px-3 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold"
+                          onClick={() => {
+                            setApplyError(null);
+                            setSelectedJob(job);
+                          }}
+                        >
+                          Apply Now
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -210,54 +270,77 @@ function ApplicantJobsPage() {
         )}
 
         {/* Apply Dialog */}
-        <Dialog open={selectedJob !== null} onOpenChange={(open) => !open && setSelectedJob(null)}>
+        <Dialog
+          open={selectedJob !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedJob(null);
+              setApplyError(null);
+            }
+          }}
+        >
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="text-base font-bold">
                 Apply for {selectedJob?.title}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Your profile will be matched against this role's criteria.
+                Your authenticated profile and resume will be submitted to the {selectedJob?.department || "hiring"} team.
               </DialogDescription>
             </DialogHeader>
 
-            {appliedSuccess ? (
-              <div className="py-6 text-center space-y-2">
-                <div className="grid size-12 place-items-center rounded-full bg-surface-green text-brand-green mx-auto">
-                  <CheckCircle2 className="size-6" />
+            <div className="space-y-3 py-2 text-xs">
+              {applyError && (
+                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-2.5 text-xs text-destructive flex items-center gap-2">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <span>{applyError}</span>
                 </div>
-                <h4 className="text-sm font-bold text-foreground">Application Sent!</h4>
-                <p className="text-xs text-muted-foreground">
-                  Your profile and resume were submitted for {selectedJob?.title}.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3 py-2 text-xs">
-                <div className="rounded-lg bg-muted/40 p-3">
-                  <div className="font-semibold text-foreground">{selectedJob?.title}</div>
-                  <div className="text-muted-foreground text-[11px]">{selectedJob?.location}</div>
-                  <div className="text-[11px] text-brand-blue mt-1">{selectedJob?.department}</div>
+              )}
+
+              <div className="rounded-lg bg-muted/40 p-3 space-y-1">
+                <div className="font-semibold text-foreground">{user?.name || "Applicant"}</div>
+                <div className="text-muted-foreground">{user?.email}</div>
+                <div className="text-[11px] text-brand-blue">
+                  {user?.applicantProfile?.headline || "Software Professional"}
                 </div>
-                <DialogFooter className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" size="sm" onClick={() => setSelectedJob(null)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-brand-blue text-primary-foreground hover:bg-brand-blue/90"
-                    onClick={() => {
-                      setAppliedSuccess(true);
-                      setTimeout(() => {
-                        setAppliedSuccess(false);
-                        setSelectedJob(null);
-                      }, 1200);
-                    }}
-                  >
-                    Submit Application
-                  </Button>
-                </DialogFooter>
               </div>
-            )}
+
+              <div className="rounded-lg border border-dashed border-border p-3 text-center bg-card">
+                <span className="text-muted-foreground text-[11px] flex items-center justify-center gap-1.5">
+                  <FileText className="size-3.5 text-brand-blue" />
+                  Using profile resume:{" "}
+                  <strong className="text-foreground">
+                    {user?.applicantProfile?.resumeFileName || "Default Candidate Resume.pdf"}
+                  </strong>
+                </span>
+              </div>
+
+              <DialogFooter className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedJob(null)}
+                  disabled={createApplicationMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-brand-blue text-primary-foreground hover:bg-brand-blue/90"
+                  onClick={handleApply}
+                  disabled={createApplicationMutation.isPending}
+                >
+                  {createApplicationMutation.isPending ? (
+                    <>
+                      <Loader2 className="size-3.5 mr-1.5 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit Application"
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

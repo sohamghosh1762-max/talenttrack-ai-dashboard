@@ -3,14 +3,19 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface IApplicantDocument extends Document {
   id: string;
   userId: mongoose.Types.ObjectId;
+  firebaseUid?: string | undefined;
   headline?: string | undefined;
   phone?: string | undefined;
   location?: string | undefined;
   skills: string[];
-  experience?: string | undefined;
-  education: string[];
+  experience?: any | undefined;
+  education?: any | undefined;
+  certifications?: any | undefined;
+  projects?: any | undefined;
   resume?: string | undefined;
+  resumeId?: string | undefined;
   summary?: string | undefined;
+  bio?: string | undefined;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,6 +27,12 @@ const ApplicantSchema = new Schema<IApplicantDocument>(
       ref: "User",
       required: true,
       unique: true,
+      index: true,
+    },
+    firebaseUid: {
+      type: String,
+      unique: true,
+      sparse: true,
       index: true,
     },
     headline: {
@@ -43,18 +54,34 @@ const ApplicantSchema = new Schema<IApplicantDocument>(
       index: true,
     },
     experience: {
-      type: String,
-      trim: true,
+      type: Schema.Types.Mixed,
+      default: [],
     },
     education: {
-      type: [String],
+      type: Schema.Types.Mixed,
+      default: [],
+    },
+    certifications: {
+      type: Schema.Types.Mixed,
+      default: [],
+    },
+    projects: {
+      type: Schema.Types.Mixed,
       default: [],
     },
     resume: {
       type: String,
       trim: true,
     },
+    resumeId: {
+      type: String,
+      trim: true,
+    },
     summary: {
+      type: String,
+      trim: true,
+    },
+    bio: {
       type: String,
       trim: true,
     },

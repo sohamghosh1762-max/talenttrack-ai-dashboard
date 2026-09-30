@@ -3,6 +3,9 @@ import { handleAuthApiRequest } from "./auth-routes.ts";
 import { handleJobApiRequest } from "./job-routes.ts";
 import { handleApplicationApiRequest } from "./application-routes.ts";
 import { handleResumeApiRequest } from "./resume-routes.ts";
+import { handleAiApiRequest } from "./ai-routes.ts";
+import { handleAtsApiRequest } from "./ats-routes.ts";
+import { handleApplicantApiRequest } from "./applicant-routes.ts";
 import { getDatabaseStatus } from "../db/mongodb.ts";
 import { errorResponse, successResponse } from "../utils/response.ts";
 import { NotFoundError } from "../utils/errors.ts";
@@ -91,7 +94,25 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 7. Fallthrough for unhandled /api/* route
+    // 7. Applicant routes: /api/applicant/* (Profile & ATS Score)
+    if (pathname.startsWith("/api/applicant")) {
+      const response = await handleApplicantApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 8. AI routes: /api/ai/*
+    if (pathname.startsWith("/api/ai")) {
+      const response = await handleAiApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 9. Fallthrough for unhandled /api/* route
     const notFoundErr = new NotFoundError(`API endpoint not found: ${req.method} ${pathname}`);
     const response = errorResponse(notFoundErr, 404);
     requestLogger(req, startTime, 404, notFoundErr.message);
@@ -113,3 +134,6 @@ export * from "./auth-routes.ts";
 export * from "./job-routes.ts";
 export * from "./application-routes.ts";
 export * from "./resume-routes.ts";
+export * from "./ai-routes.ts";
+export * from "./ats-routes.ts";
+export * from "./applicant-routes.ts";

@@ -611,4 +611,348 @@ describe("APPLICATION MANAGEMENT REST API & RBAC SUITE", () => {
     assert.ok(res);
     assert.equal(res.status, 403);
   });
+
+  /* ------------------------------------------------------------- */
+  /* PHASE 19: RECRUITER PIPELINE KANBAN STAGE UPDATE & SECURITY   */
+  /* ------------------------------------------------------------- */
+
+  it("should successfully update application stage for owned job via PATCH /api/recruiter/applications/:id/stage", async () => {
+    const app = await applicationRepository.create({
+      jobId: publishedJob1.id,
+      applicantId: applicant1User.id,
+      recruiterId: recruiter1User.id,
+      resumeId: applicant1Resume.id,
+    });
+    assert.equal(app.currentStage, "APPLIED");
+
+    const req = createJsonRequest(
+      `https://talenttrack.ai/api/recruiter/applications/${app.id}/stage`,
+      {
+        method: "PATCH",
+        token: recruiter1Token,
+        body: {
+          stage: "SCREENING",
+        },
+      },
+    );
+
+    const res = await handleApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 200, "Should return 200 OK for valid stage update");
+
+    const json = await res.json();
+    assert.equal(json.success, true);
+    assert.equal(json.data.stage, "SCREENING");
+    assert.equal(json.data.application.currentStage, "SCREENING");
+    assert.equal(json.data.application.status, "SCREENING");
+
+    // Verify persistence in MongoDB / Repository
+    const persisted = await applicationRepository.findById(app.id);
+    assert.ok(persisted);
+    assert.equal(persisted.currentStage, "SCREENING");
+    assert.equal(persisted.status, "SCREENING");
+  });
+
+  it("should support transitions across all valid stages", async () => {
+    const app = await applicationRepository.create({
+      jobId: publishedJob1.id,
+      applicantId: applicant1User.id,
+      recruiterId: recruiter1User.id,
+    });
+
+    const validStages = ["SCREENING", "INTERVIEW", "OFFERED", "REJECTED", "WITHDRAWN", "APPLIED"];
+
+    for (const targetStage of validStages) {
+      const req = createJsonRequest(
+        `https://talenttrack.ai/api/recruiter/applications/${app.id}/stage`,
+        {
+          method: "PATCH",
+          token: recruiter1Token,
+          body: {
+            stage: targetStage,
+          },
+        },
+      );
+
+      const res = await handleApiRequest(req);
+      assert.ok(res);
+      assert.equal(res.status, 200);
+
+      const json = await res.json();
+      assert.equal(json.data.stage, targetStage);
+
+      // Verify persistence
+      const persisted = await applicationRepository.findById(app.id);
+      assert.ok(persisted);
+      assert.equal(persisted.currentStage, targetStage);
+    }
+  });
+
+  it("should also support PATCH /api/applications/:id/stage endpoint", async () => {
+    const app = await applicationRepository.create({
+      jobId: publishedJob1.id,
+      applicantId: applicant1User.id,
+      recruiterId: recruiter1User.id,
+    });
+
+    const req = createJsonRequest(
+      `https://talenttrack.ai/api/applications/${app.id}/stage`,
+      {
+        method: "PATCH",
+        token: recruiter1Token,
+        body: {
+          stage: "INTERVIEW",
+        },
+      },
+    );
+
+    const res = await handleApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 200);
+
+    const json = await res.json();
+    assert.equal(json.data.stage, "INTERVIEW");
+  });
+
+  it("should reject unauthenticated stage update with 401", async () => {
+    const app = await applicationRepository.create({
+      jobId: publishedJob1.id,
+      applicantId: applicant1User.id,
+      recruiterId: recruiter1User.id,
+    });
+
+    const req = createJsonRequest(
+      `https://talenttrack.ai/api/recruiter/applications/${app.id}/stage`,
+      {
+        method: "PATCH",
+        // No token
+        body: {
+          stage: "INTERVIEW",
+        },
+      },
+    );
+
+    const res = await handleApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 401, "Unauthenticated request must return 401");
+  });
+
+  it("should reject applicant role attempting stage update with 403 Forbidden", async () => {
+    const app = await applicationRepository.create({
+      jobId: publishedJob1.id,
+      applicantId: applicant1User.id,
+      recruiterId: recruiter1User.id,
+    });
+
+    const req = createJsonRequest(
+      `https://talenttrack.ai/api/recruiter/applications/${app.id}/stage`,
+      {
+        method: "PATCH",
+        token: applicant1Token, // Applicant role
+        body: {
+          stage: "OFFERED",
+        },
+      },
+    );
+
+    const res = await handleApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 403, "Applicant must be rejected with 403");
+  });
+
+  it("should reject recruiter updating another recruiter's application with 403 Forbidden", async () => {
+    // Application belongs to Recruiter 1
+    const app = await applicationRepository.create({
+      jobId: publishedJob1.id,
+      applicantId: applicant1User.id,
+      recruiterId: recruiter1User.id,
+    });
+
+    // Recruiter 2 attempts to change stage
+    const req = createJsonRequest(
+      `https://talenttrack.ai/api/recruiter/applications/${app.id}/stage`,
+      {
+        method: "PATCH",
+        token: recruiter2Token,
+        body: {
+          stage: "OFFERED",
+        },
+      },
+    );
+
+    const res = await handleApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 403, "Cross-recruiter modification must be blocked with 403");
+  });
+
+  it("should reject non-existent application with 404", async () => {
+    const req = createJsonRequest(
+      "https://talenttrack.ai/api/recruiter/applications/65f1a2b3c4d5e6f7a8b9c999/stage",
+      {
+        method: "PATCH",
+        token: recruiter1Token,
+        body: {
+          stage: "SCREENING",
+        },
+      },
+    );
+
+    const res = await handleApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 404, "Non-existent application must return 404");
+  });
+
+  it("should reject invalid/malformed application ID with 400 Bad Request", async () => {
+    const req = createJsonRequest(
+      "https://talenttrack.ai/api/recruiter/applications/invalid-id-format/stage",
+      {
+        method: "PATCH",
+        token: recruiter1Token,
+        body: {
+          stage: "SCREENING",
+        },
+      },
+    );
+
+    const res = await handleApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 400, "Malformed application ID must return 400");
+  });
+
+  it("should reject invalid stage values with 400 Bad Request", async () => {
+    const app = await applicationRepository.create({
+      jobId: publishedJob1.id,
+      applicantId: applicant1User.id,
+      recruiterId: recruiter1User.id,
+    });
+
+    const invalidStages = ["INVALID", "PENDING", "SHORTLISTED", "RANDOM_VALUE", "HIRED"];
+
+    for (const invalidStage of invalidStages) {
+      const req = createJsonRequest(
+        `https://talenttrack.ai/api/recruiter/applications/${app.id}/stage`,
+        {
+          method: "PATCH",
+          token: recruiter1Token,
+          body: {
+            stage: invalidStage,
+          },
+        },
+      );
+
+      const res = await handleApiRequest(req);
+      assert.ok(res);
+      assert.equal(res.status, 400, `Invalid stage '${invalidStage}' must return 400`);
+
+      const json = await res.json();
+      assert.equal(json.success, false);
+    }
+  });
+
+  it("should reject missing, empty, or non-string stage with 400 Bad Request", async () => {
+    const app = await applicationRepository.create({
+      jobId: publishedJob1.id,
+      applicantId: applicant1User.id,
+      recruiterId: recruiter1User.id,
+    });
+
+    // 1. Missing stage
+    const req1 = createJsonRequest(
+      `https://talenttrack.ai/api/recruiter/applications/${app.id}/stage`,
+      {
+        method: "PATCH",
+        token: recruiter1Token,
+        body: {},
+      },
+    );
+    const res1 = await handleApiRequest(req1);
+    assert.ok(res1);
+    assert.equal(res1.status, 400);
+
+    // 2. Empty stage
+    const req2 = createJsonRequest(
+      `https://talenttrack.ai/api/recruiter/applications/${app.id}/stage`,
+      {
+        method: "PATCH",
+        token: recruiter1Token,
+        body: { stage: "" },
+      },
+    );
+    const res2 = await handleApiRequest(req2);
+    assert.ok(res2);
+    assert.equal(res2.status, 400);
+
+    // 3. Numeric stage
+    const req3 = createJsonRequest(
+      `https://talenttrack.ai/api/recruiter/applications/${app.id}/stage`,
+      {
+        method: "PATCH",
+        token: recruiter1Token,
+        body: { stage: 123 },
+      },
+    );
+    const res3 = await handleApiRequest(req3);
+    assert.ok(res3);
+    assert.equal(res3.status, 400);
+  });
+
+  it("should ignore client-supplied recruiterId in body and enforce session ownership", async () => {
+    // App belongs to Recruiter 1
+    const app = await applicationRepository.create({
+      jobId: publishedJob1.id,
+      applicantId: applicant1User.id,
+      recruiterId: recruiter1User.id,
+    });
+
+    // Recruiter 2 tries to spoof recruiterId: recruiter1User.id in payload
+    const req = createJsonRequest(
+      `https://talenttrack.ai/api/recruiter/applications/${app.id}/stage`,
+      {
+        method: "PATCH",
+        token: recruiter2Token,
+        body: {
+          stage: "OFFERED",
+          recruiterId: recruiter1User.id,
+        },
+      },
+    );
+
+    const res = await handleApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 403, "Cannot bypass authorization via client recruiterId");
+  });
+
+  it("should filter applications by updated stage in GET /api/recruiter/applications", async () => {
+    const app1 = await applicationRepository.create({
+      jobId: publishedJob1.id,
+      applicantId: applicant1User.id,
+      recruiterId: recruiter1User.id,
+    });
+
+    const app2 = await applicationRepository.create({
+      jobId: publishedJob1.id,
+      applicantId: applicant2User.id,
+      recruiterId: recruiter1User.id,
+    });
+
+    // Move app1 to INTERVIEW
+    await applicationRepository.updateStage(app1.id, "INTERVIEW");
+
+    // Recruiter queries stage=INTERVIEW
+    const req = createJsonRequest(
+      "https://talenttrack.ai/api/recruiter/applications?stage=INTERVIEW",
+      {
+        token: recruiter1Token,
+      },
+    );
+
+    const res = await handleApiRequest(req);
+    assert.ok(res);
+    assert.equal(res.status, 200);
+
+    const json = await res.json();
+    assert.equal(json.data.length, 1);
+    assert.equal(json.data[0].id, app1.id);
+    assert.equal(json.data[0].currentStage, "INTERVIEW");
+  });
 });

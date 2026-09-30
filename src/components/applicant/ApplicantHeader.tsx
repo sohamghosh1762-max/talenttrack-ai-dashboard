@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Bell,
@@ -10,7 +10,6 @@ import {
   LogOut,
   Menu,
   Search,
-  Settings,
   Sparkles,
   User as UserIcon,
 } from "lucide-react";
@@ -26,41 +25,64 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ApplicantSidebar } from "./ApplicantSidebar";
 import { useAuth } from "@/auth/AuthProvider";
+import { useMyApplications } from "@/hooks/api/useApplications";
+import { formatApplicationDate } from "@/lib/applicant-utils";
 
 interface ApplicantHeaderProps {
   searchQuery?: string | undefined;
   onSearchChange?: ((val: string) => void) | undefined;
 }
 
-const applicantNotifications = [
-  {
-    id: "notif-app-1",
-    title: "Interview Invitation Received",
-    description: "TalentTrack Technologies invited you for Technical Deep Dive.",
-    timeAgo: "25m ago",
-    unread: true,
-  },
-  {
-    id: "notif-app-2",
-    title: "Application Status Update",
-    description: "CloudScale Systems marked your Staff React Architect application as Shortlisted.",
-    timeAgo: "2h ago",
-    unread: true,
-  },
-  {
-    id: "notif-app-3",
-    title: "New AI Role Match",
-    description: "Frontend Developer opening at Nexus AI matches 94% of your profile.",
-    timeAgo: "1d ago",
-    unread: false,
-  },
-];
-
 export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [notifications, setNotifications] = useState(applicantNotifications);
+  const [readIds, setReadIds] = useState<string[]>([]);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const { data: applications = [] } = useMyApplications();
+
+  // Derive notifications from real applications
+  const notifications = useMemo(() => {
+    return applications.slice(0, 5).map((app) => {
+      const isInterview =
+        app.currentStage?.toUpperCase() === "INTERVIEW" ||
+        app.status?.toUpperCase() === "INTERVIEW";
+      const isOffered =
+        app.status?.toUpperCase() === "OFFERED" ||
+        app.currentStage?.toUpperCase() === "OFFERED";
+      const isShortlisted =
+        app.status?.toUpperCase() === "SHORTLISTED" ||
+        app.currentStage?.toUpperCase() === "SHORTLISTED";
+
+      let title = "Application Submitted";
+      let desc = `Your application for ${app.job?.title || app.jobTitle || "Job Position"} is currently under review.`;
+
+      if (isOffered) {
+        title = "Job Offer Extended! 🎉";
+        desc = `Congratulations! You received an offer for ${app.job?.title || app.jobTitle}.`;
+      } else if (isInterview) {
+        title = "Interview Stage Scheduled";
+        desc = `Your application for ${app.job?.title || app.jobTitle} advanced to the interview stage.`;
+      } else if (isShortlisted) {
+        title = "Candidate Shortlisted";
+        desc = `You have been shortlisted for ${app.job?.title || app.jobTitle}.`;
+      }
+
+      return {
+        id: `notif-${app.id}`,
+        title,
+        description: desc,
+        timeAgo: formatApplicationDate(app.appliedAt),
+        unread: !readIds.includes(`notif-${app.id}`),
+      };
+    });
+  }, [applications, readIds]);
+
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
+  const markAllAsRead = () => {
+    setReadIds(notifications.map((n) => n.id));
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -68,11 +90,6 @@ export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantH
   };
 
   const initial = user?.name ? user.name.charAt(0).toUpperCase() : "A";
-  const unreadCount = notifications.filter((n) => n.unread).length;
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
-  };
 
   return (
     <header
@@ -145,6 +162,11 @@ export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantH
             </div>
             <DropdownMenuSeparator />
             <div className="space-y-1">
+              {notifications.length === 0 && (
+                <div className="p-4 text-center text-xs text-muted-foreground">
+                  No new notifications yet.
+                </div>
+              )}
               {notifications.map((notif) => (
                 <div
                   key={notif.id}
@@ -179,7 +201,7 @@ export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantH
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="hidden h-auto items-center gap-2.5 px-1 py-1 text-left sm:flex hover:bg-muted/60"
+              className="hidden h-auto items-center gap-2.5 px-1 py-1 text-left sm:flex hover:bg-muted/60 cursor-pointer"
             >
               <div>
                 <span className="block text-xs font-bold text-foreground">
@@ -194,7 +216,7 @@ export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantH
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 shadow-xl">
             <div className="px-3 py-2">
-              <div className="text-xs font-bold">{user?.name}</div>
+              <div className="text-xs font-bold">{user?.name || "Applicant"}</div>
               <div className="text-[10px] text-muted-foreground">{user?.email}</div>
             </div>
             <DropdownMenuSeparator />

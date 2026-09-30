@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useState, useMemo } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  AlertCircle,
+  Briefcase,
   Calendar,
   CalendarDays,
   CheckCircle2,
   Clock,
   ExternalLink,
+  Loader2,
   MapPin,
   MessageSquare,
   Sparkles,
@@ -16,6 +19,9 @@ import {
 } from "lucide-react";
 import { ApplicantLayout } from "@/components/applicant/ApplicantLayout";
 import { Button } from "@/components/ui/button";
+import { useMyApplications } from "@/hooks/api/useApplications";
+import { formatApplicationDate } from "@/lib/applicant-utils";
+import type { IApplication } from "@/server/types/application-types";
 
 export const Route = createFileRoute("/applicant/interviews")({
   head: () => ({
@@ -31,76 +37,30 @@ export const Route = createFileRoute("/applicant/interviews")({
   component: ApplicantInterviewsPage,
 });
 
-interface ScheduledInterview {
-  id: string;
-  role: string;
-  company: string;
-  stage: string;
-  interviewers: string[];
-  dateTime: string;
-  duration: string;
-  meetingLink: string;
-  status: "Upcoming" | "Completed" | "Rescheduled";
-  notes?: string;
-  prepTips?: string[];
-}
-
-const mockApplicantInterviews: ScheduledInterview[] = [
-  {
-    id: "interview-1",
-    role: "Senior Frontend Engineer",
-    company: "TalentTrack Technologies",
-    stage: "Technical Deep Dive & Architecture",
-    interviewers: ["Sarah Jenkins (VP Engineering)", "David Kim (Lead Architect)"],
-    dateTime: "Tomorrow, Oct 2, 2025 at 3:00 PM EST",
-    duration: "45 minutes",
-    meetingLink: "https://meet.google.com/abc-defg-hij",
-    status: "Upcoming",
-    notes:
-      "Please be ready to share your screen for live system design and React component walkthrough.",
-    prepTips: [
-      "Review state management patterns with Redux & Context API",
-      "Prepare questions about the team's engineering roadmap",
-      "Ensure web camera and microphone permissions are enabled",
-    ],
-  },
-  {
-    id: "interview-2",
-    role: "Staff React Architect",
-    company: "CloudScale Systems",
-    stage: "Hiring Manager Introduction",
-    interviewers: ["Michael Brown (Director of Talent)"],
-    dateTime: "Friday, Oct 5, 2025 at 11:30 AM EST",
-    duration: "30 minutes",
-    meetingLink: "https://zoom.us/j/9876543210",
-    status: "Upcoming",
-    notes: "General overview of career experience, company culture, and expectations.",
-    prepTips: [
-      "Review recent projects and leadership achievements",
-      "Prepare your career timeline summary",
-    ],
-  },
-  {
-    id: "interview-3",
-    role: "Fullstack TypeScript Developer",
-    company: "Nexus AI Labs",
-    stage: "Initial Recruiter Screen",
-    interviewers: ["Elena Rostova (Senior Technical Recruiter)"],
-    dateTime: "Sep 24, 2025 at 2:00 PM EST",
-    duration: "25 minutes",
-    meetingLink: "https://meet.google.com/xyz-uvwx-rst",
-    status: "Completed",
-    notes: "Completed successfully. Advanced to technical interview stage.",
-  },
-];
-
 function ApplicantInterviewsPage() {
   const [filter, setFilter] = useState<"All" | "Upcoming" | "Completed">("All");
+  const { data: applications = [], isLoading, error } = useMyApplications();
 
-  const filteredInterviews = mockApplicantInterviews.filter((item) => {
-    if (filter === "All") return true;
-    return item.status === filter;
-  });
+  // Dynamically derive interview items from authenticated applicant applications
+  const interviewApplications = useMemo(() => {
+    return applications.filter(
+      (app) =>
+        app.currentStage?.toUpperCase() === "INTERVIEW" ||
+        app.status?.toUpperCase() === "INTERVIEW",
+    );
+  }, [applications]);
+
+  const filteredInterviews = useMemo(() => {
+    if (filter === "All") return interviewApplications;
+    if (filter === "Upcoming") {
+      return interviewApplications.filter(
+        (app) => app.status !== "REJECTED" && app.status !== "WITHDRAWN",
+      );
+    }
+    return interviewApplications.filter(
+      (app) => app.status === "OFFERED" || app.status === "REJECTED",
+    );
+  }, [interviewApplications, filter]);
 
   return (
     <ApplicantLayout>
@@ -115,8 +75,7 @@ function ApplicantInterviewsPage() {
               <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">Interviews</h1>
             </div>
             <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-              Keep track of your scheduled candidate interviews, interviewers, and direct video
-              meeting links.
+              Track your scheduled candidate interviews, hiring stages, and recruiter communication.
             </p>
           </div>
 
@@ -138,96 +97,117 @@ function ApplicantInterviewsPage() {
           </div>
         </section>
 
-        {/* Interviews List */}
-        <div className="space-y-4">
-          {filteredInterviews.map((interview) => (
-            <div
-              key={interview.id}
-              className="dashboard-card p-5 space-y-4 transition-all duration-200 hover:border-brand-blue/40"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-foreground">{interview.role}</h2>
-                    <span
-                      className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                        interview.status === "Upcoming"
-                          ? "bg-surface-green text-brand-green border border-brand-green/20"
-                          : "bg-muted text-muted-foreground"
-                      }`}
+        {/* Loading */}
+        {isLoading && (
+          <div className="dashboard-card p-12 text-center space-y-3">
+            <Loader2 className="size-8 animate-spin text-brand-blue mx-auto" />
+            <p className="text-xs text-muted-foreground">Loading your scheduled interviews...</p>
+          </div>
+        )}
+
+        {/* Error */}
+        {!isLoading && error && (
+          <div className="dashboard-card p-8 text-center space-y-3 border-destructive/30">
+            <AlertCircle className="size-8 text-destructive mx-auto" />
+            <h3 className="text-sm font-bold text-foreground">Failed to load interviews</h3>
+            <p className="text-xs text-muted-foreground">{(error as Error).message}</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !error && filteredInterviews.length === 0 && (
+          <div className="dashboard-card p-12 text-center space-y-3">
+            <div className="grid size-12 place-items-center rounded-full bg-surface-peach text-brand-orange mx-auto">
+              <CalendarDays className="size-6" />
+            </div>
+            <h3 className="text-sm font-bold text-foreground">No interviews scheduled yet</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              When a recruiter advances your application to the interview stage, scheduled sessions, meeting links, and preparation tips will appear here.
+            </p>
+            <div className="flex items-center justify-center gap-2 pt-1">
+              <Link to="/applicant/applications">
+                <Button variant="outline" size="sm" className="text-xs">
+                  View Applications
+                </Button>
+              </Link>
+              <Link to="/applicant/jobs">
+                <Button size="sm" className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs">
+                  Explore Jobs
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Dynamic Interviews List */}
+        {!isLoading && !error && filteredInterviews.length > 0 && (
+          <div className="space-y-4">
+            {filteredInterviews.map((app: IApplication) => (
+              <div
+                key={app.id}
+                className="dashboard-card p-5 space-y-4 transition-all duration-200 hover:border-brand-blue/40"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-bold text-foreground">
+                        <Link
+                          to="/applicant/jobs/$jobId"
+                          params={{ jobId: app.jobId }}
+                          className="hover:text-brand-blue transition-colors"
+                        >
+                          {app.job?.title || app.jobTitle || "Job Position"}
+                        </Link>
+                      </h2>
+                      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold bg-surface-green text-brand-green border border-brand-green/20">
+                        Interview Stage
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-brand-blue mt-0.5">
+                      {app.job?.company || "TalentTrack AI"} •{" "}
+                      <span className="text-foreground">{app.job?.location || "Remote"}</span>
+                    </p>
+                  </div>
+
+                  <Link to="/applicant/jobs/$jobId" params={{ jobId: app.jobId }}>
+                    <Button
+                      size="sm"
+                      className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold gap-1.5 shadow-sm shrink-0"
                     >
-                      {interview.status}
+                      <Briefcase className="size-3.5" />
+                      View Position
+                    </Button>
+                  </Link>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Clock className="size-4 text-brand-blue shrink-0" />
+                    <span>Applied: <strong className="text-foreground">{formatApplicationDate(app.appliedAt)}</strong></span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="size-4 text-brand-green shrink-0" />
+                    <span>
+                      AI Match Score: <strong className="text-foreground">{app.aiScore ? `${app.aiScore}%` : "Calculated upon review"}</strong>
                     </span>
                   </div>
-                  <p className="text-xs font-semibold text-brand-blue mt-0.5">
-                    {interview.company} • <span className="text-foreground">{interview.stage}</span>
-                  </p>
                 </div>
 
-                {interview.status === "Upcoming" && (
-                  <Button
-                    asChild
-                    size="sm"
-                    className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold gap-1.5 shadow-sm shrink-0"
-                  >
-                    <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer">
-                      <Video className="size-3.5" />
-                      Join Video Meeting
-                      <ExternalLink className="size-3" />
-                    </a>
-                  </Button>
+                {app.notes && (
+                  <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
+                    <div className="font-semibold text-foreground flex items-center gap-1.5">
+                      <MessageSquare className="size-3.5 text-muted-foreground" />
+                      Recruiter Note / Instructions:
+                    </div>
+                    <p className="text-[11px] leading-relaxed">{app.notes}</p>
+                  </div>
                 )}
               </div>
-
-              {/* Details Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Calendar className="size-4 text-brand-blue shrink-0" />
-                  <span className="font-semibold text-foreground">{interview.dateTime}</span>
-                  <span className="text-[11px]">({interview.duration})</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <User className="size-4 text-brand-purple shrink-0" />
-                  <span>
-                    <strong className="text-foreground">Interviewers:</strong>{" "}
-                    {interview.interviewers.join(", ")}
-                  </span>
-                </div>
-              </div>
-
-              {interview.notes && (
-                <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
-                  <div className="font-semibold text-foreground flex items-center gap-1.5">
-                    <MessageSquare className="size-3.5 text-muted-foreground" />
-                    Session Details & Instructions:
-                  </div>
-                  <p className="text-[11px] leading-relaxed">{interview.notes}</p>
-                </div>
-              )}
-
-              {interview.prepTips && interview.prepTips.length > 0 && (
-                <div className="rounded-lg bg-surface-blue/30 border border-brand-blue/20 p-3 text-xs space-y-1.5">
-                  <div className="font-bold text-brand-blue flex items-center gap-1.5 text-[11.5px]">
-                    <Sparkles className="size-3.5" />
-                    Recommended Preparation Tips:
-                  </div>
-                  <ul className="space-y-1 text-[11px] text-muted-foreground list-disc list-inside">
-                    {interview.prepTips.map((tip, idx) => (
-                      <li key={idx}>{tip}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {filteredInterviews.length === 0 && (
-            <div className="dashboard-card p-12 text-center text-xs text-muted-foreground">
-              No {filter.toLowerCase()} interviews found.
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </ApplicantLayout>
   );

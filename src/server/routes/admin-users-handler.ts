@@ -23,7 +23,7 @@ const ALLOWED_SORT_FIELDS = ["createdAt", "name", "email", "role", "status"];
  */
 export async function handleGetUsers(req: Request): Promise<Response> {
   // 1. Authorization
-  const admin = authenticate(req);
+  const admin = await authenticate(req);
   requireRole("ADMIN")(admin);
 
   // 2. Query parameter extraction & validation
@@ -134,7 +134,7 @@ export async function handleGetUsers(req: Request): Promise<Response> {
  */
 export async function handleGetUserById(req: Request, id: string): Promise<Response> {
   // 1. Authorization
-  const admin = authenticate(req);
+  const admin = await authenticate(req);
   requireRole("ADMIN")(admin);
 
   // 2. Validate MongoDB ObjectId
@@ -159,7 +159,7 @@ export async function handleGetUserById(req: Request, id: string): Promise<Respo
  */
 export async function handleGetUserActivity(req: Request, id: string): Promise<Response> {
   // 1. Authorization
-  const admin = authenticate(req);
+  const admin = await authenticate(req);
   requireRole("ADMIN")(admin);
 
   // 2. Validate ObjectId
@@ -185,7 +185,7 @@ export async function handleGetUserActivity(req: Request, id: string): Promise<R
  */
 export async function handleBulkUpdateUserStatus(req: Request): Promise<Response> {
   // 1. Authorization
-  const admin = authenticate(req);
+  const admin = await authenticate(req);
   requireRole("ADMIN")(admin);
 
   // 2. Parse JSON body
@@ -239,7 +239,7 @@ export async function handleBulkUpdateUserStatus(req: Request): Promise<Response
  */
 export async function handleUpdateUserStatus(req: Request, id: string): Promise<Response> {
   // 1. Authorization
-  const admin = authenticate(req);
+  const admin = await authenticate(req);
   requireRole("ADMIN")(admin);
 
   // 2. Validate MongoDB ObjectId

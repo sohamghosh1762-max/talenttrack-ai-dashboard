@@ -16,7 +16,9 @@ import type {
   UserSummaryStats,
   BulkUpdateStatusResult,
   UserActivityItem,
+  UpdateApplicantProfileInput,
 } from "../types/user-types.ts";
+import type { IParsedResumeProfile } from "../types/resume-types.ts";
 import { auditService } from "../services/audit-service.ts";
 
 // Standard 24-character hexadecimal MongoDB ObjectId validator
@@ -562,6 +564,124 @@ class UserRepository {
   }
 
   /**
+   * Find user by Firebase UID
+   */
+  public findByFirebaseUid(firebaseUid: string): IUser | null {
+    if (!firebaseUid) return null;
+    for (const u of this.users.values()) {
+      if (u.firebaseUid === firebaseUid) {
+        return { ...u };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Link Firebase UID to existing user (and associated Applicant document if applicable)
+   */
+  public linkFirebaseUid(userId: string, firebaseUid: string): boolean {
+    const user = this.users.get(userId);
+    if (!user) return false;
+
+    user.firebaseUid = firebaseUid;
+    user.updatedAt = new Date().toISOString();
+
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      User.findByIdAndUpdate(userId, {
+        $set: { firebaseUid, updatedAt: new Date() },
+      }).catch(console.error);
+
+      if (user.role === "APPLICANT") {
+        Applicant.findOneAndUpdate(
+          { userId },
+          { $set: { firebaseUid, updatedAt: new Date() } },
+        ).catch(console.error);
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Create and persist a new Firebase-authenticated Applicant user
+   */
+  public createFirebaseApplicant(data: {
+    firebaseUid: string;
+    email: string;
+    name?: string | undefined;
+    phone?: string | undefined;
+    emailVerified?: boolean | undefined;
+    avatarUrl?: string | undefined;
+    headline?: string | undefined;
+    location?: string | undefined;
+  }): IUser {
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const id = generateObjectId();
+    const now = new Date().toISOString();
+
+    const applicantProfile: ApplicantProfileInfo = {
+      headline: data.headline || "Applicant",
+      location: data.location || "Remote",
+      phone: data.phone || "",
+      skills: [],
+      experienceYears: "",
+    };
+
+    const newUser: IUser = {
+      id,
+      name: (data.name && data.name.trim()) || normalizedEmail.split("@")[0] || "Applicant",
+      email: normalizedEmail,
+      passwordHash: "FIREBASE_AUTH_MANAGED",
+      firebaseUid: data.firebaseUid,
+      role: "APPLICANT",
+      status: "ACTIVE",
+      emailVerified: data.emailVerified ?? false,
+      emailVerifiedAt: data.emailVerified ? now : undefined,
+      avatarUrl: data.avatarUrl,
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      createdAt: now,
+      updatedAt: now,
+      lastActive: now,
+      applicantProfile,
+    };
+
+    if (isDatabaseConnected()) {
+      User.create({
+        _id: id,
+        name: newUser.name,
+        email: newUser.email,
+        passwordHash: newUser.passwordHash,
+        firebaseUid: newUser.firebaseUid,
+        role: newUser.role,
+        status: newUser.status,
+        emailVerified: newUser.emailVerified,
+        emailVerifiedAt: newUser.emailVerifiedAt,
+        avatarUrl: newUser.avatarUrl,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        applicantProfile: newUser.applicantProfile,
+      })
+        .then(async (createdUserDoc) => {
+          await Applicant.create({
+            userId: createdUserDoc._id,
+            firebaseUid: data.firebaseUid,
+            headline: applicantProfile.headline,
+            location: applicantProfile.location,
+            phone: applicantProfile.phone,
+            skills: [],
+          } as any).catch(console.error);
+        })
+        .catch((err) => {
+          console.error(`[MongoDB] Error saving Firebase user ${newUser.email}:`, err);
+        });
+    }
+
+    this.users.set(id, newUser);
+    return { ...newUser };
+  }
+
+  /**
    * Count active administrators
    */
   public countActiveAdmins(): number {
@@ -982,6 +1102,190 @@ class UserRepository {
     }
 
     return true;
+  }
+
+  /**
+   * Update and persist Applicant profile (User + Applicant models)
+   */
+  public async updateApplicantProfile(
+    userId: string,
+    data: UpdateApplicantProfileInput,
+  ): Promise<IUser | null> {
+    const user = this.users.get(userId);
+    if (!user) return null;
+
+    const now = new Date().toISOString();
+
+    if (data.name !== undefined && data.name.trim()) {
+      user.name = data.name.trim();
+    }
+
+    const currentProfile = user.applicantProfile || {
+      headline: "",
+      location: "",
+      phone: "",
+      skills: [],
+      experienceYears: "",
+    };
+
+    const updatedProfile: ApplicantProfileInfo = {
+      ...currentProfile,
+      ...(data.headline !== undefined ? { headline: data.headline } : {}),
+      ...(data.location !== undefined ? { location: data.location } : {}),
+      ...(data.phone !== undefined ? { phone: data.phone } : {}),
+      ...(data.bio !== undefined ? { bio: data.bio } : {}),
+      ...(data.summary !== undefined ? { summary: data.summary } : {}),
+      ...(data.skills !== undefined ? { skills: data.skills } : {}),
+      ...(data.experiences !== undefined ? { experiences: data.experiences } : {}),
+      ...(data.education !== undefined ? { education: data.education } : {}),
+      ...(data.certifications !== undefined ? { certifications: data.certifications } : {}),
+      ...(data.projects !== undefined ? { projects: data.projects } : {}),
+    };
+
+    user.applicantProfile = updatedProfile;
+    user.updatedAt = now;
+
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      const userUpdateFields: Record<string, any> = {
+        updatedAt: new Date(),
+        applicantProfile: updatedProfile,
+      };
+      if (data.name !== undefined && data.name.trim()) {
+        userUpdateFields["name"] = data.name.trim();
+      }
+
+      await User.findByIdAndUpdate(userId, { $set: userUpdateFields }).catch((err) => {
+        console.error(`[MongoDB] Error updating applicant profile for user ${userId}:`, err);
+      });
+
+      const applicantDocFields: Record<string, any> = {
+        updatedAt: new Date(),
+      };
+      if (data.headline !== undefined) applicantDocFields["headline"] = data.headline;
+      if (data.location !== undefined) applicantDocFields["location"] = data.location;
+      if (data.phone !== undefined) applicantDocFields["phone"] = data.phone;
+      if (data.bio !== undefined) applicantDocFields["bio"] = data.bio;
+      if (data.summary !== undefined) applicantDocFields["summary"] = data.summary;
+      if (data.skills !== undefined) applicantDocFields["skills"] = data.skills;
+      if (data.experiences !== undefined) applicantDocFields["experience"] = data.experiences;
+      if (data.education !== undefined) applicantDocFields["education"] = data.education;
+      if (data.certifications !== undefined) applicantDocFields["certifications"] = data.certifications;
+      if (data.projects !== undefined) applicantDocFields["projects"] = data.projects;
+
+      await Applicant.findOneAndUpdate(
+        { userId },
+        { $set: applicantDocFields },
+        { upsert: false },
+      ).catch((err) => {
+        console.error(`[MongoDB] Error updating Applicant document for user ${userId}:`, err);
+      });
+    }
+
+    return { ...user };
+  }
+
+  /**
+   * Sync extracted resume profile to Applicant profile
+   */
+  public async syncApplicantFromParsedResume(
+    userId: string,
+    profile: IParsedResumeProfile,
+    resumeId?: string,
+    resumeFileName?: string,
+  ): Promise<void> {
+    const user = this.users.get(userId);
+    const now = new Date().toISOString();
+
+    const mappedExperiences = (profile.experience || []).map((exp, i) => ({
+      id: `exp-${i + 1}`,
+      title: exp.role || "Role",
+      company: exp.company || "Company",
+      location: exp.location || "",
+      period: `${exp.startDate || ""} - ${exp.endDate || "Present"}`.trim(),
+      description: Array.isArray(exp.description) ? exp.description.join(". ") : String(exp.description || ""),
+    }));
+
+    const mappedEducation = (profile.education || []).map((edu, i) => ({
+      id: `edu-${i + 1}`,
+      degree: edu.degree || "Degree",
+      institution: edu.institution || "Institution",
+      period: `${edu.startDate || ""} - ${edu.endDate || ""}`.trim(),
+      grade: edu.grade || "",
+    }));
+
+    const mappedCertifications = (profile.certifications || []).map((cert, i) => ({
+      id: `cert-${i + 1}`,
+      name: cert.name || "Certification",
+      issuer: cert.issuer || "",
+      year: cert.date || "",
+    }));
+
+    const mappedProjects = (profile.projects || []).map((proj, i) => ({
+      id: `proj-${i + 1}`,
+      name: proj.name || "Project",
+      tech: Array.isArray(proj.technologies) ? proj.technologies.join(", ") : "",
+      description: proj.description || "",
+    }));
+
+    const currentProfile = user?.applicantProfile || {};
+    const existingSkills = currentProfile.skills || [];
+    const mergedSkills = Array.from(new Set([...existingSkills, ...(profile.skills || [])]));
+
+    const updatedProfile: ApplicantProfileInfo = {
+      ...currentProfile,
+      phone: profile.personal?.phone || currentProfile.phone || "",
+      location: profile.personal?.location || currentProfile.location || "",
+      bio: profile.summary || currentProfile.bio || "",
+      summary: profile.summary || currentProfile.summary || "",
+      skills: mergedSkills,
+      experiences: mappedExperiences.length > 0 ? mappedExperiences : currentProfile.experiences,
+      education: mappedEducation.length > 0 ? mappedEducation : currentProfile.education,
+      certifications: mappedCertifications.length > 0 ? mappedCertifications : currentProfile.certifications,
+      projects: mappedProjects.length > 0 ? mappedProjects : currentProfile.projects,
+      resumeFileName: resumeFileName || currentProfile.resumeFileName,
+      resumeId: resumeId || currentProfile.resumeId,
+    };
+
+    if (user) {
+      if (profile.personal?.fullName && (user.name === "Applicant" || !user.name)) {
+        user.name = profile.personal.fullName;
+      }
+      user.applicantProfile = updatedProfile;
+      user.updatedAt = now;
+    }
+
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      const userUpdates: Record<string, any> = {
+        updatedAt: new Date(),
+        applicantProfile: updatedProfile,
+      };
+      if (profile.personal?.fullName) {
+        userUpdates["name"] = profile.personal.fullName;
+      }
+
+      await User.findByIdAndUpdate(userId, { $set: userUpdates }).catch(console.error);
+
+      await Applicant.findOneAndUpdate(
+        { userId },
+        {
+          $set: {
+            phone: updatedProfile.phone,
+            location: updatedProfile.location,
+            summary: updatedProfile.summary,
+            bio: updatedProfile.bio,
+            skills: updatedProfile.skills,
+            experience: updatedProfile.experiences,
+            education: updatedProfile.education,
+            certifications: updatedProfile.certifications,
+            projects: updatedProfile.projects,
+            resumeFileName: updatedProfile.resumeFileName,
+            resumeId: updatedProfile.resumeId,
+            updatedAt: new Date(),
+          },
+        },
+        { upsert: false },
+      ).catch(console.error);
+    }
   }
 }
 

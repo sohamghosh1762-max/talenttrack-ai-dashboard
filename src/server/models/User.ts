@@ -28,9 +28,16 @@ const ApplicantProfileSchema = new Schema<ApplicantProfileInfo>(
     headline: { type: String },
     location: { type: String },
     phone: { type: String },
+    bio: { type: String },
+    summary: { type: String },
     skills: { type: [String], default: [] },
     experienceYears: { type: String },
     resumeFileName: { type: String },
+    resumeId: { type: String },
+    experiences: { type: Schema.Types.Mixed, default: [] },
+    education: { type: Schema.Types.Mixed, default: [] },
+    certifications: { type: Schema.Types.Mixed, default: [] },
+    projects: { type: Schema.Types.Mixed, default: [] },
   },
   { _id: false },
 );
@@ -56,6 +63,12 @@ const UserSchema = new Schema<IUserDocument>(
       index: true,
     },
     passwordHash: { type: String, required: true },
+    firebaseUid: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
     role: {
       type: String,
       enum: [

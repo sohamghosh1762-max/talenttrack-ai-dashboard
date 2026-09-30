@@ -51,10 +51,17 @@ export class ApiClient {
     // Automatically attach auth token from localStorage if available in browser environment
     if (typeof window !== "undefined") {
       try {
-        const storedAuth = localStorage.getItem("talenttrack_auth");
-        if (storedAuth) {
-          const parsed = JSON.parse(storedAuth);
-          if (parsed.token) {
+        const raw =
+          localStorage.getItem("talenttrack_applicant_auth_session_v1") ||
+          sessionStorage.getItem("talenttrack_applicant_auth_session_v1") ||
+          localStorage.getItem("talenttrack_legacy_auth_session_v1") ||
+          sessionStorage.getItem("talenttrack_legacy_auth_session_v1") ||
+          localStorage.getItem("talenttrack_auth_session_v1") ||
+          sessionStorage.getItem("talenttrack_auth_session_v1") ||
+          localStorage.getItem("talenttrack_auth");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.token) {
             headers.set("Authorization", `Bearer ${parsed.token}`);
           }
         }

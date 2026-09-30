@@ -59,3 +59,13 @@ export class InternalServerError extends AppError {
     super(message, 500, "INTERNAL_SERVER_ERROR", details, false);
   }
 }
+
+export class AIServiceError extends AppError {
+  constructor(
+    message: string = "AI service temporarily unavailable",
+    statusCode: number = 503,
+    details?: unknown,
+  ) {
+    super(message, statusCode, "AI_SERVICE_ERROR", details);
+  }
+}

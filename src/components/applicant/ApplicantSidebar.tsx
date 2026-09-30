@@ -44,8 +44,11 @@ const applicantNavGroups: NavGroup[] = [
     ],
   },
   {
-    title: "PROFILE",
-    items: [{ label: "My Profile", href: "/applicant/profile", icon: User }],
+    title: "PROFILE & RESUME",
+    items: [
+      { label: "My Profile", href: "/applicant/profile", icon: User },
+      { label: "ATS Resume Score", href: "/applicant/ats-score", icon: Sparkles },
+    ],
   },
   {
     title: "COMMUNICATION",

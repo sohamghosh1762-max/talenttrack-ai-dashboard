@@ -17,17 +17,19 @@ export class AuthError extends Error {
   }
 }
 
+import { firebaseAdminService } from "../services/firebase-admin-service.ts";
+
 /**
- * Authenticate incoming request via HTTP-only session cookie or Bearer session token
+ * Authenticate incoming request via HTTP-only session cookie, Bearer session token, or Firebase ID Token
  */
-export function authenticate(req: Request): AuthenticatedUser {
+export async function authenticate(req: Request): Promise<AuthenticatedUser> {
   const token = extractTokenFromRequest(req);
 
   if (!token) {
     throw new AuthError("Authentication required. Please log in.", 401);
   }
 
-  // 1. Look up active session in cryptographic session store
+  // 1. Look up active session in cryptographic session store (Recruiter / Admin / Legacy sessions)
   const session = sessionRepository.findValidSessionByToken(token);
   if (session) {
     const user = userRepository.findFullUserById(session.userId);
@@ -79,15 +81,43 @@ export function authenticate(req: Request): AuthenticatedUser {
     };
   }
 
+  // 3. Firebase ID Token Verification (for Applicant authentication)
+  try {
+    const payload = await firebaseAdminService.verifyIdToken(token);
+    const user = await firebaseAdminService.resolveOrProvisionApplicant(payload);
+
+    if (user.status === "SUSPENDED") {
+      throw new AuthError("Account has been suspended. Please contact support.", 403);
+    }
+    if (user.status === "LOCKED") {
+      throw new AuthError(
+        "Account is temporarily locked. Please try again later or reset your password.",
+        403,
+      );
+    }
+    if (user.status === "DEACTIVATED") {
+      throw new AuthError("Account is deactivated. Please contact an administrator.", 403);
+    }
+
+    return {
+      ...toSafeUser(user),
+      token,
+    };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      throw err;
+    }
+  }
+
   throw new AuthError("Invalid or expired session. Please sign in again.", 401);
 }
 
 /**
  * Optionally authenticate incoming request; returns null if not authenticated
  */
-export function authenticateOptional(req: Request): AuthenticatedUser | null {
+export async function authenticateOptional(req: Request): Promise<AuthenticatedUser | null> {
   try {
-    return authenticate(req);
+    return await authenticate(req);
   } catch {
     return null;
   }

@@ -19,9 +19,17 @@ export interface ApplicantProfile {
   headline?: string | undefined;
   location?: string | undefined;
   phone?: string | undefined;
+  bio?: string | undefined;
+  summary?: string | undefined;
   skills?: string[] | undefined;
   experienceYears?: string | undefined;
   resumeFileName?: string | undefined;
+  resumeId?: string | undefined;
+  experiences?: any[] | undefined;
+  experience?: any[] | undefined;
+  education?: any[] | undefined;
+  certifications?: any[] | undefined;
+  projects?: any[] | undefined;
 }
 
 export interface AdminProfile {

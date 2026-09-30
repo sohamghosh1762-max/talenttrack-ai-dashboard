@@ -37,6 +37,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ApplicantIndexRouteImport } from './routes/applicant/index'
 import { Route as ApplicantApplicationsRouteImport } from './routes/applicant/applications'
+import { Route as ApplicantAtsScoreRouteImport } from './routes/applicant/ats-score'
 import { Route as ApplicantInterviewsRouteImport } from './routes/applicant/interviews'
 import { Route as ApplicantJobsRouteImport } from './routes/applicant/jobs'
 import { Route as ApplicantMessagesRouteImport } from './routes/applicant/messages'
@@ -187,6 +188,11 @@ const ApplicantApplicationsRoute = ApplicantApplicationsRouteImport.update({
   path: '/applicant/applications',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApplicantAtsScoreRoute = ApplicantAtsScoreRouteImport.update({
+  id: '/applicant/ats-score',
+  path: '/applicant/ats-score',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApplicantInterviewsRoute = ApplicantInterviewsRouteImport.update({
   id: '/applicant/interviews',
   path: '/applicant/interviews',
@@ -261,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/applicant/applications': typeof ApplicantApplicationsRoute
+  '/applicant/ats-score': typeof ApplicantAtsScoreRoute
   '/applicant/interviews': typeof ApplicantInterviewsRoute
   '/applicant/jobs': typeof ApplicantJobsRouteWithChildren
   '/applicant/messages': typeof ApplicantMessagesRoute
@@ -300,6 +307,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/applicant/applications': typeof ApplicantApplicationsRoute
+  '/applicant/ats-score': typeof ApplicantAtsScoreRoute
   '/applicant/interviews': typeof ApplicantInterviewsRoute
   '/applicant/jobs': typeof ApplicantJobsRouteWithChildren
   '/applicant/messages': typeof ApplicantMessagesRoute
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/applicant/applications': typeof ApplicantApplicationsRoute
+  '/applicant/ats-score': typeof ApplicantAtsScoreRoute
   '/applicant/interviews': typeof ApplicantInterviewsRoute
   '/applicant/jobs': typeof ApplicantJobsRouteWithChildren
   '/applicant/messages': typeof ApplicantMessagesRoute
@@ -381,6 +390,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/users'
     | '/applicant/applications'
+    | '/applicant/ats-score'
     | '/applicant/interviews'
     | '/applicant/jobs'
     | '/applicant/messages'
@@ -420,6 +430,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/users'
     | '/applicant/applications'
+    | '/applicant/ats-score'
     | '/applicant/interviews'
     | '/applicant/jobs'
     | '/applicant/messages'
@@ -459,6 +470,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/users'
     | '/applicant/applications'
+    | '/applicant/ats-score'
     | '/applicant/interviews'
     | '/applicant/jobs'
     | '/applicant/messages'
@@ -494,6 +506,7 @@ export interface RootRouteChildren {
   UnauthorizedRoute: typeof UnauthorizedRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApplicantApplicationsRoute: typeof ApplicantApplicationsRoute
+  ApplicantAtsScoreRoute: typeof ApplicantAtsScoreRoute
   ApplicantInterviewsRoute: typeof ApplicantInterviewsRoute
   ApplicantJobsRoute: typeof ApplicantJobsRouteWithChildren
   ApplicantMessagesRoute: typeof ApplicantMessagesRoute
@@ -701,6 +714,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApplicantApplicationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/applicant/ats-score': {
+      id: '/applicant/ats-score'
+      path: '/applicant/ats-score'
+      fullPath: '/applicant/ats-score'
+      preLoaderRoute: typeof ApplicantAtsScoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/applicant/interviews': {
       id: '/applicant/interviews'
       path: '/applicant/interviews'
@@ -842,6 +862,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnauthorizedRoute: UnauthorizedRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   ApplicantApplicationsRoute: ApplicantApplicationsRoute,
+  ApplicantAtsScoreRoute: ApplicantAtsScoreRoute,
   ApplicantInterviewsRoute: ApplicantInterviewsRoute,
   ApplicantJobsRoute: ApplicantJobsRouteWithChildren,
   ApplicantMessagesRoute: ApplicantMessagesRoute,

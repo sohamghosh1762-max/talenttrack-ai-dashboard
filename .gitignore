@@ -1,15 +1,22 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Environment files
+.env
+.env.*
+!.env.example
+.env.local
+.env.development
+.env.development.local
+.env.production
+.env.production.local
+
+# Local development / temporary
+*.local
+tmp/
+temp/
 
 # Dependencies
 node_modules/
 
-# Production builds
+# Production builds & generated output
 dist/
 dist-ssr/
 build/
@@ -18,14 +25,17 @@ build/
 .tanstack/
 .nitro/
 .next/
+.nuxt/
 .vite/
 coverage/
 
-# Environment configuration
-.env
-.env.*
-!.env.example
-*.local
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Cloudflare / Wrangler
 .wrangler/
@@ -35,15 +45,28 @@ coverage/
 *- Copy/
 * - Copy/
 
-# Credentials & Keys
+# Firebase / Service Credentials / Private Keys
+serviceAccountKey*.json
+firebase-service-account*.json
+*-firebase-adminsdk-*.json
+firebase-adminsdk*.json
+credentials.json
+credentials
+.aws/
 *.pem
 *.key
-credentials.json
-service-account*.json
+*.p12
+*.pfx
 
-# SQLite
+# Local databases
+*.db
 *.sqlite
 *.sqlite3
+
+# Uploads and applicant files
+uploads/
+*.pdf
+*.docx
 
 # Python (if any scripts run)
 __pycache__/
@@ -63,4 +86,3 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
-

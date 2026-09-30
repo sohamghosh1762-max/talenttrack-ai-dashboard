@@ -21,6 +21,13 @@ const envSchema = z.object({
   // AI Services (Phase 7)
   OPENAI_API_KEY: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default("gemini-3.5-flash"),
+
+  // Firebase Admin (Server-side Authentication for Applicants)
+  FIREBASE_PROJECT_ID: z.string().default("talenttrack-ai-75a10"),
+  FIREBASE_CLIENT_EMAIL: z.string().optional(),
+  FIREBASE_PRIVATE_KEY: z.string().optional(),
+
 
   // S3 / Storage (Phase 5)
   AWS_REGION: z.string().default("us-east-1"),

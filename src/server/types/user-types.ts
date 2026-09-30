@@ -16,13 +16,93 @@ export interface RecruiterProfileInfo {
   department?: string | undefined;
 }
 
+export interface ApplicantExperienceItem {
+  id?: string | undefined;
+  title: string;
+  company: string;
+  location?: string | undefined;
+  period?: string | undefined;
+  description?: string | undefined;
+}
+
+export interface ApplicantEducationItem {
+  id?: string | undefined;
+  degree: string;
+  institution: string;
+  period?: string | undefined;
+  grade?: string | undefined;
+}
+
+export interface ApplicantCertificationItem {
+  id?: string | undefined;
+  name: string;
+  issuer: string;
+  year?: string | undefined;
+}
+
+export interface ApplicantProjectItem {
+  id?: string | undefined;
+  name: string;
+  tech?: string | undefined;
+  description?: string | undefined;
+}
+
 export interface ApplicantProfileInfo {
   headline?: string | undefined;
   location?: string | undefined;
   phone?: string | undefined;
+  bio?: string | undefined;
+  summary?: string | undefined;
   skills?: string[] | undefined;
   experienceYears?: string | undefined;
   resumeFileName?: string | undefined;
+  resumeId?: string | undefined;
+  firebaseUid?: string | undefined;
+  experiences?: ApplicantExperienceItem[] | undefined;
+  education?: ApplicantEducationItem[] | undefined;
+  certifications?: ApplicantCertificationItem[] | undefined;
+  projects?: ApplicantProjectItem[] | undefined;
+}
+
+export interface ApplicantProfileResponse {
+  id: string;
+  name: string;
+  email: string;
+  headline: string;
+  location: string;
+  phone: string;
+  bio: string;
+  summary: string;
+  skills: string[];
+  experiences: ApplicantExperienceItem[];
+  education: ApplicantEducationItem[];
+  certifications: ApplicantCertificationItem[];
+  projects: ApplicantProjectItem[];
+  applicantProfile?: ApplicantProfileInfo | undefined;
+  resume: {
+    id: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    uploadedAt: string;
+    parsingStatus: string;
+    extractedSkillsCount: number;
+    atsScore: number | null;
+  } | null;
+}
+
+export interface UpdateApplicantProfileInput {
+  name?: string | undefined;
+  headline?: string | undefined;
+  location?: string | undefined;
+  phone?: string | undefined;
+  bio?: string | undefined;
+  summary?: string | undefined;
+  skills?: string[] | undefined;
+  experiences?: ApplicantExperienceItem[] | undefined;
+  education?: ApplicantEducationItem[] | undefined;
+  certifications?: ApplicantCertificationItem[] | undefined;
+  projects?: ApplicantProjectItem[] | undefined;
 }
 
 export interface AdminProfileInfo {
@@ -38,6 +118,7 @@ export interface IUser {
   passwordHash: string; // Hashed password
   role: UserRole;
   status: UserStatus;
+  firebaseUid?: string | undefined; // Firebase Authentication UID for Applicants
   emailVerified: boolean;
   emailVerifiedAt?: string | undefined;
   avatarUrl?: string | undefined;
@@ -53,6 +134,7 @@ export interface IUser {
 }
 
 export type SafeUser = Omit<IUser, "passwordHash">;
+
 
 export interface UserQueryParams {
   page?: number | undefined;

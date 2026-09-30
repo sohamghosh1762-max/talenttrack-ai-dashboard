@@ -57,6 +57,32 @@ const ResumeSchema = new Schema<IResumeDocument>(
       default: () => new Date().toISOString(),
       index: true,
     },
+    parsingStatus: {
+      type: String,
+      enum: ["NOT_STARTED", "PROCESSING", "COMPLETED", "FAILED"],
+      default: "NOT_STARTED",
+      index: true,
+    },
+    parsedProfile: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    parsedAt: {
+      type: String,
+      default: null,
+    },
+    parsingError: {
+      type: String,
+      default: null,
+    },
+    atsScore: {
+      type: Number,
+      default: null,
+    },
+    atsAnalysis: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
   },
   {
     timestamps: true,

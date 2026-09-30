@@ -287,6 +287,36 @@ describe("PHASE 3: MongoDB Production Integration & Persistence Suite", () => {
       assert.strictEqual(updated.currentStage, "INTERVIEW");
       assert.strictEqual(updated.aiScore, 89);
     });
+
+    it("persistently transitions through Kanban pipeline stages with updateStage", async () => {
+      const app = await applicationRepository.create({
+        jobId: "65f1a2b3c4d5e6f7a8b9c101",
+        applicantId: "65f1a2b3c4d5e6f7a8b9c020",
+        recruiterId: "65f1a2b3c4d5e6f7a8b9c003",
+      });
+      assert.strictEqual(app.currentStage, "APPLIED");
+
+      // 1. Move to SCREENING
+      const screened = await applicationRepository.updateStage(app.id, "SCREENING");
+      assert.ok(screened);
+      assert.strictEqual(screened.currentStage, "SCREENING");
+      assert.strictEqual(screened.status, "SCREENING");
+
+      // 2. Move to INTERVIEW
+      const interviewed = await applicationRepository.updateStage(app.id, "INTERVIEW");
+      assert.ok(interviewed);
+      assert.strictEqual(interviewed.currentStage, "INTERVIEW");
+
+      // 3. Move to OFFERED
+      const offered = await applicationRepository.updateStage(app.id, "OFFERED");
+      assert.ok(offered);
+      assert.strictEqual(offered.currentStage, "OFFERED");
+
+      // 4. Verify retrieval from repository preserves the stage
+      const fetched = await applicationRepository.findById(app.id);
+      assert.ok(fetched);
+      assert.strictEqual(fetched.currentStage, "OFFERED");
+    });
   });
 
   describe("5. REST API Integration for Jobs & Applications", () => {

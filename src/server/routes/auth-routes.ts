@@ -241,8 +241,51 @@ export async function handleLogin(req: Request): Promise<Response> {
  * Handle GET /api/auth/me
  */
 export async function handleGetMe(req: Request): Promise<Response> {
-  const authUser = authenticate(req);
+  const authUser = await authenticate(req);
   return successResponse({ user: authUser }, "Session active.");
+}
+
+import { firebaseAdminService } from "../services/firebase-admin-service.ts";
+import { toSafeUser } from "../db/user-repository.ts";
+
+/**
+ * Handle POST /api/auth/firebase-bootstrap
+ * - Dedicated Applicant Firebase Identity bootstrap endpoint
+ * - Strictly verifies Firebase ID token via Firebase Admin SDK
+ * - Resolves or provisions MongoDB Applicant linked via firebaseUid
+ * - Never trusts client-supplied applicantId or role in request body
+ */
+export async function handleFirebaseBootstrap(req: Request): Promise<Response> {
+  const token = extractTokenFromRequest(req);
+  if (!token) {
+    throw new AuthError("Firebase ID token is required in Authorization header.", 401);
+  }
+
+  // 1. Strictly verify ID token via Firebase Admin
+  const payload = await firebaseAdminService.verifyIdToken(token);
+
+  // 2. Resolve or provision applicant based strictly on verified Firebase UID
+  const user = await firebaseAdminService.resolveOrProvisionApplicant(payload);
+
+  if (user.status === "SUSPENDED") {
+    throw new AuthError("Your account has been suspended. Please contact support.", 403);
+  }
+  if (user.status === "LOCKED") {
+    throw new AuthError(
+      "Account is temporarily locked. Please try again later or reset your password.",
+      403,
+    );
+  }
+  if (user.status === "DEACTIVATED") {
+    throw new AuthError("Account is deactivated. Please contact an administrator.", 403);
+  }
+
+  const safeUser = toSafeUser(user);
+  return successResponse(
+    { user: safeUser },
+    "Firebase authentication bootstrapped successfully.",
+    200,
+  );
 }
 
 /**
@@ -415,6 +458,10 @@ export async function handleAuthApiRequest(req: Request): Promise<Response | nul
 
     if (pathname === "/api/auth/me" && req.method === "GET") {
       return await handleGetMe(req);
+    }
+
+    if (pathname === "/api/auth/firebase-bootstrap" && req.method === "POST") {
+      return await handleFirebaseBootstrap(req);
     }
 
     if (pathname === "/api/auth/logout" && req.method === "POST") {

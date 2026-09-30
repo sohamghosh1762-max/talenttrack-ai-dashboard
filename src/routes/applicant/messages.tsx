@@ -21,7 +21,7 @@ function ApplicantMessagesPage() {
     {
       sender: "recruiter",
       name: "Rahul Mehta (TalentTrack Technologies)",
-      text: "Hi Aarav, our engineering team reviewed your profile and would love to schedule a 45-minute technical discussion.",
+      text: "Hello! Our engineering team reviewed your profile and would love to schedule a 45-minute technical discussion.",
       time: "10:20 AM",
     },
     {

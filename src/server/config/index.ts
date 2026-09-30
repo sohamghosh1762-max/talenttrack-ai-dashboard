@@ -21,6 +21,12 @@ export const config = {
   ai: {
     openaiApiKey: env.OPENAI_API_KEY,
     geminiApiKey: env.GEMINI_API_KEY,
+    geminiModel: env.GEMINI_MODEL || "gemini-2.5-flash",
+  },
+  firebase: {
+    projectId: env.FIREBASE_PROJECT_ID,
+    clientEmail: env.FIREBASE_CLIENT_EMAIL,
+    privateKey: env.FIREBASE_PRIVATE_KEY,
   },
   storage: {
     region: env.AWS_REGION,

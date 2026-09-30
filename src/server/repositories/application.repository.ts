@@ -444,8 +444,8 @@ class ApplicationRepository {
         },
         { new: true },
       )
-        .populate("jobId", "title department")
-        .populate("applicantId", "name email")
+        .populate("jobId", "title department location employmentType status")
+        .populate("applicantId", "name email applicantProfile")
         .lean<any>();
 
       if (!updatedDoc) return null;
@@ -463,18 +463,63 @@ class ApplicationRepository {
         notes: updatedDoc.notes || undefined,
         appliedAt: updatedDoc.appliedAt || now,
         updatedAt: updatedDoc.updatedAt ? new Date(updatedDoc.updatedAt).toISOString() : now,
+        jobTitle: updatedDoc.jobId && typeof updatedDoc.jobId === "object" && "title" in updatedDoc.jobId ? (updatedDoc.jobId as { title: string }).title : undefined,
+        applicantName: updatedDoc.applicantId && typeof updatedDoc.applicantId === "object" && "name" in updatedDoc.applicantId ? (updatedDoc.applicantId as { name: string }).name : undefined,
+        applicantEmail: updatedDoc.applicantId && typeof updatedDoc.applicantId === "object" && "email" in updatedDoc.applicantId ? (updatedDoc.applicantId as { email: string }).email : undefined,
       };
 
-      this.inMemoryApplications.set(id, app);
-      return app;
+      if (updatedDoc.jobId && typeof updatedDoc.jobId === "object") {
+        app.job = {
+          id: updatedDoc.jobId._id?.toString() || app.jobId,
+          title: updatedDoc.jobId.title || "Job Opening",
+          department: updatedDoc.jobId.department,
+          location: updatedDoc.jobId.location,
+          type: updatedDoc.jobId.employmentType,
+          company: "TalentTrack AI",
+          status: updatedDoc.jobId.status,
+        };
+      }
+
+      if (updatedDoc.applicantId && typeof updatedDoc.applicantId === "object") {
+        const initials = (updatedDoc.applicantId.name || "A")
+          .split(" ")
+          .map((n: string) => n[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2);
+        app.applicant = {
+          id: updatedDoc.applicantId._id?.toString() || app.applicantId,
+          name: updatedDoc.applicantId.name,
+          email: updatedDoc.applicantId.email,
+          phone: updatedDoc.applicantId.applicantProfile?.phone,
+          location: updatedDoc.applicantId.applicantProfile?.location,
+          skills: updatedDoc.applicantId.applicantProfile?.skills || [],
+          initials,
+        };
+      }
+
+      const enriched = await this.enrichApplicationDetails(app);
+      this.inMemoryApplications.set(id, enriched);
+      return enriched;
     }
 
     const app = this.inMemoryApplications.get(id);
     if (!app) return null;
 
     Object.assign(app, input, { updatedAt: now });
-    this.inMemoryApplications.set(id, app);
-    return { ...app };
+    const enriched = await this.enrichApplicationDetails(app);
+    this.inMemoryApplications.set(id, enriched);
+    return { ...enriched };
+  }
+
+  public async updateStage(
+    id: string,
+    stage: IApplication["currentStage"],
+  ): Promise<IApplication | null> {
+    return this.updateStatus(id, {
+      status: stage,
+      currentStage: stage,
+    });
   }
 
   public async delete(id: string): Promise<boolean> {

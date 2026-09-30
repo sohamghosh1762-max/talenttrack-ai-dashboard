@@ -8,13 +8,70 @@ const DEFAULT_SEED_RESUMES: IResume[] = [
     id: "65f1a2b3c4d5e6f7a8b9c301",
     applicantId: "65f1a2b3c4d5e6f7a8b9c004", // Jane Applicant
     applicationId: "65f1a2b3c4d5e6f7a8b9c201",
-    originalFileName: "Aarav_Mehta_Resume_2025.pdf",
-    storedFileName: "uuid-aarav-mehta-resume.pdf",
+    originalFileName: "Jane_Applicant_Resume.pdf",
+    storedFileName: "uuid-jane-applicant-resume.pdf",
     mimeType: "application/pdf",
     fileSize: 245678,
-    s3Key: "resumes/65f1a2b3c4d5e6f7a8b9c004/uuid-aarav-mehta-resume.pdf",
+    s3Key: "resumes/65f1a2b3c4d5e6f7a8b9c004/uuid-jane-applicant-resume.pdf",
     s3Bucket: "talenttrack-resumes-private",
     uploadedAt: "2025-08-20T10:00:00.000Z",
+    parsingStatus: "COMPLETED",
+    parsedProfile: {
+      personal: {
+        fullName: "Jane Applicant",
+        email: "jane.applicant@example.com",
+        phone: "+1 555-0199",
+        location: "San Francisco, CA",
+        linkedin: "https://linkedin.com/in/janeapplicant",
+        github: "https://github.com/janeapplicant",
+        portfolio: "https://janeapplicant.dev",
+      },
+      summary: "Full Stack Engineer with 4+ years of experience in React, TypeScript, and Node.js.",
+      skills: ["React", "TypeScript", "Node.js", "Express", "MongoDB", "PostgreSQL", "Docker", "AWS", "Tailwind CSS"],
+      education: [
+        {
+          degree: "B.S. in Computer Science",
+          institution: "University of California, Berkeley",
+          fieldOfStudy: "Computer Science",
+          startDate: "2018-09",
+          endDate: "2022-05",
+          grade: "3.8 GPA",
+        },
+      ],
+      experience: [
+        {
+          company: "TechFlow Systems",
+          role: "Senior Software Engineer",
+          location: "San Francisco, CA",
+          startDate: "2022-06",
+          endDate: "Present",
+          description: [
+            "Architected scalable microservices handling 2M+ daily requests.",
+            "Led a team of 4 frontend engineers building Next.js dashboards.",
+          ],
+          technologies: ["React", "TypeScript", "Node.js", "AWS"],
+        },
+      ],
+      projects: [
+        {
+          name: "OpenSource ATS",
+          description: "An automated candidate ranking and resume parsing pipeline.",
+          technologies: ["TypeScript", "Next.js", "MongoDB"],
+          url: "https://github.com/janeapplicant/ats",
+        },
+      ],
+      certifications: [
+        {
+          name: "AWS Certified Solutions Architect",
+          issuer: "Amazon Web Services",
+          date: "2023-04",
+        },
+      ],
+      languages: ["English", "Hindi"],
+      achievements: ["Hackathon Winner 2023 (1st place out of 120 teams)"],
+    },
+    parsedAt: "2025-08-20T10:05:00.000Z",
+    parsingError: null,
     createdAt: "2025-08-20T10:00:00.000Z",
     updatedAt: "2025-08-20T10:00:00.000Z",
   },
@@ -38,6 +95,29 @@ class ResumeRepository {
     this.inMemoryResumes.clear();
   }
 
+  private mapDocumentToResume(doc: any): IResume {
+    return {
+      id: doc._id ? doc._id.toString() : doc.id,
+      applicantId: doc.applicantId ? doc.applicantId.toString() : "",
+      applicationId: doc.applicationId ? doc.applicationId.toString() : undefined,
+      originalFileName: doc.originalFileName,
+      storedFileName: doc.storedFileName,
+      mimeType: doc.mimeType,
+      fileSize: doc.fileSize,
+      s3Key: doc.s3Key,
+      s3Bucket: doc.s3Bucket,
+      uploadedAt: doc.uploadedAt,
+      parsingStatus: doc.parsingStatus || "NOT_STARTED",
+      parsedProfile: doc.parsedProfile || null,
+      parsedAt: doc.parsedAt || null,
+      parsingError: doc.parsingError || null,
+      atsScore: doc.atsScore !== undefined ? doc.atsScore : null,
+      atsAnalysis: doc.atsAnalysis || null,
+      createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
+      updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
+    };
+  }
+
   public async create(data: UploadResumeInput): Promise<IResume> {
     const now = new Date().toISOString();
 
@@ -52,22 +132,15 @@ class ResumeRepository {
         s3Key: data.s3Key,
         s3Bucket: data.s3Bucket,
         uploadedAt: now,
+        parsingStatus: "NOT_STARTED",
+        parsedProfile: null,
+        parsedAt: null,
+        parsingError: null,
+        atsScore: null,
+        atsAnalysis: null,
       });
 
-      return {
-        id: doc._id.toString(),
-        applicantId: doc.applicantId ? doc.applicantId.toString() : data.applicantId,
-        applicationId: doc.applicationId ? doc.applicationId.toString() : undefined,
-        originalFileName: doc.originalFileName,
-        storedFileName: doc.storedFileName,
-        mimeType: doc.mimeType,
-        fileSize: doc.fileSize,
-        s3Key: doc.s3Key,
-        s3Bucket: doc.s3Bucket,
-        uploadedAt: doc.uploadedAt,
-        createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : now,
-        updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : now,
-      };
+      return this.mapDocumentToResume(doc);
     }
 
     // In-memory fallback
@@ -83,6 +156,12 @@ class ResumeRepository {
       s3Key: data.s3Key,
       s3Bucket: data.s3Bucket,
       uploadedAt: now,
+      parsingStatus: "NOT_STARTED",
+      parsedProfile: null,
+      parsedAt: null,
+      parsingError: null,
+      atsScore: null,
+      atsAnalysis: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -98,20 +177,7 @@ class ResumeRepository {
       const doc = await Resume.findById(id).lean<any>();
       if (!doc) return null;
 
-      return {
-        id: doc._id ? doc._id.toString() : doc.id,
-        applicantId: doc.applicantId ? doc.applicantId.toString() : "",
-        applicationId: doc.applicationId ? doc.applicationId.toString() : undefined,
-        originalFileName: doc.originalFileName,
-        storedFileName: doc.storedFileName,
-        mimeType: doc.mimeType,
-        fileSize: doc.fileSize,
-        s3Key: doc.s3Key,
-        s3Bucket: doc.s3Bucket,
-        uploadedAt: doc.uploadedAt,
-        createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
-        updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
-      };
+      return this.mapDocumentToResume(doc);
     }
 
     const item = this.inMemoryResumes.get(id);
@@ -126,20 +192,7 @@ class ResumeRepository {
         .sort({ createdAt: -1 })
         .lean<any[]>();
 
-      return docs.map((doc) => ({
-        id: doc._id ? doc._id.toString() : doc.id,
-        applicantId: doc.applicantId ? doc.applicantId.toString() : applicantId,
-        applicationId: doc.applicationId ? doc.applicationId.toString() : undefined,
-        originalFileName: doc.originalFileName,
-        storedFileName: doc.storedFileName,
-        mimeType: doc.mimeType,
-        fileSize: doc.fileSize,
-        s3Key: doc.s3Key,
-        s3Bucket: doc.s3Bucket,
-        uploadedAt: doc.uploadedAt,
-        createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
-        updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
-      }));
+      return docs.map((doc) => this.mapDocumentToResume(doc));
     }
 
     const all = Array.from(this.inMemoryResumes.values());
@@ -155,20 +208,7 @@ class ResumeRepository {
       const doc = await Resume.findOne({ applicationId }).lean<any>();
       if (!doc) return null;
 
-      return {
-        id: doc._id ? doc._id.toString() : doc.id,
-        applicantId: doc.applicantId ? doc.applicantId.toString() : "",
-        applicationId: doc.applicationId ? doc.applicationId.toString() : undefined,
-        originalFileName: doc.originalFileName,
-        storedFileName: doc.storedFileName,
-        mimeType: doc.mimeType,
-        fileSize: doc.fileSize,
-        s3Key: doc.s3Key,
-        s3Bucket: doc.s3Bucket,
-        uploadedAt: doc.uploadedAt,
-        createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
-        updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
-      };
+      return this.mapDocumentToResume(doc);
     }
 
     for (const resume of this.inMemoryResumes.values()) {
@@ -190,26 +230,85 @@ class ResumeRepository {
       ).lean<any>();
       if (!doc) return null;
 
-      return {
-        id: doc._id ? doc._id.toString() : doc.id,
-        applicantId: doc.applicantId ? doc.applicantId.toString() : "",
-        applicationId: doc.applicationId ? doc.applicationId.toString() : undefined,
-        originalFileName: doc.originalFileName,
-        storedFileName: doc.storedFileName,
-        mimeType: doc.mimeType,
-        fileSize: doc.fileSize,
-        s3Key: doc.s3Key,
-        s3Bucket: doc.s3Bucket,
-        uploadedAt: doc.uploadedAt,
-        createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
-        updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
-      };
+      return this.mapDocumentToResume(doc);
     }
 
     const item = this.inMemoryResumes.get(resumeId);
     if (!item) return null;
     item.applicationId = applicationId;
     item.updatedAt = new Date().toISOString();
+    return JSON.parse(JSON.stringify(item));
+  }
+
+  public async updateParsingStatus(
+    id: string,
+    update: {
+      parsingStatus: "NOT_STARTED" | "PROCESSING" | "COMPLETED" | "FAILED";
+      parsedProfile?: any;
+      parsedAt?: string | null;
+      parsingError?: string | null;
+      atsScore?: number | null;
+      atsAnalysis?: any | null;
+    },
+  ): Promise<IResume | null> {
+    if (!id) return null;
+
+    const updateFields: Record<string, any> = {
+      parsingStatus: update.parsingStatus,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (update.parsedProfile !== undefined) {
+      updateFields["parsedProfile"] = update.parsedProfile;
+    }
+    if (update.parsedAt !== undefined) {
+      updateFields["parsedAt"] = update.parsedAt;
+    }
+    if (update.parsingError !== undefined) {
+      updateFields["parsingError"] = update.parsingError;
+    }
+    if (update.atsScore !== undefined) {
+      updateFields["atsScore"] = update.atsScore;
+    }
+    if (update.atsAnalysis !== undefined) {
+      updateFields["atsAnalysis"] = update.atsAnalysis;
+    }
+
+    if (isDatabaseConnected() && isValidObjectId(id)) {
+      const doc = await Resume.findByIdAndUpdate(id, { $set: updateFields }, { new: true }).lean<any>();
+      if (!doc) return null;
+      return this.mapDocumentToResume(doc);
+    }
+
+    const item = this.inMemoryResumes.get(id);
+    if (!item) return null;
+
+    Object.assign(item, updateFields);
+    return JSON.parse(JSON.stringify(item));
+  }
+
+  public async updateAtsAnalysis(
+    id: string,
+    atsAnalysis: any,
+  ): Promise<IResume | null> {
+    if (!id) return null;
+
+    const updateFields: Record<string, any> = {
+      atsScore: atsAnalysis?.overallScore !== undefined ? atsAnalysis.overallScore : null,
+      atsAnalysis: atsAnalysis || null,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (isDatabaseConnected() && isValidObjectId(id)) {
+      const doc = await Resume.findByIdAndUpdate(id, { $set: updateFields }, { new: true }).lean<any>();
+      if (!doc) return null;
+      return this.mapDocumentToResume(doc);
+    }
+
+    const item = this.inMemoryResumes.get(id);
+    if (!item) return null;
+
+    Object.assign(item, updateFields);
     return JSON.parse(JSON.stringify(item));
   }
 
@@ -226,3 +325,4 @@ class ResumeRepository {
 }
 
 export const resumeRepository = new ResumeRepository();
+
