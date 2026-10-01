@@ -66,7 +66,7 @@ export class GeminiService {
     return (
       (typeof process !== "undefined" && process.env ? process.env["GEMINI_MODEL"] : undefined) ||
       config.ai.geminiModel ||
-      "gemini-3.5-flash"
+      "gemini-3.6-flash"
     );
   }
 
@@ -75,7 +75,15 @@ export class GeminiService {
    */
   public getCandidateModels(specifiedModel?: string): string[] {
     const primary = specifiedModel || this.getModel();
-    const candidates = [primary, "gemini-3.5-flash", "gemini-3.8-flash", "gemini-flash-latest", "gemini-2.5-flash-lite"];
+    const candidates = [
+      primary,
+      "gemini-3.6-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-flash-lite-latest",
+      "gemini-3.1-flash-lite",
+      "gemini-3.8-flash",
+      "gemini-3.7-flash",
+    ];
     return Array.from(new Set(candidates.filter(Boolean)));
   }
 
@@ -160,6 +168,14 @@ export class GeminiService {
 
     for (const targetModel of candidateModels) {
       try {
+        console.log(
+          JSON.stringify({
+            stage: "[ATS-DEBUG] gemini-request",
+            model: targetModel,
+            promptLength: prompt.trim().length,
+          }),
+        );
+
         const apiCall = ai.models.generateContent({
           model: targetModel,
           contents: prompt.trim(),
@@ -182,23 +198,23 @@ export class GeminiService {
           throw new AIServiceError("Empty or malformed response returned from Gemini AI", 502);
         }
 
+        console.log(
+          JSON.stringify({
+            stage: "[ATS-DEBUG] gemini-response",
+            model: targetModel,
+            responseLength: text.length,
+          }),
+        );
+
         return text;
       } catch (err: unknown) {
         lastError = err;
         const rawMsg = err instanceof Error ? err.message : String(err);
-        const isModelUnavailable =
-          rawMsg.includes("404") ||
-          rawMsg.includes("503") ||
-          rawMsg.toLowerCase().includes("not found") ||
-          rawMsg.toLowerCase().includes("unavailable") ||
-          rawMsg.toLowerCase().includes("high demand") ||
-          rawMsg.toLowerCase().includes("no longer available");
-
-        if (isModelUnavailable && candidateModels.indexOf(targetModel) < candidateModels.length - 1) {
-          console.warn(`Gemini model '${targetModel}' unavailable, trying fallback candidate...`);
+        const currentIndex = candidateModels.indexOf(targetModel);
+        if (currentIndex < candidateModels.length - 1) {
+          console.warn(`[ATS-DEBUG] Gemini model '${targetModel}' error: ${rawMsg.slice(0, 100)}, trying fallback '${candidateModels[currentIndex + 1]}'...`);
           continue;
         }
-
         break;
       }
     }
@@ -266,6 +282,14 @@ export class GeminiService {
 
     for (const targetModel of candidateModels) {
       try {
+        console.log(
+          JSON.stringify({
+            stage: "[ATS-DEBUG] gemini-request",
+            model: targetModel,
+            hasResponseSchema: Boolean(options.responseSchema),
+          }),
+        );
+
         const apiCall = ai.models.generateContent({
           model: targetModel,
           contents: prompt.trim(),
@@ -288,6 +312,14 @@ export class GeminiService {
           throw new AIServiceError("Empty response returned from Gemini AI", 502);
         }
 
+        console.log(
+          JSON.stringify({
+            stage: "[ATS-DEBUG] gemini-response",
+            model: targetModel,
+            responseLength: rawText.length,
+          }),
+        );
+
         try {
           const parsed = JSON.parse(rawText) as T;
           return parsed;
@@ -299,19 +331,11 @@ export class GeminiService {
       } catch (err: unknown) {
         lastError = err;
         const rawMsg = err instanceof Error ? err.message : String(err);
-        const isModelUnavailable =
-          rawMsg.includes("404") ||
-          rawMsg.includes("503") ||
-          rawMsg.toLowerCase().includes("not found") ||
-          rawMsg.toLowerCase().includes("unavailable") ||
-          rawMsg.toLowerCase().includes("high demand") ||
-          rawMsg.toLowerCase().includes("no longer available");
-
-        if (isModelUnavailable && candidateModels.indexOf(targetModel) < candidateModels.length - 1) {
-          console.warn(`Gemini structured model '${targetModel}' unavailable, trying fallback candidate...`);
+        const currentIndex = candidateModels.indexOf(targetModel);
+        if (currentIndex < candidateModels.length - 1) {
+          console.warn(`[ATS-DEBUG] Gemini structured model '${targetModel}' error: ${rawMsg.slice(0, 100)}, trying fallback '${candidateModels[currentIndex + 1]}'...`);
           continue;
         }
-
         break;
       }
     }

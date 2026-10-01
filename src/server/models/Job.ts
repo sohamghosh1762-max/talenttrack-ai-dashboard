@@ -74,6 +74,17 @@ const JobSchema = new Schema<IJobDocument>(
       required: true,
       index: true,
     },
+    hiringManagerId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+    },
+    hiringManagerIds: {
+      type: [Schema.Types.ObjectId],
+      ref: "User",
+      default: [],
+      index: true,
+    },
     status: {
       type: String,
       enum: [
@@ -107,6 +118,11 @@ const JobSchema = new Schema<IJobDocument>(
         } else if (ret["recruiterId"]) {
           ret["recruiterId"] = ret["recruiterId"].toString();
         }
+        if (ret["hiringManagerId"] && typeof ret["hiringManagerId"] === "object" && "_id" in ret["hiringManagerId"]) {
+          ret["hiringManagerId"] = ret["hiringManagerId"]._id.toString();
+        } else if (ret["hiringManagerId"]) {
+          ret["hiringManagerId"] = ret["hiringManagerId"].toString();
+        }
         delete ret["_id"];
         delete ret["__v"];
         return ret;
@@ -116,6 +132,16 @@ const JobSchema = new Schema<IJobDocument>(
       virtuals: true,
       transform: (_doc, ret: Record<string, any>) => {
         ret["id"] = ret["_id"] ? ret["_id"].toString() : ret["id"];
+        if (ret["recruiterId"] && typeof ret["recruiterId"] === "object" && "_id" in ret["recruiterId"]) {
+          ret["recruiterId"] = ret["recruiterId"]._id.toString();
+        } else if (ret["recruiterId"]) {
+          ret["recruiterId"] = ret["recruiterId"].toString();
+        }
+        if (ret["hiringManagerId"] && typeof ret["hiringManagerId"] === "object" && "_id" in ret["hiringManagerId"]) {
+          ret["hiringManagerId"] = ret["hiringManagerId"]._id.toString();
+        } else if (ret["hiringManagerId"]) {
+          ret["hiringManagerId"] = ret["hiringManagerId"].toString();
+        }
         delete ret["_id"];
         delete ret["__v"];
         return ret;
@@ -127,6 +153,7 @@ const JobSchema = new Schema<IJobDocument>(
 // Indexes for high-frequency queries
 JobSchema.index({ status: 1, department: 1 });
 JobSchema.index({ recruiterId: 1, status: 1 });
+JobSchema.index({ hiringManagerId: 1, status: 1 });
 JobSchema.index({ createdAt: -1 });
 
 export const Job: Model<IJobDocument> =

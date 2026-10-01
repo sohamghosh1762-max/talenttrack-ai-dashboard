@@ -1,5 +1,6 @@
 import { resumeRepository } from "../repositories/resume.repository.ts";
 import { atsService } from "../services/ats-service.ts";
+import { resumeParserService } from "../services/resume-parser-service.ts";
 import { authenticate } from "../middleware/auth-middleware.ts";
 import { successResponse, errorResponse } from "../utils/response.ts";
 import { ForbiddenError, NotFoundError } from "../utils/errors.ts";
@@ -33,7 +34,19 @@ export async function handleGetApplicantAtsScore(req: Request): Promise<Response
   }
 
   // Find most recent completed parsed resume or latest uploaded
-  const completedResume = resumes.find((r) => r.parsingStatus === "COMPLETED") || resumes[0];
+  let completedResume = resumes.find((r) => r.parsingStatus === "COMPLETED" && r.parsedProfile) || resumes[0];
+
+  // Auto-parse latest resume if it has not been parsed yet
+  if (completedResume && (completedResume.parsingStatus !== "COMPLETED" || !completedResume.parsedProfile)) {
+    try {
+      const parsed = await resumeParserService.parseResume(completedResume.id);
+      if (parsed && parsed.parsingStatus === "COMPLETED" && parsed.parsedProfile) {
+        completedResume = parsed;
+      }
+    } catch (parseErr) {
+      console.warn("[ATS-DEBUG] Auto-parsing in handleGetApplicantAtsScore:", parseErr);
+    }
+  }
 
   if (!completedResume || completedResume.parsingStatus !== "COMPLETED" || !completedResume.parsedProfile) {
     const pendingResponse: AtsScoreResponse = {
@@ -99,14 +112,40 @@ export async function handleAnalyzeApplicantAtsScore(req: Request): Promise<Resp
   }
 
   const resumes = await resumeRepository.findByApplicantId(user.id);
-  const completedResume = resumes.find((r) => r.parsingStatus === "COMPLETED");
+  if (!resumes || resumes.length === 0) {
+    throw new NotFoundError("No resume found. Please upload your resume first.");
+  }
+
+  let completedResume = resumes.find((r) => r.parsingStatus === "COMPLETED" && r.parsedProfile);
+
+  if (!completedResume && resumes.length > 0 && resumes[0]) {
+    // Attempt auto-parsing the latest resume
+    try {
+      const parsed = await resumeParserService.parseResume(resumes[0].id);
+      if (parsed && parsed.parsingStatus === "COMPLETED" && parsed.parsedProfile) {
+        completedResume = parsed;
+      }
+    } catch (parseErr) {
+      console.warn("[ATS-DEBUG] Auto-parsing in handleAnalyzeApplicantAtsScore:", parseErr);
+    }
+  }
 
   if (!completedResume || !completedResume.parsedProfile) {
     throw new NotFoundError("No completed parsed resume found. Please upload and parse your resume first.");
   }
 
-  // Generate fresh analysis
-  const analysis = await atsService.analyzeResume(completedResume);
+  let forceFresh = false;
+  try {
+    const body = await req.clone().json();
+    if (body && typeof body === "object" && body.forceFresh === true) {
+      forceFresh = true;
+    }
+  } catch {
+    // Non-JSON or empty POST is standard
+  }
+
+  // Generate or retrieve idempotent analysis
+  const analysis = await atsService.analyzeResume(completedResume, { forceFresh });
 
   // Persist updated analysis
   await resumeRepository.updateAtsAnalysis(completedResume.id, analysis);

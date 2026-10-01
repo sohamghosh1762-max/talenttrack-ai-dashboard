@@ -23,6 +23,13 @@ export async function handleUploadResume(req: Request): Promise<Response> {
     throw new ForbiddenError("Only applicant accounts are permitted to upload resumes.");
   }
 
+  console.log(
+    JSON.stringify({
+      stage: "[ATS-DEBUG] upload-start",
+      applicantId: user.id,
+    }),
+  );
+
   // Parse and validate multipart form data
   const { buffer, fileName, mimeType, fileSize } = await parseResumeFormData(req);
 
@@ -35,6 +42,16 @@ export async function handleUploadResume(req: Request): Promise<Response> {
     fileSize,
   });
 
+  console.log(
+    JSON.stringify({
+      stage: "[ATS-DEBUG] upload-complete",
+      applicantId: user.id,
+      fileName,
+      mimeType,
+      fileSize,
+    }),
+  );
+
   // 2. Persist resume metadata in MongoDB
   const resume = await resumeRepository.create({
     applicantId: user.id,
@@ -45,6 +62,15 @@ export async function handleUploadResume(req: Request): Promise<Response> {
     s3Key: s3Result.s3Key,
     s3Bucket: s3Result.s3Bucket,
   });
+
+  console.log(
+    JSON.stringify({
+      stage: "[ATS-DEBUG] resume-record-created",
+      resumeId: resume.id,
+      applicantId: resume.applicantId,
+      parsingStatus: resume.parsingStatus,
+    }),
+  );
 
   // Safe external metadata payload (never expose S3 secret keys or AWS credentials)
   const safeResumeData = {

@@ -44,6 +44,29 @@ export interface ApplicationResumeInfo {
   uploadedAt?: string | undefined;
 }
 
+export interface HiringManagerFeedbackItem {
+  id: string;
+  hiringManagerId: string;
+  hiringManagerName?: string | undefined;
+  overallFeedback: string;
+  technicalSkillsRating?: number | undefined; // 1-5
+  communicationRating?: number | undefined; // 1-5
+  experienceRating?: number | undefined; // 1-5
+  roleFitRating?: number | undefined; // 1-5
+  strengths?: string[] | string | undefined;
+  concerns?: string[] | string | undefined;
+  recommendation: "Recommend" | "Maybe" | "Do Not Recommend" | string;
+  createdAt: string;
+}
+
+export interface HiringDecision {
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  decidedBy?: string | undefined;
+  decidedByName?: string | undefined;
+  decidedAt?: string | undefined;
+  notes?: string | undefined;
+}
+
 export interface IApplication {
   id: string; // 24-character hexadecimal MongoDB ObjectId
   jobId: string; // Ref to Job
@@ -63,12 +86,15 @@ export interface IApplication {
   job?: ApplicationJobInfo | undefined;
   applicant?: ApplicationApplicantInfo | undefined;
   resume?: ApplicationResumeInfo | undefined;
+  hiringManagerFeedback?: HiringManagerFeedbackItem[] | undefined;
+  hiringDecision?: HiringDecision | undefined;
 }
 
 export interface ApplicationQueryParams {
   page?: number | undefined;
   limit?: number | undefined;
   jobId?: string | undefined;
+  jobIds?: string[] | undefined;
   applicantId?: string | undefined;
   recruiterId?: string | undefined;
   status?: ApplicationStatus | string | undefined;

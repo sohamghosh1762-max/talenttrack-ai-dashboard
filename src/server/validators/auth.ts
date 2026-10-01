@@ -20,6 +20,7 @@ export const registerSchema = z
         "recruiter",
         "applicant",
         "admin",
+        "hiring_manager",
         "RECRUITER",
         "APPLICANT",
         "SUPER_ADMIN",

@@ -66,8 +66,22 @@ export class ResumeTextExtractor {
    */
   public async extractFromPdf(buffer: Buffer): Promise<string> {
     try {
-      const data = await pdfParse(buffer);
-      const text = (data && data.text) || "";
+      let text = "";
+      if (typeof pdfParse === "function") {
+        const data = await pdfParse(buffer);
+        text = (data && data.text) || "";
+      } else if (pdfParse && typeof pdfParse.PDFParse === "function") {
+        const parser = new pdfParse.PDFParse({ data: buffer });
+        const data = await parser.getText();
+        text = (data && data.text) || "";
+        if (typeof parser.destroy === "function") {
+          try {
+            await parser.destroy();
+          } catch {
+            // Non-fatal cleanup failure
+          }
+        }
+      }
       if (!text.trim()) {
         throw new BadRequestError("Unable to extract readable text from this resume.");
       }

@@ -20,13 +20,15 @@ function apiDevPlugin(): Plugin {
             const fullUrl = `${protocol}://${host}${req.url}`;
 
             const method = req.method || "GET";
-            let body: string | undefined = undefined;
+            let body: Buffer | undefined = undefined;
             if (method === "POST" || method === "PATCH" || method === "PUT") {
               const chunks: Buffer[] = [];
               for await (const chunk of req) {
                 chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
               }
-              body = Buffer.concat(chunks).toString("utf-8");
+              if (chunks.length > 0) {
+                body = Buffer.concat(chunks);
+              }
             }
 
             const headers = new Headers();
@@ -39,7 +41,7 @@ function apiDevPlugin(): Plugin {
             const standardReq = new Request(fullUrl, {
               method,
               headers,
-              ...(body !== undefined && { body }),
+              ...(body !== undefined && { body: body as unknown as BodyInit }),
             });
 
             const response = await handleApiRequest(standardReq);

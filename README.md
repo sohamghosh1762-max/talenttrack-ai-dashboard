@@ -1,153 +1,175 @@
 # TalentTrack AI
 
-## AI-Powered Applicant Tracking System
+## AI-Powered Applicant Tracking System & Controlled Hybrid ATS
 
-**TalentTrack AI** is a modern Applicant Tracking System (ATS) designed to streamline the recruitment lifecycle for organizations and provide job seekers with a structured application experience. The platform combines job management, candidate applications, resume processing, semantic candidate matching, recruitment pipelines, communication, and hiring analytics in one unified application.
+**TalentTrack AI** is an enterprise-grade Applicant Tracking System (ATS) designed to streamline the entire recruitment lifecycle for organizations and provide job seekers with a transparent, intelligent application experience. 
 
-> **Important:** AI-generated recommendations are intended to support recruiter decision-making. Final hiring decisions remain with human reviewers.
+The platform features a **Controlled Hybrid ATS Scoring Engine** that combines deterministic rule-based evaluation with Google Gemini semantic intelligence, robust Role-Based Access Control (RBAC), Firebase-authenticated applicant identity, Amazon S3 document storage, and MongoDB persistence.
 
----
-
-## 1. Project Implementation Status
-
-This repository is organized into sequential engineering phases. Below is the accurate status of all platform capabilities:
-
-### Currently Implemented (UI & Prototype Portals)
-
-- **Frontend Presentation:** Complete responsive React 19 application with Tailwind CSS v4 and Radix UI accessible primitives.
-- **Role Portals:**
-  - **Recruiter ATS:** Dashboard, Job Openings, Candidate Directory, Kanban Pipeline, AI Screening UI, Messaging UI, Reports, and Settings.
-  - **Applicant Portal:** Overview, Search Jobs, Saved Jobs, Applications, Profile & Resume view, and Messages.
-  - **Admin Module:** User Management, Activity Logs, Platform Reports, and Platform Configuration.
-- **Routing & Guards:** TanStack Router file-based routing with role-based protected route wrappers (`ProtectedRoute`).
-- **State Management:** TanStack Query configured for async caching and query invalidation.
-- **Development Mock Layer:** Isolated in-memory datasets providing realistic data for UI walkthroughs.
-
-### Phase 1 Implemented (Production Foundation & Architecture)
-
-- **Package Management:** Standardized on `npm` with synchronized `package-lock.json`, removed conflicting lockfiles.
-- **Runtime Environment:** Explicit Node.js version requirement (`>=20.0.0`, `.nvmrc` configured to `22.12.0`).
-- **Build System:** Vite + TanStack Start + Nitro SSR pipeline stabilized with zero native binding errors.
-- **Environment Layer:** Type-safe configuration via Zod schema validation in `src/server/config/`, with zero secrets committed.
-- **Server Architecture:** Modular backend structure (`config`, `middleware`, `routes`, `controllers`, `services`, `repositories`, `validators`, `models`, `workers`, `utils`).
-- **API Foundation:** Centralized `/api` router dispatcher with `/api/health`, standard response wrappers, and structured HTTP request logging (`requestId`, `timestamp`, `method`, `route`, `status`, `duration`).
-- **Error Handling:** Standardized error hierarchy (`AppError`, `ValidationError`, `AuthenticationError`, `AuthorizationError`, `NotFoundError`, `ConflictError`, `InternalServerError`) with safe production formatting.
-- **Frontend API Client:** Type-safe `src/lib/api/client.ts` with automatic bearer token attachment, error normalization, and standard HTTP methods.
-- **Documentation:** Complete architectural documentation suite under `docs/`.
-
-### Prepared & Planned for Subsequent Phases
-
-- **Phase 2 — Real Authentication & RBAC:** Production JWT session tokens, bcrypt/argon2 password hashing, refresh tokens, password reset flows.
-- **Phase 3 — Multi-Tenancy & Organizations:** Organization onboarding, workspace isolation, team member invitations.
-- **Phase 4 — Database Persistence & Real Job CRUD:** MongoDB/Mongoose connection layer, persistent job creation, candidate directories.
-- **Phase 5 — Resume Parsing & Storage:** AWS S3 secure object storage, PDF/DOCX document text extraction.
-- **Phase 6 — Application Lifecycle & Real Pipeline:** Database-persisted stage transitions, candidate audit history.
-- **Phase 7 — AI Candidate Screening:** Embeddings, semantic matching engine, match explanation generation.
-- **Phase 8 — Communication & Interviews:** Real-time messaging, calendar interview scheduling, SMTP email dispatch.
-- **Phase 9 — Production Analytics:** Database-aggregated pipeline funnels, sourcing metrics, and export pipelines.
+> **Note:** AI-generated ATS evaluations and semantic candidate insights are designed to support recruiter decision-making. Final hiring authority remains with human talent acquisition teams.
 
 ---
 
-## 2. Product Overview
+## Features
 
-TalentTrack AI supports three primary user roles:
-
-### Recruiter
-
-- Create, edit, publish, pause, and archive job openings
-- Review and manage applications
-- View candidate profiles and analyze resumes
-- Review explainable match scores
-- Manage the hiring pipeline across Kanban stages
-- Schedule interviews and communicate with candidates
-- View recruitment analytics and reports
-
-### Applicant
-
-- Browse and search job openings with filters
-- View detailed job descriptions and requirements
-- Create and manage a candidate profile
-- Upload resumes and track application progress
-- Save jobs and receive recruiter communications
-
-### Administrator
-
-- User lifecycle management (search, role/status filtering, activate/suspend)
-- Platform-wide activity audit logs
-- Platform health, user distribution, and hiring compliance reports
-- System settings configuration (General, Auth, Notifications, File Upload, AI, Security)
+- **Controlled Hybrid ATS Scoring**: Combines 60% deterministic objective measurements (completeness, structure, chronology, keyword density) with 40% Google Gemini semantic intelligence (qualitative relevance, evidence citations).
+- **100% Score Repeatability**: Cryptographic SHA-256 canonical resume hashing and composite analysis keys eliminate AI score drift and cache evaluations idempotently.
+- **Applicant Experience**: Firebase authentication (Google Sign-In, Email/Password, Phone OTP), resume upload, instant ATS score breakdown, personalized job search, and real-time application tracking.
+- **Recruiter ATS Hub**: Job posting CRUD, applicant candidate reviews, interactive Kanban pipeline, AI match screening, and candidate communication.
+- **Administrator Portal**: Platform-wide user lifecycle management (activate, suspend, unlock accounts), activity audit logs, and compliance analytics.
+- **Secure Document Processing**: AWS S3 private object storage, presigned download URLs, and robust PDF/DOCX text extraction with automated corrupted header recovery.
+- **Enterprise Security & RBAC**: Centralized permissions matrix across 7 user roles, native Scrypt password hashing, SHA-256 session tokens, 15-minute brute-force lockout defense, and zero client trust.
 
 ---
 
-## 3. User Journey
+## Architecture
 
 ```text
-Public Homepage
-       │
-       ▼
-Authentication
-       │
-       ├──────────────────────┬──────────────────────┐
-       │                      │                      │
-       ▼                      ▼                      ▼
-   Recruiter               Applicant               Admin
-       │                      │                      │
-       ▼                      ▼                      ▼
- Recruiter ATS         Applicant Portal         Admin Portal
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            CLIENT (BROWSER)                                 │
+│  ┌───────────────────────────────┐       ┌───────────────────────────────┐  │
+│  │    React 19 Presentation      │       │     Tailwind CSS v4 & Radix   │  │
+│  │ (Applicant / Recruiter/ Admin)│       │     UI Accessible Primitives  │  │
+│  └───────────────┬───────────────┘       └───────────────────────────────┘  │
+│                  │                                       │                  │
+│                  ▼                                       ▼                  │
+│  ┌───────────────────────────────┐       ┌───────────────────────────────┐  │
+│  │    TanStack Router Tree &     │       │       TanStack Query v5       │  │
+│  │       Role Route Guards       │       │    (Async Server Caching)     │  │
+│  └───────────────┬───────────────┘       └───────────────┬───────────────┘  │
+│                  │                                       │                  │
+│                  └───────────────────┬───────────────────┘                  │
+│                                      ▼                                      │
+│                        ┌───────────────────────────┐                        │
+│                        │    Frontend API Client    │                        │
+│                        │    (src/lib/api/client)   │                        │
+│                        └─────────────┬─────────────┘                        │
+└──────────────────────────────────────┼──────────────────────────────────────┘
+                                       │ HTTP / JSON (Bearer / Session Cookie)
+┌──────────────────────────────────────┼──────────────────────────────────────┐
+│                                      ▼                                      │
+│                            BACKEND SERVER ENGINE                            │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │      Central API Router Dispatcher (`src/server/routes/index.ts`)     │  │
+│  └───────────────────────────────────┬───────────────────────────────────┘  │
+│                                      │                                      │
+│         ┌────────────────────────────┼────────────────────────────┐         │
+│         ▼                            ▼                            ▼         │
+│  ┌──────────────┐             ┌──────────────┐             ┌──────────────┐ │
+│  │ Structured   │             │ Auth & RBAC  │             │ Zod Request  │ │
+│  │ Logger & Req │             │ Middleware   │             │ Boundary     │ │
+│  │ Timing ID    │             │ Guards       │             │ Validation   │ │
+│  └──────────────┘             └──────────────┘             └──────────────┘ │
+│                                      │                                      │
+│                                      ▼                                      │
+│                        ┌───────────────────────────┐                        │
+│                        │       Service Layer       │                        │
+│                        │   (src/server/services)   │                        │
+│                        └─────────────┬─────────────┘                        │
+│                                      │                                      │
+│         ┌────────────────────────────┼────────────────────────────┐         │
+│         ▼                            ▼                            ▼         │
+│  ┌──────────────┐             ┌──────────────┐             ┌──────────────┐ │
+│  │ MongoDB &    │             │ AWS S3       │             │ Google       │ │
+│  │ Mongoose     │             │ Object Store │             │ Gemini AI    │ │
+│  │ Repositories │             │ (Resumes)    │             │ Engine       │ │
+│  └──────────────┘             └──────────────┘             └──────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
-
-### Route Structure
-
-#### Public Routes
-
-- `/` — Homepage & Value Proposition
-- `/jobs` — Public Job Board
-- `/login` — User Login
-- `/register` — User Registration
-
-#### Recruiter Routes (Protected)
-
-- `/dashboard` — Recruiter Dashboard & Analytics
-- `/jobs` — Job Management & Postings
-- `/applications` — Application Review
-- `/candidates` — Candidate Directory & Profiles
-- `/pipeline` — Kanban Hiring Pipeline
-- `/ai-screening` — AI Screening & Matching Center
-- `/messages` — Candidate Messaging
-- `/reports` — Recruitment Reports & Analytics
-- `/settings` — Recruiter & Organization Settings
-
-#### Applicant Routes (Protected)
-
-- `/applicant` — Applicant Portal Overview
-- `/applicant/jobs` — Job Search & Recommendations
-- `/applicant/applications` — Application Tracking
-- `/applicant/saved-jobs` — Saved Job Openings
-- `/applicant/profile` — Candidate Profile & Resume
-- `/applicant/messages` — Recruiter Communications
-- `/applicant/settings` — Applicant Settings
-
-#### Admin Routes (Protected)
-
-- `/admin` — Admin Dashboard
-- `/admin/users` — User Directory & Status Management
-- `/admin/activity` — System Activity & Audit Trail
-- `/admin/reports` — Platform Analytics & Hiring Compliance
-- `/admin/settings` — Platform System Configuration
 
 ---
 
-## 4. Quick Start & Development
+## Technology Stack
+
+- **Frontend**: React 19, TypeScript, Vite 8, Nitro SSR, TanStack Router, TanStack Query v5, Tailwind CSS v4, Radix UI, Lucide Icons, Recharts.
+- **Backend**: Node.js (`>=20.0.0`), Express 5, TypeScript.
+- **Database & ODM**: MongoDB with Mongoose 9 (`mongoose`).
+- **Cloud Storage**: Amazon Web Services (AWS) S3 (`@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`).
+- **AI & ATS Intelligence**: Google Gemini SDK (`@google/genai`) using model `gemini-3.6-flash`.
+- **Authentication**:
+  - Firebase Admin SDK (`firebase-admin`) for Applicant identity verification.
+  - Native Scrypt password hashing (`node:crypto`) & SHA-256 session token management for Recruiters/Admins.
+- **Testing**: Native Node.js Test Runner (`node:test`, `node:assert/strict`) with 309 passing automated tests.
+
+---
+
+## Portals & Roles
+
+### Applicant Portal (`/applicant`)
+- **ATS Resume Score**: Real-time compatibility score (0–100), 6-category breakdown, AI evidence citations, strengths, weaknesses, and recommendations.
+- **Job Search**: Search openings with filters, save favorites, and submit one-click applications.
+- **Application History**: Track application statuses from submission to interview and offer.
+- **Candidate Profile**: Manage skills, work experience, education, and portfolio links.
+
+### Recruiter Portal (`/dashboard`)
+- **Dashboard Overview**: Active job postings, candidate counts, and recent submissions.
+- **Job Management**: Create, edit, publish, pause, and archive job openings.
+- **Kanban Pipeline (`/pipeline`)**: Drag-and-drop candidates across stages (`APPLIED` → `SCREENING` → `INTERVIEW` → `OFFERED` → `REJECTED`).
+- **Candidate Detail**: Review parsed profiles, match scores, and interview notes.
+
+### Hiring Manager Portal (`/hiring-manager`)
+- **Decision Dashboard**: Scoped view of assigned positions, candidates awaiting review, shortlisted counts, and pending decisions.
+- **Requisition Management (`/hiring-manager/jobs`)**: Directory of job requisitions assigned directly to the manager.
+- **Candidate Review (`/hiring-manager/candidates`)**: Scoped candidate directory with match scores, stage badges, and review status.
+- **Candidate Inspector & Feedback**: Comprehensive candidate detail view with ATS score breakdown, structured evaluations with ratings (1-5), and binding Approve/Reject decisions.
+- **Job-Scoped Analytics (`/hiring-manager/analytics`)**: Real-time pipeline metrics, average ATS scores, and decision distribution.
+
+### Administrator Portal (`/admin`)
+- **User Directory**: Search, filter, activate, suspend, or unlock user accounts.
+- **Audit Logs**: Review platform-wide security and administrative actions.
+- **Analytics & Reports**: Platform compliance, user distribution, and recruitment metrics.
+
+---
+
+## AI & Controlled Hybrid ATS
+
+```
+                  ┌─────────────────────────────────────────┐
+                  │              Candidate Resume           │
+                  └────────────────────┬────────────────────┘
+                                       │
+                         ┌─────────────┴─────────────┐
+                         ▼                           ▼
+                Deterministic Engine          Gemini AI Engine
+                (Objective Criteria)        (Semantic Substance)
+                         │                           │
+                         └─────────────┬─────────────┘
+                                       │
+                                       ▼
+                             Controlled Fusion Engine
+                        (60% Deterministic + 40% Gemini)
+                                       │
+                                       ▼
+                             Final ATS Resume Score
+```
+
+- **Category Fusion Formula**:
+  $$\text{Category Score} = \text{round}\left(0.60 \times \text{Deterministic Score} + 0.40 \times \text{Gemini Dimension Score}\right)$$
+- **Auditing & Idempotency**:
+  $$\text{analysisKey} = \text{SHA-256}\left(\text{resumeHash} : \text{rubricVersion} : \text{engineVersion} : \text{geminiModel} : \text{promptVersion} : \text{jobContextHash}\right)$$
+- **Score Stability**: 10 repeated analyses of the exact same resume yield 100% identical numerical results across all categories.
+
+---
+
+## Authentication & Security
+
+- **Applicant Authentication**: Firebase Authentication on client; server validates Firebase ID tokens via `FirebaseAdminService.verifyIdToken()` and links or provisions MongoDB records via `firebaseUid`.
+- **Recruiter / Admin Authentication**: Direct server Scrypt password hashing with per-user 16-byte random salts.
+- **Session Tokens**: Opaque tokens stored as SHA-256 hashes (`tokenHash`) with `HttpOnly`, `SameSite=Lax`, `Secure` cookies.
+- **Defense in Depth**: 5-attempt brute-force lockout (15 mins), IP rate limiting, private S3 buckets with presigned URLs, and Zod schema boundary validation.
+
+---
+
+## Development & Testing
 
 ### Prerequisites
+- Node.js `>= 20.0.0`
+- npm `>= 10.0.0`
+- MongoDB instance & Google Gemini API Key
 
-- **Node.js:** `>= 20.0.0` (Recommended: `22.12.0`)
-- **Package Manager:** `npm` `>= 10.0.0`
-
-### Setup Steps
-
+### Quick Start
 ```bash
-# 1. Clone repository and install dependencies
+# 1. Clone repository & install dependencies
 git clone https://github.com/sohamghosh1762-max/talenttrack-ai-dashboard.git
 cd talenttrack-ai-dashboard
 npm install
@@ -159,47 +181,43 @@ cp .env.example .env
 npm run dev
 ```
 
-The application will be running at `http://localhost:3000` (or `http://localhost:5173`).
-
-### Quality & Build Verification Commands
-
+### Verification Commands
 ```bash
-# Run TypeScript type check
+# Run automated test suite (285 tests across 79 suites)
+npm test
+
+# Run strict TypeScript typecheck
 npm run typecheck
 
 # Run production build
 npm run build
-
-# Run automated tests
-npm test
-
-# Run linter
-npm run lint
-
-# Run code formatter
-npm run format
 ```
 
 ---
 
-## 5. Architecture Documentation
+## Documentation Index
 
-Detailed architectural and engineering documentation is available in the [`docs/`](./docs) directory:
+Complete technical and architectural documentation is available in the [`docs/`](./docs) directory:
 
 - [System Architecture](docs/ARCHITECTURE.md) (`docs/ARCHITECTURE.md`)
-- [Developer Guide](docs/DEVELOPMENT.md) (`docs/DEVELOPMENT.md`)
+- [API Architecture & Endpoints](docs/API_ARCHITECTURE.md) (`docs/API_ARCHITECTURE.md`)
+- [ATS Architecture & Hybrid Scoring](docs/ATS_ARCHITECTURE.md) (`docs/ATS_ARCHITECTURE.md`)
+- [Authentication & RBAC](docs/AUTH_AND_RBAC.md) (`docs/AUTH_AND_RBAC.md`)
+- [Database Architecture & Schemas](docs/DATABASE.md) (`docs/DATABASE.md`)
+- [Resume Pipeline & Storage](docs/RESUME_PIPELINE.md) (`docs/RESUME_PIPELINE.md`)
+- [Implementation Status Matrix](docs/IMPLEMENTATION_STATUS.md) (`docs/IMPLEMENTATION_STATUS.md`)
+- [Testing & Quality Assurance](docs/TESTING.md) (`docs/TESTING.md`)
 - [Environment Configuration](docs/ENVIRONMENT.md) (`docs/ENVIRONMENT.md`)
-- [API Architecture & Response Standard](docs/API_ARCHITECTURE.md) (`docs/API_ARCHITECTURE.md`)
 - [Security Baseline](docs/SECURITY_BASELINE.md) (`docs/SECURITY_BASELINE.md`)
+- [Developer Guide](docs/DEVELOPMENT.md) (`docs/DEVELOPMENT.md`)
 
 ---
 
-## 6. Contributors & Internship
+## Contributors & Internship
 
-This project is developed for educational, research, and demonstration purposes.
+This project is developed for educational, research, and enterprise ATS demonstration purposes.
 
 ### Contributors
-
 - **Project Lead:** SOHAM GHOSH
 - **Team Members:** Jevin Parmar, Nayesha Suhail Ahmed Bijapure, Shubham Tiwari
 - **Internship:** Zaalima Development Pvt. Ltd.

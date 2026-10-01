@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { geminiService } from "./gemini-service.ts";
 import {
   validateGeminiAtsAnalysis,
@@ -9,28 +10,111 @@ import {
   type AtsCategoryKey,
   type AtsCompatibilityTier,
   ATS_CATEGORY_WEIGHTS,
+  ATS_SCORING_CONFIG,
 } from "../types/ats-types.ts";
 import type { IResume, IParsedResumeProfile } from "../types/resume-types.ts";
 
-export const ATS_ANALYZER_SYSTEM_INSTRUCTION = `You are a high-precision ATS (Applicant Tracking System) resume analyzer.
-Your task is to evaluate the provided candidate resume profile for overall quality, ATS parseability, keyword relevance, experience impact, and structural clarity.
+export const ATS_ANALYZER_SYSTEM_INSTRUCTION = `You are a high-precision, objective ATS (Applicant Tracking System) semantic resume evaluator.
+Your role is to evaluate the provided candidate resume profile for qualitative substance, role progression, keyword relevance, and demonstrated impact.
 
-EVALUATION CRITERIA:
-1. Completeness (20%): Look for complete contact info (email, phone, location), professional summary, work history, education, and skills.
-2. Skills Presentation (25%): Evaluate technical and domain competencies, breadth and depth of skills, and modern industry relevance.
-3. Experience Quality (20%): Check for clear job roles, quantifiable achievements (metrics, %, numbers), action verbs, and responsibilities.
-4. Keyword Coverage (20%): Assess the density of industry-standard keywords, technologies, and domain terminology that ATS filters search for.
-5. Education & Certifications (10%): Verify formal degrees, recognized institutions, and relevant professional certifications.
-6. Structure & Formatting (5%): Evaluate chronological clarity, section organization, and clean machine-readable representation.
+EVALUATION INSTRUCTIONS:
+1. Provide qualitative scores (0-100) with concrete evidence citations based ONLY on the candidate data provided.
+2. skillsRelevance: Evaluate alignment and depth of technical and domain skills.
+3. experienceQuality: Evaluate career trajectory, responsibilities, and clarity.
+4. projectQuality: Evaluate technical implementation projects and complexity.
+5. summaryQuality: Evaluate the clarity and focus of the professional summary.
+6. keywordRelevance: Assess presence and natural density of relevant industry terms.
+7. achievementQuality: Assess presence of quantifiable achievements, business outcomes, and metrics.
+8. strengths: 3-5 factual strengths based on the resume.
+9. weaknesses: 3-5 constructive areas to improve based on the resume.
+10. recommendations: 3-5 actionable suggestions to improve ATS parseability and candidate match.
 
-Return a strictly structured JSON response matching the schema.
-Strengths and improvement recommendations MUST be specific to the actual candidate data provided. Do not hallucinate or invent qualifications.`;
+CRITICAL RULES:
+- Return strictly structured JSON matching the schema.
+- Do NOT invent or hallucinate skills, metrics, or credentials.
+- Evidence items MUST quote or refer directly to elements present in the resume.`;
+
+/**
+ * Computes a deterministic SHA-256 hash of the canonical resume profile and metadata
+ */
+export function computeResumeHash(
+  profile: IParsedResumeProfile,
+  fileName: string = "",
+  fileSize: number = 0,
+): string {
+  const canonical = {
+    fileName: fileName.trim().toLowerCase(),
+    fileSize,
+    personal: {
+      fullName: profile.personal?.fullName?.trim() || "",
+      email: profile.personal?.email?.trim().toLowerCase() || "",
+      phone: profile.personal?.phone?.trim() || "",
+      location: profile.personal?.location?.trim() || "",
+      linkedin: profile.personal?.linkedin?.trim() || "",
+      github: profile.personal?.github?.trim() || "",
+      portfolio: profile.personal?.portfolio?.trim() || "",
+    },
+    summary: profile.summary?.trim() || "",
+    skills: [...(profile.skills || [])].map((s) => s.trim().toLowerCase()).sort(),
+    experience: (profile.experience || []).map((e) => ({
+      company: e.company?.trim().toLowerCase() || "",
+      role: e.role?.trim().toLowerCase() || "",
+      startDate: e.startDate?.trim() || "",
+      endDate: e.endDate?.trim() || "",
+      description: Array.isArray(e.description)
+        ? e.description.map((d) => d.trim()).sort()
+        : [String(e.description || "").trim()],
+      technologies: [...(e.technologies || [])].map((t) => t.trim().toLowerCase()).sort(),
+    })),
+    education: (profile.education || []).map((edu) => ({
+      institution: edu.institution?.trim().toLowerCase() || "",
+      degree: edu.degree?.trim().toLowerCase() || "",
+      fieldOfStudy: edu.fieldOfStudy?.trim().toLowerCase() || "",
+      startDate: edu.startDate?.trim() || "",
+      endDate: edu.endDate?.trim() || "",
+      grade: edu.grade?.trim() || "",
+    })),
+    certifications: (profile.certifications || []).map((c) => ({
+      name: c.name?.trim().toLowerCase() || "",
+      issuer: c.issuer?.trim().toLowerCase() || "",
+      date: c.date?.trim() || "",
+    })),
+    projects: (profile.projects || []).map((p) => ({
+      name: p.name?.trim().toLowerCase() || "",
+      description: p.description?.trim() || "",
+      technologies: [...(p.technologies || [])].map((t) => t.trim().toLowerCase()).sort(),
+    })),
+  };
+
+  return crypto.createHash("sha256").update(JSON.stringify(canonical)).digest("hex");
+}
+
+/**
+ * Computes a unique, deterministic analysis key representing the exact input context
+ */
+export function computeAnalysisKey(
+  resumeHash: string,
+  rubricVersion: string = ATS_SCORING_CONFIG.rubricVersion,
+  engineVersion: string = ATS_SCORING_CONFIG.engineVersion,
+  geminiModel: string = "gemini-3.6-flash",
+  promptVersion: string = ATS_SCORING_CONFIG.promptVersion,
+  jobContextHash: string = "none",
+): string {
+  const combined = `${resumeHash}:${rubricVersion}:${engineVersion}:${geminiModel}:${promptVersion}:${jobContextHash}`;
+  return crypto.createHash("sha256").update(combined).digest("hex");
+}
 
 export class AtsService {
   /**
    * Deterministically calculates category baseline scores directly from structured parsedProfile
    */
-  public calculateDeterministicBaselines(profile: IParsedResumeProfile): Record<AtsCategoryKey, { score: number; strengths: string[]; improvements: string[] }> {
+  public calculateDeterministicBaselines(
+    profile: IParsedResumeProfile,
+    jobContext?: { requiredSkills?: string[]; title?: string },
+  ): Record<
+    AtsCategoryKey,
+    { score: number; strengths: string[]; improvements: string[]; evidence: string[] }
+  > {
     const strengths: Record<AtsCategoryKey, string[]> = {
       completeness: [],
       skills: [],
@@ -49,58 +133,99 @@ export class AtsService {
       structure: [],
     };
 
+    const evidence: Record<AtsCategoryKey, string[]> = {
+      completeness: [],
+      skills: [],
+      experience: [],
+      keywords: [],
+      education: [],
+      structure: [],
+    };
+
     // 1. Completeness evaluation (0-100)
-    let completenessScore = 40;
+    let completenessScore = 30;
     if (profile.personal?.fullName && profile.personal?.email) {
-      completenessScore += 15;
+      completenessScore += 20;
       strengths.completeness.push("Complete candidate contact information (Name and Email)");
+      evidence.completeness.push("Primary contact details provided.");
     }
-    if (profile.personal?.phone) completenessScore += 10;
-    if (profile.personal?.location) completenessScore += 5;
+    if (profile.personal?.phone) {
+      completenessScore += 10;
+      evidence.completeness.push("Phone contact present.");
+    }
+    if (profile.personal?.location) {
+      completenessScore += 10;
+      evidence.completeness.push("Location present.");
+    }
     if (profile.personal?.linkedin || profile.personal?.github || profile.personal?.portfolio) {
       completenessScore += 10;
       strengths.completeness.push("Professional links and portfolio profiles included");
+      evidence.completeness.push("Professional web presence links detected.");
     } else {
       improvements.completeness.push("Add LinkedIn or portfolio links to improve contact completeness");
     }
     if (profile.summary && profile.summary.trim().length > 30) {
       completenessScore += 10;
-      strengths.completeness.push("Clear executive summary highlighting career focus");
+      strengths.completeness.push("Clear professional summary highlighting career focus");
+      evidence.completeness.push("Substantial executive summary section present.");
     } else {
       improvements.completeness.push("Include a concise 2-3 sentence professional summary");
     }
-    if (profile.experience && profile.experience.length > 0) completenessScore += 5;
-    if (profile.education && profile.education.length > 0) completenessScore += 5;
+    if (profile.experience && profile.experience.length > 0) {
+      completenessScore += 5;
+    }
+    if (profile.education && profile.education.length > 0) {
+      completenessScore += 5;
+    }
     completenessScore = Math.min(100, Math.max(20, completenessScore));
 
     // 2. Skills evaluation (0-100)
     const skillsCount = profile.skills?.length || 0;
     let skillsScore = 40;
     if (skillsCount >= 10) {
-      skillsScore = 94;
+      skillsScore = 95;
       strengths.skills.push(`Robust skill profile with ${skillsCount} identified core competencies`);
+      evidence.skills.push(`${skillsCount} technical skills extracted.`);
     } else if (skillsCount >= 6) {
-      skillsScore = 82;
+      skillsScore = 84;
       strengths.skills.push(`Good technical coverage across ${skillsCount} key skills`);
+      evidence.skills.push(`${skillsCount} technical skills extracted.`);
     } else if (skillsCount >= 3) {
       skillsScore = 68;
       improvements.skills.push("Expand skills section with additional domain-specific tools and frameworks");
+      evidence.skills.push(`Only ${skillsCount} core skills identified.`);
     } else {
       skillsScore = 45;
       improvements.skills.push("Add more core technical skills and tools to pass automated ATS filters");
+      evidence.skills.push("Minimal skills listed.");
+    }
+
+    // Job matching if context provided
+    if (jobContext?.requiredSkills && jobContext.requiredSkills.length > 0) {
+      const lowerProfileSkills = new Set((profile.skills || []).map((s) => s.toLowerCase()));
+      const matched = jobContext.requiredSkills.filter((req) => lowerProfileSkills.has(req.toLowerCase()));
+      const matchRatio = matched.length / jobContext.requiredSkills.length;
+      skillsScore = Math.round(skillsScore * 0.6 + matchRatio * 100 * 0.4);
+      evidence.skills.push(`Matched ${matched.length}/${jobContext.requiredSkills.length} job-specific required skills.`);
     }
 
     // 3. Experience evaluation (0-100)
     const experienceCount = profile.experience?.length || 0;
-    let experienceScore = 50;
+    let experienceScore = 45;
     let hasQuantifiableMetrics = false;
     let hasTechInExp = false;
 
     if (experienceCount > 0) {
       experienceScore += Math.min(25, experienceCount * 12);
       for (const exp of profile.experience) {
-        const descText = Array.isArray(exp.description) ? exp.description.join(" ") : String(exp.description || "");
-        if (/\d+%|\$\d+|\b\d+\s*(?:users|clients|projects|ms|teams|engineers|requests)\b/i.test(descText)) {
+        const descText = Array.isArray(exp.description)
+          ? exp.description.join(" ")
+          : String(exp.description || "");
+        if (
+          /\d+%|\$\d+|\b\d+\s*(?:users|clients|projects|ms|teams|engineers|requests|k|m|gb|tb)\b/i.test(
+            descText,
+          )
+        ) {
           hasQuantifiableMetrics = true;
         }
         if (exp.technologies && exp.technologies.length > 0) {
@@ -109,70 +234,89 @@ export class AtsService {
       }
 
       if (hasQuantifiableMetrics) {
-        experienceScore += 15;
+        experienceScore += 18;
         strengths.experience.push("Measurable achievements and quantifiable metrics in work experience");
+        evidence.experience.push("Experience contains quantifiable outcome metrics (e.g. percentages, scale).");
       } else {
         improvements.experience.push("Incorporate quantifiable metrics and percentage outcomes in recent job roles");
+        evidence.experience.push("Experience lacks measurable numbers and impact metrics.");
       }
 
       if (hasTechInExp) {
-        experienceScore += 10;
+        experienceScore += 12;
         strengths.experience.push("Technologies and tools directly linked to job roles");
+        evidence.experience.push("Technologies mapped to career history.");
       }
     } else {
-      experienceScore = 40;
+      experienceScore = 35;
       improvements.experience.push("Detail your practical work history or substantial project experience");
+      evidence.experience.push("No employment history records detected.");
     }
     experienceScore = Math.min(100, Math.max(30, experienceScore));
 
     // 4. Keyword Coverage evaluation (0-100)
-    let keywordScore = 55;
+    let keywordScore = 50;
     const allKeywords = new Set<string>();
     (profile.skills || []).forEach((s) => allKeywords.add(s.toLowerCase()));
-    (profile.experience || []).forEach((e) => (e.technologies || []).forEach((t) => allKeywords.add(t.toLowerCase())));
-    (profile.projects || []).forEach((p) => (p.technologies || []).forEach((t) => allKeywords.add(t.toLowerCase())));
+    (profile.experience || []).forEach((e) =>
+      (e.technologies || []).forEach((t) => allKeywords.add(t.toLowerCase())),
+    );
+    (profile.projects || []).forEach((p) =>
+      (p.technologies || []).forEach((t) => allKeywords.add(t.toLowerCase())),
+    );
 
     if (allKeywords.size >= 12) {
-      keywordScore = 92;
+      keywordScore = 94;
       strengths.keywords.push(`Strong ATS keyword density with ${allKeywords.size} distinct technical keywords`);
+      evidence.keywords.push(`${allKeywords.size} distinct technical keywords found.`);
     } else if (allKeywords.size >= 6) {
       keywordScore = 78;
       strengths.keywords.push("Solid keyword coverage across experience and projects");
-      improvements.keywords.push("Add industry-standard keywords and synonyms to maximize ATS parsing match");
+      evidence.keywords.push(`${allKeywords.size} distinct technical keywords found.`);
     } else {
       keywordScore = 52;
       improvements.keywords.push("Incorporate high-value industry terminology and technical keywords");
+      evidence.keywords.push("Limited industry keyword density detected.");
     }
 
     // 5. Education & Certifications evaluation (0-100)
-    let educationScore = 60;
+    let educationScore = 55;
     const eduCount = profile.education?.length || 0;
     const certCount = profile.certifications?.length || 0;
 
     if (eduCount > 0) {
-      educationScore += 20;
+      educationScore += 25;
       strengths.education.push("Verified educational background and formal degree details");
+      evidence.education.push(`${eduCount} formal educational qualification(s) verified.`);
     } else {
       improvements.education.push("Add formal education or degree history");
+      evidence.education.push("No formal educational degrees listed.");
     }
 
     if (certCount > 0) {
       educationScore += 20;
       strengths.education.push(`Industry certifications included (${certCount} credential${certCount > 1 ? "s" : ""})`);
+      evidence.education.push(`${certCount} professional certification(s) listed.`);
     } else {
       improvements.education.push("Consider listing professional certifications or relevant accredited training");
     }
-    educationScore = Math.min(100, Math.max(40, educationScore));
+    educationScore = Math.min(100, Math.max(35, educationScore));
 
     // 6. Structure & Formatting evaluation (0-100)
     let structureScore = 70;
-    if (profile.personal?.fullName && profile.skills?.length && (profile.experience?.length || profile.education?.length)) {
+    if (
+      profile.personal?.fullName &&
+      profile.skills?.length &&
+      (profile.experience?.length || profile.education?.length)
+    ) {
       structureScore += 18;
       strengths.structure.push("Well-structured document sections suitable for automated parser extraction");
+      evidence.structure.push("Standard chronological layout with key section headers.");
     }
     if (profile.projects && profile.projects.length > 0) {
-      structureScore += 8;
+      structureScore += 12;
       strengths.structure.push("Dedicated portfolio / project highlights section");
+      evidence.structure.push(`${profile.projects.length} project highlights detected.`);
     }
     structureScore = Math.min(100, Math.max(50, structureScore));
 
@@ -181,31 +325,37 @@ export class AtsService {
         score: completenessScore,
         strengths: strengths.completeness,
         improvements: improvements.completeness,
+        evidence: evidence.completeness,
       },
       skills: {
         score: skillsScore,
         strengths: strengths.skills,
         improvements: improvements.skills,
+        evidence: evidence.skills,
       },
       experience: {
         score: experienceScore,
         strengths: strengths.experience,
         improvements: improvements.experience,
+        evidence: evidence.experience,
       },
       keywords: {
         score: keywordScore,
         strengths: strengths.keywords,
         improvements: improvements.keywords,
+        evidence: evidence.keywords,
       },
       education: {
         score: educationScore,
         strengths: strengths.education,
         improvements: improvements.education,
+        evidence: evidence.education,
       },
       structure: {
         score: structureScore,
         strengths: strengths.structure,
         improvements: improvements.structure,
+        evidence: evidence.structure,
       },
     };
   }
@@ -227,12 +377,19 @@ export class AtsService {
   }
 
   /**
-   * Build AI prompt for Gemini from structured parsedProfile
+   * Build deterministic AI prompt for Gemini from structured parsedProfile
    */
-  public buildPrompt(profile: IParsedResumeProfile, fileName: string): string {
-    return `Analyze the following candidate structured resume profile for ATS readiness, formatting compatibility, keyword density, and qualitative impact.
-Provide realistic, constructive evaluation scores (0-100) and actionable feedback for each category:
+  public buildPrompt(
+    profile: IParsedResumeProfile,
+    fileName: string,
+    jobContext?: { requiredSkills?: string[]; title?: string; description?: string },
+  ): string {
+    const jobText = jobContext
+      ? `\nTarget Role: ${jobContext.title || "Not specified"}\nRequired Skills: ${(jobContext.requiredSkills || []).join(", ")}\nJob Context: ${jobContext.description || "General position"}\n`
+      : "";
 
+    return `Analyze the following candidate structured resume profile for ATS readiness, semantic skill depth, experience quality, keyword density, and qualitative impact.
+${jobText}
 Resume File: ${fileName}
 Candidate Name: ${profile.personal?.fullName || "Not Specified"}
 Email: ${profile.personal?.email || "Not Specified"}
@@ -289,55 +446,121 @@ Achievements: ${(profile.achievements || []).join(", ") || "None"}`;
   }
 
   /**
-   * Performs full ATS analysis:
-   * 1. Extracts deterministic baseline evidence from parsedProfile
-   * 2. Calls Gemini AI for qualitative evaluation (if configured)
-   * 3. Validates structured Gemini response with Zod
-   * 4. Combines deterministic metrics with qualitative assessment
-   * 5. Computes strictly weighted 0-100 reproducible final score
+   * Performs full controlled hybrid ATS analysis:
+   * 1. Generates cryptographic resumeHash & analysisKey
+   * 2. Checks for existing cached analysis matching identical context (Idempotent: same resume = same result)
+   * 3. Calculates objective deterministic baseline scores (60% weight)
+   * 4. Calls Gemini AI for semantic qualitative dimensions (40% weight) with temperature: 0
+   * 5. Validates structured Gemini response with Zod (bounds: 0-100)
+   * 6. Fuses deterministic and Gemini scores at the category level
+   * 7. Computes strictly weighted 0-100 final ATS score
    */
-  public async analyzeResume(resume: IResume): Promise<AtsAnalysisResult> {
+  public async analyzeResume(
+    resume: IResume,
+    options: { forceFresh?: boolean; jobContext?: { requiredSkills?: string[]; title?: string; description?: string } } = {},
+  ): Promise<AtsAnalysisResult> {
     const profile = resume.parsedProfile;
     if (!profile) {
       throw new Error("Cannot perform ATS analysis: Resume has not been parsed yet.");
     }
+
+    const fileName = resume.originalFileName || "Resume.pdf";
+    const fileSize = resume.fileSize || 0;
+    const currentModel = geminiService.getModel();
+
+    // 1. Calculate cryptographic identity hashes
+    const resumeHash = computeResumeHash(profile, fileName, fileSize);
+    const jobContextHash = options.jobContext
+      ? crypto.createHash("sha256").update(JSON.stringify(options.jobContext)).digest("hex")
+      : "none";
+
+    const analysisKey = computeAnalysisKey(
+      resumeHash,
+      ATS_SCORING_CONFIG.rubricVersion,
+      ATS_SCORING_CONFIG.engineVersion,
+      currentModel,
+      ATS_SCORING_CONFIG.promptVersion,
+      jobContextHash,
+    );
+
+    // 2. Idempotency Check: Return cached analysis if context is identical and not forced fresh
+    if (!options.forceFresh && resume.atsAnalysis) {
+      const existing = resume.atsAnalysis;
+      if (
+        existing.analysisKey === analysisKey ||
+        existing.resumeHash === resumeHash
+      ) {
+        console.log(
+          JSON.stringify({
+            stage: "[ATS-DEBUG] cached-analysis-hit",
+            resumeId: resume.id,
+            analysisKey,
+            overallScore: existing.overallScore,
+          }),
+        );
+        return existing;
+      }
+    }
+
     console.log(
       JSON.stringify({
-        stage: "ats-analysis",
+        stage: "[ATS-DEBUG] ats-analysis-start",
         resumeId: resume.id,
         applicantId: resume.applicantId,
-        hasParsedProfile: Boolean(profile),
+        hasParsedProfile: true,
         skillsCount: profile.skills?.length || 0,
         experienceCount: profile.experience?.length || 0,
         educationCount: profile.education?.length || 0,
         summaryPresent: Boolean(profile.summary && profile.summary.trim().length > 0),
-        geminiConfigured: geminiService.isConfigured(),
+        analysisKey,
       }),
     );
 
-    const deterministic = this.calculateDeterministicBaselines(profile);
-    const fileName = resume.originalFileName || "Resume.pdf";
+    // 3. Deterministic objective evaluation
+    const deterministic = this.calculateDeterministicBaselines(profile, options.jobContext);
 
+    // 4. Gemini AI qualitative evaluation (temperature: 0 for deterministic stability)
     let aiOutput: ValidatedGeminiAtsOutput | null = null;
+    let aiAvailable = false;
 
     if (geminiService.isConfigured()) {
       try {
-        const prompt = this.buildPrompt(profile, fileName);
+        const prompt = this.buildPrompt(profile, fileName, options.jobContext);
         const rawAi = await geminiService.generateStructured<Record<string, unknown>>(prompt, {
           systemInstruction: ATS_ANALYZER_SYSTEM_INSTRUCTION,
           responseSchema: GEMINI_ATS_ANALYSIS_SCHEMA,
-          temperature: 0.2, // Low temperature for high evaluation consistency
+          temperature: 0, // Deterministic zero-temperature execution
         });
 
         aiOutput = validateGeminiAtsAnalysis(rawAi);
+        aiAvailable = true;
       } catch (err: unknown) {
-        // Safe fallback: Gemini error is logged server-side, deterministic scorer continues
-        console.warn("Gemini ATS structured evaluation fallback invoked:", err instanceof Error ? err.message : String(err));
+        console.warn(
+          "[ATS-DEBUG] Gemini semantic evaluation fallback invoked:",
+          err instanceof Error ? err.message : String(err),
+        );
       }
     }
 
-    // Blend deterministic baseline with AI qualitative scoring
-    // Completeness (20%), Skills (25%), Experience (20%), Keywords (20%), Education (10%), Structure (5%)
+    // 5. Category-Level Controlled Fusion
+    // Deterministic (60%) + Gemini AI Semantic (40%)
+    const detWeight = ATS_SCORING_CONFIG.deterministicWeight; // 0.60
+    const aiWeight = ATS_SCORING_CONFIG.geminiWeight; // 0.40
+
+    // Map Gemini semantic dimensions to the 6 standard ATS categories
+    const geminiCategoryScores: Record<AtsCategoryKey, number> = {
+      completeness: aiOutput ? aiOutput.summaryQuality.score : deterministic.completeness.score,
+      skills: aiOutput ? aiOutput.skillsRelevance.score : deterministic.skills.score,
+      experience: aiOutput
+        ? Math.round((aiOutput.experienceQuality.score + aiOutput.achievementQuality.score) / 2)
+        : deterministic.experience.score,
+      keywords: aiOutput ? aiOutput.keywordRelevance.score : deterministic.keywords.score,
+      education: aiOutput
+        ? Math.round((aiOutput.achievementQuality.score + aiOutput.projectQuality.score) / 2)
+        : deterministic.education.score,
+      structure: aiOutput ? aiOutput.projectQuality.score : deterministic.structure.score,
+    };
+
     const categoriesKeys: AtsCategoryKey[] = [
       "completeness",
       "skills",
@@ -348,48 +571,72 @@ Achievements: ${(profile.achievements || []).join(", ") || "None"}`;
     ];
 
     const finalCategories: Record<AtsCategoryKey, any> = {} as any;
+    const deterministicScores: Record<AtsCategoryKey, number> = {} as any;
+    const finalCategoryScores: Record<AtsCategoryKey, number> = {} as any;
 
     let weightedSum = 0;
 
     for (const key of categoriesKeys) {
       const weightInfo = ATS_CATEGORY_WEIGHTS[key];
-      const base = deterministic[key];
-      const aiCat = aiOutput?.categories?.[key];
+      const detScore = deterministic[key].score;
+      const gemScore = geminiCategoryScores[key];
 
-      let score: number;
-      let feedback: string;
+      deterministicScores[key] = detScore;
 
-      if (aiCat && typeof aiCat.score === "number" && !isNaN(aiCat.score)) {
-        // Weighted blend: 40% deterministic baseline + 60% Gemini qualitative evaluation
-        const blended = Math.round(base.score * 0.4 + aiCat.score * 0.6);
-        score = Math.max(0, Math.min(100, blended));
-        feedback = aiCat.feedback && aiCat.feedback.trim() ? aiCat.feedback.trim() : `${weightInfo.label} evaluated with strong ATS compatibility.`;
-      } else {
-        score = base.score;
-        feedback = base.strengths[0] || `${weightInfo.label} evaluated based on resume profile attributes.`;
+      // Category fusion formula: (detScore * 0.60) + (gemScore * 0.40)
+      const fusedScore = Math.min(
+        100,
+        Math.max(0, Math.round(detScore * detWeight + gemScore * aiWeight)),
+      );
+      finalCategoryScores[key] = fusedScore;
+
+      // Extract evidence / feedback
+      let feedback = deterministic[key].strengths[0] || `${weightInfo.label} evaluated against ATS standards.`;
+      const evidenceList = [...deterministic[key].evidence];
+
+      if (aiOutput) {
+        if (key === "skills" && aiOutput.skillsRelevance.evidence.length > 0) {
+          evidenceList.push(...aiOutput.skillsRelevance.evidence);
+          feedback = aiOutput.skillsRelevance.evidence[0]!;
+        } else if (key === "experience" && aiOutput.experienceQuality.evidence.length > 0) {
+          evidenceList.push(...aiOutput.experienceQuality.evidence);
+          feedback = aiOutput.experienceQuality.evidence[0]!;
+        } else if (key === "keywords" && aiOutput.keywordRelevance.evidence.length > 0) {
+          evidenceList.push(...aiOutput.keywordRelevance.evidence);
+          feedback = aiOutput.keywordRelevance.evidence[0]!;
+        } else if (key === "completeness" && aiOutput.summaryQuality.evidence.length > 0) {
+          evidenceList.push(...aiOutput.summaryQuality.evidence);
+          feedback = aiOutput.summaryQuality.evidence[0]!;
+        } else if (key === "structure" && aiOutput.projectQuality.evidence.length > 0) {
+          evidenceList.push(...aiOutput.projectQuality.evidence);
+          feedback = aiOutput.projectQuality.evidence[0]!;
+        }
       }
 
       finalCategories[key] = {
         key,
         label: weightInfo.label,
-        score,
+        score: fusedScore,
+        deterministicScore: detScore,
+        geminiScore: gemScore,
         weight: weightInfo.weight,
         feedback,
+        evidence: Array.from(new Set(evidenceList)),
       };
 
-      weightedSum += score * weightInfo.weight;
+      weightedSum += fusedScore * weightInfo.weight;
     }
 
-    // Final numeric score: 0 to 100
-    const overallScore = Math.max(0, Math.min(100, Math.round(weightedSum)));
+    // Final Overall ATS Score: 0 to 100
+    const overallScore = Math.min(100, Math.max(0, Math.round(weightedSum)));
     const { tier, label } = this.getCompatibilityTier(overallScore);
 
-    // Aggregate strengths & improvements
+    // Aggregate strengths, weaknesses & recommendations
     const collectedStrengths: string[] = [];
-    const collectedImprovements: string[] = [];
+    const collectedWeaknesses: string[] = [];
 
     if (aiOutput?.strengths && aiOutput.strengths.length > 0) {
-      collectedStrengths.push(...aiOutput.strengths.slice(0, 4));
+      collectedStrengths.push(...aiOutput.strengths);
     } else {
       categoriesKeys.forEach((k) => {
         if (deterministic[k].strengths.length > 0) {
@@ -398,42 +645,61 @@ Achievements: ${(profile.achievements || []).join(", ") || "None"}`;
       });
     }
 
-    if (aiOutput?.improvements && aiOutput.improvements.length > 0) {
-      collectedImprovements.push(...aiOutput.improvements.slice(0, 4));
+    if (aiOutput?.weaknesses && aiOutput.weaknesses.length > 0) {
+      collectedWeaknesses.push(...aiOutput.weaknesses);
+    } else if (aiOutput?.improvements && aiOutput.improvements.length > 0) {
+      collectedWeaknesses.push(...aiOutput.improvements);
     } else {
       categoriesKeys.forEach((k) => {
         if (deterministic[k].improvements.length > 0) {
-          collectedImprovements.push(...deterministic[k].improvements);
+          collectedWeaknesses.push(...deterministic[k].improvements);
         }
       });
     }
 
     const finalStrengths = Array.from(new Set(collectedStrengths)).slice(0, 4);
-    const finalImprovements = Array.from(new Set(collectedImprovements)).slice(0, 4);
+    const finalWeaknesses = Array.from(new Set(collectedWeaknesses)).slice(0, 4);
 
-    // Collect all keyword occurrences from parsed profile
+    // Extract keyword analysis
     const allKeywords = new Set<string>();
     (profile.skills || []).forEach((s) => allKeywords.add(s.toLowerCase()));
-    (profile.experience || []).forEach((e) => (e.technologies || []).forEach((t) => allKeywords.add(t.toLowerCase())));
-    (profile.projects || []).forEach((p) => (p.technologies || []).forEach((t) => allKeywords.add(t.toLowerCase())));
+    (profile.experience || []).forEach((e) =>
+      (e.technologies || []).forEach((t) => allKeywords.add(t.toLowerCase())),
+    );
+    (profile.projects || []).forEach((p) =>
+      (p.technologies || []).forEach((t) => allKeywords.add(t.toLowerCase())),
+    );
 
-    // Build keyword analysis: matched keywords from resume profile + potential missing high-demand tech
-    const matchedKeywords = (profile.skills && profile.skills.length > 0)
-      ? profile.skills.slice(0, 8)
-      : Array.from(allKeywords).slice(0, 8).map((k) => k.charAt(0).toUpperCase() + k.slice(1));
+    const matchedKeywords =
+      profile.skills && profile.skills.length > 0
+        ? profile.skills.slice(0, 8)
+        : Array.from(allKeywords).slice(0, 8).map((k) => k.charAt(0).toUpperCase() + k.slice(1));
 
-    const standardTechKeywords = ["Docker", "AWS", "CI/CD", "Kubernetes", "GraphQL", "PostgreSQL", "Redis", "TypeScript", "Python"];
+    const standardTechKeywords = [
+      "Docker",
+      "AWS",
+      "CI/CD",
+      "Kubernetes",
+      "GraphQL",
+      "PostgreSQL",
+      "Redis",
+      "TypeScript",
+      "Python",
+    ];
     const potentialMissing = standardTechKeywords
       .filter((tech) => !allKeywords.has(tech.toLowerCase()))
       .slice(0, 4);
 
-    const recommendations = finalImprovements.length > 0
-      ? finalImprovements
-      : [
-          "Add relevant technical keywords to match specific job descriptions.",
-          "Quantify achievements in experience bullet points with measurable metrics.",
-          "Ensure consistent chronological formatting across all sections.",
-        ];
+    const recommendations =
+      aiOutput?.recommendations && aiOutput.recommendations.length > 0
+        ? aiOutput.recommendations.slice(0, 4)
+        : finalWeaknesses.length > 0
+          ? finalWeaknesses
+          : [
+              "Add relevant technical keywords to match specific job descriptions.",
+              "Quantify achievements in experience bullet points with measurable metrics.",
+              "Ensure consistent chronological formatting across all sections.",
+            ];
 
     const summary =
       aiOutput?.summary && aiOutput.summary.trim()
@@ -441,6 +707,19 @@ Achievements: ${(profile.achievements || []).join(", ") || "None"}`;
         : `Your resume demonstrates ${label.toLowerCase()} with a score of ${overallScore}/100 based on standard applicant tracking system criteria.`;
 
     const now = new Date().toISOString();
+    const currentVersion = (resume.atsAnalysis?.analysisVersion || 0) + 1;
+
+    console.log(
+      JSON.stringify({
+        stage: "[ATS-DEBUG] ats-score-created",
+        resumeId: resume.id,
+        overallScore,
+        compatibilityTier: tier,
+        analysisKey,
+        analysisVersion: currentVersion,
+        categoriesCount: Object.keys(finalCategories).length,
+      }),
+    );
 
     return {
       overallScore,
@@ -448,18 +727,57 @@ Achievements: ${(profile.achievements || []).join(", ") || "None"}`;
       compatibilityLabel: label,
       summary,
       categories: finalCategories,
-      strengths: finalStrengths.length > 0 ? finalStrengths : ["Comprehensive technical skill set identified", "Standard clear section formatting"],
-      improvements: finalImprovements.length > 0 ? finalImprovements : ["Add more quantifiable results in recent experience roles", "Ensure all relevant technology keywords are present"],
+      deterministicScores,
+      geminiScores: aiOutput
+        ? {
+            skillsRelevance: aiOutput.skillsRelevance,
+            experienceQuality: aiOutput.experienceQuality,
+            projectQuality: aiOutput.projectQuality,
+            summaryQuality: aiOutput.summaryQuality,
+            keywordRelevance: aiOutput.keywordRelevance,
+            achievementQuality: aiOutput.achievementQuality,
+          }
+        : undefined,
+      finalCategoryScores,
+      strengths:
+        finalStrengths.length > 0
+          ? finalStrengths
+          : ["Comprehensive technical skill set identified", "Standard clear section formatting"],
+      weaknesses:
+        finalWeaknesses.length > 0
+          ? finalWeaknesses
+          : ["Add more quantifiable results in recent experience roles", "Ensure all relevant technology keywords are present"],
+      improvements: finalWeaknesses,
       keywords: {
         matched: matchedKeywords.length > 0 ? matchedKeywords : ["General Industry Terminology"],
         potentialMissing: potentialMissing.length > 0 ? potentialMissing : ["Cloud Services", "CI/CD Pipelines"],
       },
+      keywordInsights:
+        aiOutput?.keywordInsights && aiOutput.keywordInsights.length > 0
+          ? aiOutput.keywordInsights
+          : undefined,
       recommendations,
+      resumeHash,
+      analysisKey,
+      rubricVersion: ATS_SCORING_CONFIG.rubricVersion,
+      engineVersion: ATS_SCORING_CONFIG.engineVersion,
+      geminiModel: currentModel,
+      promptVersion: ATS_SCORING_CONFIG.promptVersion,
+      analysisVersion: currentVersion,
       analyzedAt: now,
       resumeId: resume.id,
       originalFileName: fileName,
+      aiAvailable,
+      aiNotice: !aiAvailable
+        ? "AI analysis is temporarily unavailable. The score below is based on the available ATS evaluation."
+        : undefined,
+      scoringConfig: {
+        deterministicWeight: detWeight,
+        geminiWeight: aiWeight,
+      },
     };
   }
 }
 
 export const atsService = new AtsService();
+

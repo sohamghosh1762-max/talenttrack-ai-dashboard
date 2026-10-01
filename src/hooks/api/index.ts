@@ -5,4 +5,4 @@ export * from "./useApplications.ts";
 export * from "./useResumes.ts";
 export * from "./useAtsScore.ts";
 export * from "./useApplicantProfile.ts";
-
+export * from "./useHiringManager.ts";

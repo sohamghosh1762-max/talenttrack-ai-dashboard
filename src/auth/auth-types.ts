@@ -7,7 +7,7 @@ export type CanonicalRole =
   | "APPLICANT"
   | "ADMIN";
 
-export type UserRole = CanonicalRole | "recruiter" | "applicant" | "admin";
+export type UserRole = CanonicalRole | "recruiter" | "applicant" | "admin" | "hiring_manager";
 
 export interface RecruiterProfile {
   companyName: string;

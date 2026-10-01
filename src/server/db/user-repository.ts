@@ -78,6 +78,24 @@ export const DEFAULT_SEED_USERS: IUser[] = [
       lastLogin: "2026-09-18T14:30:00.000Z",
     },
   },
+  // Hiring Managers
+  {
+    id: "65f1a2b3c4d5e6f7a8b9c020",
+    name: "Sarah Chen",
+    email: "manager@talenttrack.ai",
+    passwordHash: "password123",
+    role: "HIRING_MANAGER",
+    status: "ACTIVE",
+    emailVerified: true,
+    createdAt: "2025-02-01T09:30:00.000Z",
+    updatedAt: "2025-02-01T09:30:00.000Z",
+    lastActive: "2026-09-20T10:00:00.000Z",
+    recruiterProfile: {
+      companyName: "TalentTrack Technologies",
+      jobTitle: "VP of Engineering",
+      department: "Core Engineering",
+    },
+  },
   // Recruiters
   {
     id: "65f1a2b3c4d5e6f7a8b9c003",
@@ -970,6 +988,13 @@ class UserRepository {
 
     this.users.set(id, newUser);
     return { ...newUser };
+  }
+
+  /**
+   * Alias for createUser
+   */
+  public create(userData: Parameters<UserRepository["createUser"]>[0]): IUser {
+    return this.createUser(userData);
   }
 
   /**

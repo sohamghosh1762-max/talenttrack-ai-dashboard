@@ -25,7 +25,7 @@ export const Route = createFileRoute("/register")({
     const r = search["role"];
     const s = search["step"];
     return {
-      role: r === "applicant" || r === "recruiter" ? r : undefined,
+      role: r === "applicant" || r === "recruiter" || r === "hiring_manager" ? (r as UserRole) : undefined,
       step: s === "select" || s === "form" ? s : undefined,
     };
   },
@@ -55,7 +55,11 @@ function RegisterPage() {
   }
 
   const roleLabel =
-    search.role === "applicant" ? "Applicant Registration" : "Employer & Recruiter Registration";
+    search.role === "applicant"
+      ? "Applicant Registration"
+      : search.role === "hiring_manager"
+        ? "Hiring Manager Registration"
+        : "Employer & Recruiter Registration";
 
   return (
     <div className="min-h-screen bg-background grid lg:grid-cols-[1fr_1.25fr]">

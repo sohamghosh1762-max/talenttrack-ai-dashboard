@@ -22,7 +22,7 @@ import { authStorage } from "@/auth/auth-storage";
 
 interface LoginFormProps {
   redirectPath?: string | undefined;
-  targetRole?: "applicant" | "recruiter" | "admin" | undefined;
+  targetRole?: "applicant" | "recruiter" | "hiring_manager" | "admin" | undefined;
   onChangeRole?: (() => void) | undefined;
 }
 
@@ -130,13 +130,13 @@ export function LoginForm({ redirectPath, targetRole, onChangeRole }: LoginFormP
       }
     }
 
-    // Recruiter and Admin login
+    // Recruiter, Hiring Manager, and Admin login
     const res = await login({ email, password, rememberMe });
     if (res.success && res.user) {
       const canonicalRole = normalizeRole(res.user.role);
 
       // Account type mismatch protection
-      if (targetRole === "recruiter" && canonicalRole === USER_ROLES.APPLICANT) {
+      if ((targetRole === "recruiter" || targetRole === "hiring_manager") && canonicalRole === USER_ROLES.APPLICANT) {
         setErrorMessage(
           "Account type mismatch: This account is registered as an Applicant. Please choose the correct account type.",
         );
@@ -165,10 +165,18 @@ export function LoginForm({ redirectPath, targetRole, onChangeRole }: LoginFormP
         return;
       }
 
+      if (canonicalRole === USER_ROLES.HIRING_MANAGER) {
+        const destination =
+          redirectPath && isUserAuthorizedForRoute(res.user.role, redirectPath)
+            ? redirectPath
+            : "/hiring-manager";
+        navigate({ to: destination });
+        return;
+      }
+
       if (
         canonicalRole === USER_ROLES.ORG_ADMIN ||
         canonicalRole === USER_ROLES.RECRUITER ||
-        canonicalRole === USER_ROLES.HIRING_MANAGER ||
         canonicalRole === USER_ROLES.INTERVIEWER
       ) {
         const destination =
@@ -195,18 +203,22 @@ export function LoginForm({ redirectPath, targetRole, onChangeRole }: LoginFormP
       ? "Admin Sign In"
       : targetRole === "applicant"
         ? "Applicant Sign In"
-        : targetRole === "recruiter"
-          ? "Recruiter Sign In"
-          : "Sign In";
+        : targetRole === "hiring_manager"
+          ? "Hiring Manager Sign In"
+          : targetRole === "recruiter"
+            ? "Recruiter Sign In"
+            : "Sign In";
 
   const roleSubtitle =
     targetRole === "admin"
       ? "Sign in to access the TalentTrack AI administration portal."
       : targetRole === "applicant"
         ? "Sign in to access your candidate workspace, applications, and saved jobs."
-        : targetRole === "recruiter"
-          ? "Sign in to manage jobs, screen candidates, and track your hiring pipeline."
-          : "Sign in to continue to your TalentTrack AI workspace.";
+        : targetRole === "hiring_manager"
+          ? "Sign in to review candidates, collaborate on hiring, and make team decisions."
+          : targetRole === "recruiter"
+            ? "Sign in to manage jobs, screen candidates, and track your hiring pipeline."
+            : "Sign in to continue to your TalentTrack AI workspace.";
 
   const emailLabel =
     targetRole === "admin"
@@ -227,9 +239,11 @@ export function LoginForm({ redirectPath, targetRole, onChangeRole }: LoginFormP
       ? "Sign In to Admin Portal"
       : targetRole === "applicant"
         ? "Sign In with Email"
-        : targetRole === "recruiter"
-          ? "Sign In to Recruiter Workspace"
-          : "Sign In";
+        : targetRole === "hiring_manager"
+          ? "Sign In to Hiring Manager Portal"
+          : targetRole === "recruiter"
+            ? "Sign In to Recruiter Workspace"
+            : "Sign In";
 
   return (
     <>

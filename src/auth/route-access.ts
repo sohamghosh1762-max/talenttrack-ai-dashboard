@@ -42,7 +42,7 @@ export function normalizeRole(role: string | null | undefined): CanonicalUserRol
     return USER_ROLES.APPLICANT;
   }
 
-  return upper as CanonicalUserRole;
+  return null;
 }
 
 /**
@@ -222,7 +222,18 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
     resourceType: "recruiter",
     resourceName: "Recruiter Settings",
   },
-  // 3. Candidate / Applicant Area
+  // 3. Hiring Manager Workspace Area
+  {
+    pathPrefix: "/hiring-manager",
+    allowedRoles: [
+      USER_ROLES.HIRING_MANAGER,
+      USER_ROLES.ADMIN,
+      USER_ROLES.SUPER_ADMIN,
+    ],
+    resourceType: "recruiter",
+    resourceName: "Hiring Manager Workspace",
+  },
+  // 4. Candidate / Applicant Area
   {
     pathPrefix: "/applicant",
     allowedRoles: [USER_ROLES.APPLICANT],
@@ -273,9 +284,10 @@ export function getDefaultRouteForRole(userRole: string | null | undefined): str
     case USER_ROLES.ADMIN:
     case USER_ROLES.SUPER_ADMIN:
       return "/admin";
+    case USER_ROLES.HIRING_MANAGER:
+      return "/hiring-manager";
     case USER_ROLES.ORG_ADMIN:
     case USER_ROLES.RECRUITER:
-    case USER_ROLES.HIRING_MANAGER:
     case USER_ROLES.INTERVIEWER:
       return "/dashboard";
     case USER_ROLES.APPLICANT:
@@ -297,9 +309,10 @@ export function getWorkspaceInfoForRole(userRole: string | null | undefined): {
     case USER_ROLES.ADMIN:
     case USER_ROLES.SUPER_ADMIN:
       return { name: "Admin Console", path: "/admin" };
+    case USER_ROLES.HIRING_MANAGER:
+      return { name: "Hiring Manager Workspace", path: "/hiring-manager" };
     case USER_ROLES.ORG_ADMIN:
     case USER_ROLES.RECRUITER:
-    case USER_ROLES.HIRING_MANAGER:
     case USER_ROLES.INTERVIEWER:
       return { name: "Recruiter Dashboard", path: "/dashboard" };
     case USER_ROLES.APPLICANT:

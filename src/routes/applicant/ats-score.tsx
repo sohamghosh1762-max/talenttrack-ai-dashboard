@@ -171,16 +171,27 @@ export function ApplicantAtsScorePage() {
       setUploadPhase("error");
       const rawMsg = err instanceof Error ? err.message : "Failed to process resume.";
       if (rawMsg.includes("upload") || rawMsg.includes("storage") || rawMsg.includes("S3")) {
+        console.error("[ATS-DEBUG] Error Stage: UPLOAD_FAILED", err);
         setCustomError("Resume upload failed. Please try again.");
       } else if (rawMsg.includes("parse") || rawMsg.includes("extract")) {
+        console.error("[ATS-DEBUG] Error Stage: PARSING_FAILED", err);
         setCustomError("Your resume was uploaded, but we couldn't analyze it.");
+      } else if (rawMsg.includes("validation") || rawMsg.includes("schema")) {
+        console.error("[ATS-DEBUG] Error Stage: VALIDATION_FAILED", err);
+        setCustomError("Resume analysis failed. You can try again.");
+      } else if (rawMsg.includes("gemini") || rawMsg.includes("AI") || rawMsg.includes("rate limit")) {
+        console.error("[ATS-DEBUG] Error Stage: GEMINI_FAILED", err);
+        setCustomError("Resume analysis failed. You can try again.");
       } else {
+        console.error("[ATS-DEBUG] Error Stage: ATS_FAILED", err);
         setCustomError("Resume analysis failed. You can try again.");
       }
     }
   };
 
   const handleReanalyze = async () => {
+    setCustomError(null);
+    setUploadPhase("idle");
     try {
       await analyzeMutation.mutateAsync();
       toast.success("ATS score re-analyzed!");
@@ -614,6 +625,13 @@ export function ApplicantAtsScorePage() {
             </div>
 
             {/* Top Score Summary Banner */}
+            {analysis.aiNotice && (
+              <div className="p-3 rounded-lg bg-surface-blue/30 border border-brand-blue/30 text-xs text-foreground flex items-center gap-2">
+                <Sparkles className="size-4 text-brand-blue shrink-0" />
+                <span>{analysis.aiNotice}</span>
+              </div>
+            )}
+
             <div className="dashboard-card p-5 sm:p-6 bg-gradient-to-br from-card via-card to-blue-500/5 border-brand-blue/25 shadow-xs">
               <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 items-center">
                 {/* Score Dial / Pillar */}
@@ -677,18 +695,22 @@ export function ApplicantAtsScorePage() {
                     {analysis.summary}
                   </p>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-[11px] text-muted-foreground">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <Check className="size-3.5 text-brand-green stroke-[3]" />
                       <span>Parser Verified</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Check className="size-3.5 text-brand-green stroke-[3]" />
-                      <span>Keyword Scanned</span>
+                      <span>Keywords Analyzed</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Check className="size-3.5 text-brand-green stroke-[3]" />
                       <span>Format Standardized</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Check className="size-3.5 text-brand-green stroke-[3]" />
+                      <span>AI Reviewed</span>
                     </div>
                   </div>
                 </div>

@@ -75,6 +75,14 @@ const ApplicationSchema = new Schema<IApplicationDocument>(
     notes: {
       type: String,
     },
+    hiringManagerFeedback: {
+      type: Schema.Types.Mixed,
+      default: [],
+    },
+    hiringDecision: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
     appliedAt: {
       type: String,
       default: () => new Date().toISOString(),

@@ -16,16 +16,22 @@ export const Route = createFileRoute("/login")({
     search: Record<string, unknown>,
   ): {
     redirect?: string | undefined;
-    role?: "applicant" | "recruiter" | "admin" | undefined;
-    intent?: "applicant" | "recruiter" | "admin" | undefined;
+    role?: "applicant" | "recruiter" | "hiring_manager" | "admin" | undefined;
+    intent?: "applicant" | "recruiter" | "hiring_manager" | "admin" | undefined;
     step?: "select" | "form" | undefined;
   } => {
     const r = search["role"];
     const i = search["intent"];
     const s = search["step"];
     const redirect = search["redirect"];
-    const parsedRole = r === "applicant" || r === "recruiter" || r === "admin" ? r : undefined;
-    const parsedIntent = i === "applicant" || i === "recruiter" || i === "admin" ? i : undefined;
+    const parsedRole =
+      r === "applicant" || r === "recruiter" || r === "hiring_manager" || r === "admin"
+        ? r
+        : undefined;
+    const parsedIntent =
+      i === "applicant" || i === "recruiter" || i === "hiring_manager" || i === "admin"
+        ? i
+        : undefined;
     return {
       redirect: typeof redirect === "string" ? redirect : undefined,
       role: parsedRole,
@@ -44,6 +50,7 @@ function LoginPage() {
   // Administrative redirect takes absolute top priority over any previously selected role
   const isRedirectAdmin = Boolean(search.redirect?.startsWith("/admin"));
   const isRedirectApplicant = Boolean(search.redirect?.startsWith("/applicant"));
+  const isRedirectHiringManager = Boolean(search.redirect?.startsWith("/hiring-manager"));
   const isRedirectRecruiter = Boolean(
     search.redirect?.startsWith("/dashboard") ||
       search.redirect?.startsWith("/pipeline") ||
@@ -55,13 +62,15 @@ function LoginPage() {
       search.redirect?.startsWith("/interviews"),
   );
 
-  const authIntent: "applicant" | "recruiter" | "admin" | undefined = isRedirectAdmin
+  const authIntent: "applicant" | "recruiter" | "hiring_manager" | "admin" | undefined = isRedirectAdmin
     ? "admin"
     : isRedirectApplicant
       ? "applicant"
-      : isRedirectRecruiter
-        ? "recruiter"
-        : search.role || search.intent;
+      : isRedirectHiringManager
+        ? "hiring_manager"
+        : isRedirectRecruiter
+          ? "recruiter"
+          : search.role || search.intent;
 
   // If user explicitly requests account selection or if neither role, intent nor redirect is specified:
   const shouldShowAccountTypeSelection =
@@ -92,7 +101,9 @@ function LoginPage() {
       ? "Admin Portal"
       : authIntent === "applicant"
         ? "Applicant Portal"
-        : "Recruiter Workspace";
+        : authIntent === "hiring_manager"
+          ? "Hiring Manager Portal"
+          : "Recruiter Workspace";
 
   return (
     <div className="min-h-screen bg-background grid lg:grid-cols-[1.1fr_1fr]">

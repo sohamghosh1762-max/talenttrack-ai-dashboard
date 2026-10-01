@@ -45,8 +45,17 @@ import { Route as ApplicantProfileRouteImport } from './routes/applicant/profile
 import { Route as ApplicantSavedJobsRouteImport } from './routes/applicant/saved-jobs'
 import { Route as ApplicantSettingsRouteImport } from './routes/applicant/settings'
 import { Route as CandidatesCandidateIdRouteImport } from './routes/candidates.$candidateId'
+import { Route as HiringManagerIndexRouteImport } from './routes/hiring-manager/index'
+import { Route as HiringManagerAnalyticsRouteImport } from './routes/hiring-manager/analytics'
+import { Route as HiringManagerCandidatesRouteImport } from './routes/hiring-manager/candidates'
+import { Route as HiringManagerInterviewsRouteImport } from './routes/hiring-manager/interviews'
+import { Route as HiringManagerJobsRouteImport } from './routes/hiring-manager/jobs'
+import { Route as HiringManagerMessagesRouteImport } from './routes/hiring-manager/messages'
+import { Route as HiringManagerProfileRouteImport } from './routes/hiring-manager/profile'
+import { Route as HiringManagerShortlistedRouteImport } from './routes/hiring-manager/shortlisted'
 import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
 import { Route as ApplicantJobsJobIdRouteImport } from './routes/applicant/jobs.$jobId'
+import { Route as HiringManagerCandidatesCandidateIdRouteImport } from './routes/hiring-manager/candidates.$candidateId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -228,6 +237,47 @@ const CandidatesCandidateIdRoute = CandidatesCandidateIdRouteImport.update({
   path: '/$candidateId',
   getParentRoute: () => CandidatesRoute,
 } as any)
+const HiringManagerIndexRoute = HiringManagerIndexRouteImport.update({
+  id: '/hiring-manager/',
+  path: '/hiring-manager/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HiringManagerAnalyticsRoute = HiringManagerAnalyticsRouteImport.update({
+  id: '/hiring-manager/analytics',
+  path: '/hiring-manager/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HiringManagerCandidatesRoute = HiringManagerCandidatesRouteImport.update({
+  id: '/hiring-manager/candidates',
+  path: '/hiring-manager/candidates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HiringManagerInterviewsRoute = HiringManagerInterviewsRouteImport.update({
+  id: '/hiring-manager/interviews',
+  path: '/hiring-manager/interviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HiringManagerJobsRoute = HiringManagerJobsRouteImport.update({
+  id: '/hiring-manager/jobs',
+  path: '/hiring-manager/jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HiringManagerMessagesRoute = HiringManagerMessagesRouteImport.update({
+  id: '/hiring-manager/messages',
+  path: '/hiring-manager/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HiringManagerProfileRoute = HiringManagerProfileRouteImport.update({
+  id: '/hiring-manager/profile',
+  path: '/hiring-manager/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HiringManagerShortlistedRoute =
+  HiringManagerShortlistedRouteImport.update({
+    id: '/hiring-manager/shortlisted',
+    path: '/hiring-manager/shortlisted',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const JobsJobIdRoute = JobsJobIdRouteImport.update({
   id: '/$jobId',
   path: '/$jobId',
@@ -238,6 +288,12 @@ const ApplicantJobsJobIdRoute = ApplicantJobsJobIdRouteImport.update({
   path: '/$jobId',
   getParentRoute: () => ApplicantJobsRoute,
 } as any)
+const HiringManagerCandidatesCandidateIdRoute =
+  HiringManagerCandidatesCandidateIdRouteImport.update({
+    id: '/$candidateId',
+    path: '/$candidateId',
+    getParentRoute: () => HiringManagerCandidatesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -275,9 +331,18 @@ export interface FileRoutesByFullPath {
   '/applicant/saved-jobs': typeof ApplicantSavedJobsRoute
   '/applicant/settings': typeof ApplicantSettingsRoute
   '/candidates/$candidateId': typeof CandidatesCandidateIdRoute
+  '/hiring-manager/analytics': typeof HiringManagerAnalyticsRoute
+  '/hiring-manager/candidates': typeof HiringManagerCandidatesRouteWithChildren
+  '/hiring-manager/interviews': typeof HiringManagerInterviewsRoute
+  '/hiring-manager/jobs': typeof HiringManagerJobsRoute
+  '/hiring-manager/messages': typeof HiringManagerMessagesRoute
+  '/hiring-manager/profile': typeof HiringManagerProfileRoute
+  '/hiring-manager/shortlisted': typeof HiringManagerShortlistedRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/applicant/': typeof ApplicantIndexRoute
+  '/hiring-manager/': typeof HiringManagerIndexRoute
   '/applicant/jobs/$jobId': typeof ApplicantJobsJobIdRoute
+  '/hiring-manager/candidates/$candidateId': typeof HiringManagerCandidatesCandidateIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -315,9 +380,18 @@ export interface FileRoutesByTo {
   '/applicant/saved-jobs': typeof ApplicantSavedJobsRoute
   '/applicant/settings': typeof ApplicantSettingsRoute
   '/candidates/$candidateId': typeof CandidatesCandidateIdRoute
+  '/hiring-manager/analytics': typeof HiringManagerAnalyticsRoute
+  '/hiring-manager/candidates': typeof HiringManagerCandidatesRouteWithChildren
+  '/hiring-manager/interviews': typeof HiringManagerInterviewsRoute
+  '/hiring-manager/jobs': typeof HiringManagerJobsRoute
+  '/hiring-manager/messages': typeof HiringManagerMessagesRoute
+  '/hiring-manager/profile': typeof HiringManagerProfileRoute
+  '/hiring-manager/shortlisted': typeof HiringManagerShortlistedRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/applicant': typeof ApplicantIndexRoute
+  '/hiring-manager': typeof HiringManagerIndexRoute
   '/applicant/jobs/$jobId': typeof ApplicantJobsJobIdRoute
+  '/hiring-manager/candidates/$candidateId': typeof HiringManagerCandidatesCandidateIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -356,9 +430,18 @@ export interface FileRoutesById {
   '/applicant/saved-jobs': typeof ApplicantSavedJobsRoute
   '/applicant/settings': typeof ApplicantSettingsRoute
   '/candidates/$candidateId': typeof CandidatesCandidateIdRoute
+  '/hiring-manager/analytics': typeof HiringManagerAnalyticsRoute
+  '/hiring-manager/candidates': typeof HiringManagerCandidatesRouteWithChildren
+  '/hiring-manager/interviews': typeof HiringManagerInterviewsRoute
+  '/hiring-manager/jobs': typeof HiringManagerJobsRoute
+  '/hiring-manager/messages': typeof HiringManagerMessagesRoute
+  '/hiring-manager/profile': typeof HiringManagerProfileRoute
+  '/hiring-manager/shortlisted': typeof HiringManagerShortlistedRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/applicant/': typeof ApplicantIndexRoute
+  '/hiring-manager/': typeof HiringManagerIndexRoute
   '/applicant/jobs/$jobId': typeof ApplicantJobsJobIdRoute
+  '/hiring-manager/candidates/$candidateId': typeof HiringManagerCandidatesCandidateIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -398,9 +481,18 @@ export interface FileRouteTypes {
     | '/applicant/saved-jobs'
     | '/applicant/settings'
     | '/candidates/$candidateId'
+    | '/hiring-manager/analytics'
+    | '/hiring-manager/candidates'
+    | '/hiring-manager/interviews'
+    | '/hiring-manager/jobs'
+    | '/hiring-manager/messages'
+    | '/hiring-manager/profile'
+    | '/hiring-manager/shortlisted'
     | '/jobs/$jobId'
     | '/applicant/'
+    | '/hiring-manager/'
     | '/applicant/jobs/$jobId'
+    | '/hiring-manager/candidates/$candidateId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -438,9 +530,18 @@ export interface FileRouteTypes {
     | '/applicant/saved-jobs'
     | '/applicant/settings'
     | '/candidates/$candidateId'
+    | '/hiring-manager/analytics'
+    | '/hiring-manager/candidates'
+    | '/hiring-manager/interviews'
+    | '/hiring-manager/jobs'
+    | '/hiring-manager/messages'
+    | '/hiring-manager/profile'
+    | '/hiring-manager/shortlisted'
     | '/jobs/$jobId'
     | '/applicant'
+    | '/hiring-manager'
     | '/applicant/jobs/$jobId'
+    | '/hiring-manager/candidates/$candidateId'
   id:
     | '__root__'
     | '/'
@@ -478,9 +579,18 @@ export interface FileRouteTypes {
     | '/applicant/saved-jobs'
     | '/applicant/settings'
     | '/candidates/$candidateId'
+    | '/hiring-manager/analytics'
+    | '/hiring-manager/candidates'
+    | '/hiring-manager/interviews'
+    | '/hiring-manager/jobs'
+    | '/hiring-manager/messages'
+    | '/hiring-manager/profile'
+    | '/hiring-manager/shortlisted'
     | '/jobs/$jobId'
     | '/applicant/'
+    | '/hiring-manager/'
     | '/applicant/jobs/$jobId'
+    | '/hiring-manager/candidates/$candidateId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -513,7 +623,15 @@ export interface RootRouteChildren {
   ApplicantProfileRoute: typeof ApplicantProfileRoute
   ApplicantSavedJobsRoute: typeof ApplicantSavedJobsRoute
   ApplicantSettingsRoute: typeof ApplicantSettingsRoute
+  HiringManagerAnalyticsRoute: typeof HiringManagerAnalyticsRoute
+  HiringManagerCandidatesRoute: typeof HiringManagerCandidatesRouteWithChildren
+  HiringManagerInterviewsRoute: typeof HiringManagerInterviewsRoute
+  HiringManagerJobsRoute: typeof HiringManagerJobsRoute
+  HiringManagerMessagesRoute: typeof HiringManagerMessagesRoute
+  HiringManagerProfileRoute: typeof HiringManagerProfileRoute
+  HiringManagerShortlistedRoute: typeof HiringManagerShortlistedRoute
   ApplicantIndexRoute: typeof ApplicantIndexRoute
+  HiringManagerIndexRoute: typeof HiringManagerIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -770,6 +888,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CandidatesCandidateIdRouteImport
       parentRoute: typeof CandidatesRoute
     }
+    '/hiring-manager/': {
+      id: '/hiring-manager/'
+      path: '/hiring-manager'
+      fullPath: '/hiring-manager/'
+      preLoaderRoute: typeof HiringManagerIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hiring-manager/analytics': {
+      id: '/hiring-manager/analytics'
+      path: '/hiring-manager/analytics'
+      fullPath: '/hiring-manager/analytics'
+      preLoaderRoute: typeof HiringManagerAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hiring-manager/candidates': {
+      id: '/hiring-manager/candidates'
+      path: '/hiring-manager/candidates'
+      fullPath: '/hiring-manager/candidates'
+      preLoaderRoute: typeof HiringManagerCandidatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hiring-manager/interviews': {
+      id: '/hiring-manager/interviews'
+      path: '/hiring-manager/interviews'
+      fullPath: '/hiring-manager/interviews'
+      preLoaderRoute: typeof HiringManagerInterviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hiring-manager/jobs': {
+      id: '/hiring-manager/jobs'
+      path: '/hiring-manager/jobs'
+      fullPath: '/hiring-manager/jobs'
+      preLoaderRoute: typeof HiringManagerJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hiring-manager/messages': {
+      id: '/hiring-manager/messages'
+      path: '/hiring-manager/messages'
+      fullPath: '/hiring-manager/messages'
+      preLoaderRoute: typeof HiringManagerMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hiring-manager/profile': {
+      id: '/hiring-manager/profile'
+      path: '/hiring-manager/profile'
+      fullPath: '/hiring-manager/profile'
+      preLoaderRoute: typeof HiringManagerProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hiring-manager/shortlisted': {
+      id: '/hiring-manager/shortlisted'
+      path: '/hiring-manager/shortlisted'
+      fullPath: '/hiring-manager/shortlisted'
+      preLoaderRoute: typeof HiringManagerShortlistedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jobs/$jobId': {
       id: '/jobs/$jobId'
       path: '/$jobId'
@@ -783,6 +957,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/applicant/jobs/$jobId'
       preLoaderRoute: typeof ApplicantJobsJobIdRouteImport
       parentRoute: typeof ApplicantJobsRoute
+    }
+    '/hiring-manager/candidates/$candidateId': {
+      id: '/hiring-manager/candidates/$candidateId'
+      path: '/$candidateId'
+      fullPath: '/hiring-manager/candidates/$candidateId'
+      preLoaderRoute: typeof HiringManagerCandidatesCandidateIdRouteImport
+      parentRoute: typeof HiringManagerCandidatesRoute
     }
   }
 }
@@ -839,6 +1020,21 @@ const ApplicantJobsRouteWithChildren = ApplicantJobsRoute._addFileChildren(
   ApplicantJobsRouteChildren,
 )
 
+interface HiringManagerCandidatesRouteChildren {
+  HiringManagerCandidatesCandidateIdRoute: typeof HiringManagerCandidatesCandidateIdRoute
+}
+
+const HiringManagerCandidatesRouteChildren: HiringManagerCandidatesRouteChildren =
+  {
+    HiringManagerCandidatesCandidateIdRoute:
+      HiringManagerCandidatesCandidateIdRoute,
+  }
+
+const HiringManagerCandidatesRouteWithChildren =
+  HiringManagerCandidatesRoute._addFileChildren(
+    HiringManagerCandidatesRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R403Route: R403Route,
@@ -869,7 +1065,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApplicantProfileRoute: ApplicantProfileRoute,
   ApplicantSavedJobsRoute: ApplicantSavedJobsRoute,
   ApplicantSettingsRoute: ApplicantSettingsRoute,
+  HiringManagerAnalyticsRoute: HiringManagerAnalyticsRoute,
+  HiringManagerCandidatesRoute: HiringManagerCandidatesRouteWithChildren,
+  HiringManagerInterviewsRoute: HiringManagerInterviewsRoute,
+  HiringManagerJobsRoute: HiringManagerJobsRoute,
+  HiringManagerMessagesRoute: HiringManagerMessagesRoute,
+  HiringManagerProfileRoute: HiringManagerProfileRoute,
+  HiringManagerShortlistedRoute: HiringManagerShortlistedRoute,
   ApplicantIndexRoute: ApplicantIndexRoute,
+  HiringManagerIndexRoute: HiringManagerIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

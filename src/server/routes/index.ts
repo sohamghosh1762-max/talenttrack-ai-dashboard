@@ -103,7 +103,17 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 8. AI routes: /api/ai/*
+    // 8. Hiring Manager routes: /api/hiring-manager/*
+    if (pathname.startsWith("/api/hiring-manager")) {
+      const { handleHiringManagerApiRequest } = await import("./hiring-manager-routes.ts");
+      const response = await handleHiringManagerApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 9. AI routes: /api/ai/*
     if (pathname.startsWith("/api/ai")) {
       const response = await handleAiApiRequest(req);
       if (response) {
@@ -112,7 +122,7 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 9. Fallthrough for unhandled /api/* route
+    // 10. Fallthrough for unhandled /api/* route
     const notFoundErr = new NotFoundError(`API endpoint not found: ${req.method} ${pathname}`);
     const response = errorResponse(notFoundErr, 404);
     requestLogger(req, startTime, 404, notFoundErr.message);
@@ -137,3 +147,4 @@ export * from "./resume-routes.ts";
 export * from "./ai-routes.ts";
 export * from "./ats-routes.ts";
 export * from "./applicant-routes.ts";
+export * from "./hiring-manager-routes.ts";

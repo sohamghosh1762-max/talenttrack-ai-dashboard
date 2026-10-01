@@ -70,6 +70,14 @@ ${normalizedResumeText}
       parsingError: null,
     });
 
+    console.log(
+      JSON.stringify({
+        stage: "[ATS-DEBUG] parsing-start",
+        resumeId: resume.id,
+        applicantId: resume.applicantId,
+      }),
+    );
+
     try {
       // 1. Download file buffer from S3 storage
       const fileData = await s3Service.getFileBuffer(resume.s3Key);
@@ -86,12 +94,9 @@ ${normalizedResumeText}
 
       console.log(
         JSON.stringify({
-          stage: "resume-parsing",
+          stage: "[ATS-DEBUG] text-extraction",
           resumeId: resume.id,
-          applicantId: resume.applicantId,
-          mimeType: resume.mimeType,
           textLength: extraction.charCount,
-          geminiConfigured: geminiService.isConfigured(),
         }),
       );
 
@@ -109,9 +114,9 @@ ${normalizedResumeText}
 
       console.log(
         JSON.stringify({
-          stage: "resume-parsed-success",
+          stage: "[ATS-DEBUG] parsed-profile-created",
           resumeId: resume.id,
-          applicantId: resume.applicantId,
+          parsingStatus: "COMPLETED",
           hasParsedProfile: true,
           skillsCount: validatedProfile.skills?.length || 0,
           experienceCount: validatedProfile.experience?.length || 0,

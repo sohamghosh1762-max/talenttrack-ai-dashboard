@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export type AccountType = "applicant" | "recruiter";
+export type AccountType = "applicant" | "recruiter" | "hiring_manager";
 export type AuthMode = "login" | "signup";
 
 interface AccountTypeSelectionProps {
@@ -357,6 +357,69 @@ export function AccountTypeSelection({
                 </div>
               </div>
             </div>
+
+            {/* 3. Hiring Manager Card */}
+            <div
+              role="radio"
+              tabIndex={0}
+              aria-checked={selectedRole === "hiring_manager"}
+              aria-labelledby="hiring-manager-card-title"
+              aria-describedby="hiring-manager-card-desc"
+              onClick={() => handleCardClick("hiring_manager")}
+              onKeyDown={(e) => handleKeyDown(e, "hiring_manager")}
+              className={`group relative flex items-start gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 ${
+                selectedRole === "hiring_manager"
+                  ? "border-brand-blue bg-surface-blue/50 shadow-md ring-1 ring-brand-blue/30"
+                  : "border-border bg-card hover:border-brand-blue/40 hover:bg-muted/30 shadow-xs"
+              }`}
+            >
+              {/* Icon Container */}
+              <div
+                className={`grid size-12 place-items-center rounded-xl shrink-0 transition-colors duration-200 ${
+                  selectedRole === "hiring_manager"
+                    ? "bg-brand-blue text-primary-foreground shadow-sm ring-2 ring-brand-blue/20"
+                    : "bg-surface-blue text-brand-blue group-hover:bg-brand-blue group-hover:text-primary-foreground"
+                }`}
+              >
+                <Building2 className="size-6" />
+              </div>
+
+              {/* Text Info */}
+              <div className="flex-1 min-w-0 pr-6">
+                <div className="flex items-center gap-2">
+                  <h3
+                    id="hiring-manager-card-title"
+                    className={`text-base font-bold tracking-tight ${
+                      selectedRole === "hiring_manager" ? "text-brand-blue" : "text-foreground"
+                    }`}
+                  >
+                    I'm a Hiring Manager
+                  </h3>
+                  <span className="inline-flex items-center rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                    Decision Maker
+                  </span>
+                </div>
+                <p
+                  id="hiring-manager-card-desc"
+                  className="mt-1 text-xs text-muted-foreground leading-relaxed font-normal"
+                >
+                  Review candidates, collaborate with recruiters, and make hiring decisions for your team.
+                </p>
+              </div>
+
+              {/* Radio Indicator */}
+              <div className="absolute top-5 right-5 flex items-center justify-center">
+                <div
+                  className={`size-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                    selectedRole === "hiring_manager"
+                      ? "border-brand-blue bg-brand-blue text-white"
+                      : "border-muted-foreground/40 group-hover:border-brand-blue"
+                  }`}
+                >
+                  {selectedRole === "hiring_manager" && <div className="size-2 rounded-full bg-white" />}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Action Button */}
@@ -366,7 +429,14 @@ export function AccountTypeSelection({
               onClick={() => handleProceed()}
               className="w-full h-11 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-sm gap-2 active:scale-[0.99]"
             >
-              <span>Continue as {selectedRole === "applicant" ? "Applicant" : "Recruiter"}</span>
+              <span>
+                Continue as{" "}
+                {selectedRole === "applicant"
+                  ? "Applicant"
+                  : selectedRole === "hiring_manager"
+                    ? "Hiring Manager"
+                    : "Recruiter"}
+              </span>
               <ArrowRight className="size-4" />
             </Button>
 

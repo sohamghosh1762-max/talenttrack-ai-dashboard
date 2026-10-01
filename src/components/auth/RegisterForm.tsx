@@ -101,8 +101,8 @@ export function RegisterForm({ initialRole = "recruiter", onChangeRole }: Regist
       return;
     }
 
-    if (role === "recruiter" && !companyName.trim()) {
-      setErrorMessage("Company name is required for recruiters.");
+    if ((role === "recruiter" || role === "hiring_manager") && !companyName.trim()) {
+      setErrorMessage(`Company name is required for ${role === "hiring_manager" ? "hiring managers" : "recruiters"}.`);
       return;
     }
 
@@ -121,7 +121,7 @@ export function RegisterForm({ initialRole = "recruiter", onChangeRole }: Regist
       }
     }
 
-    // Recruiter registration
+    // Recruiter / Hiring Manager registration
     const res = await register({
       name,
       email,
@@ -129,6 +129,7 @@ export function RegisterForm({ initialRole = "recruiter", onChangeRole }: Regist
       confirmPassword,
       role,
       companyName,
+      department: companyName, // Map organization to department
       jobTitle,
       headline,
       location,
@@ -162,12 +163,20 @@ export function RegisterForm({ initialRole = "recruiter", onChangeRole }: Regist
 
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-          Create your {role === "recruiter" ? "Recruiter" : "Applicant"} account
+          Create your{" "}
+          {role === "recruiter"
+            ? "Recruiter"
+            : role === "hiring_manager"
+              ? "Hiring Manager"
+              : "Applicant"}{" "}
+          account
         </h1>
         <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
           {role === "recruiter"
             ? "Create job postings, screen resumes with AI, and manage candidate pipelines."
-            : "Discover career opportunities, apply for roles, and track applications in real-time."}
+            : role === "hiring_manager"
+              ? "Review candidates, collaborate with recruiters, and make team hiring decisions."
+              : "Discover career opportunities, apply for roles, and track applications in real-time."}
         </p>
       </div>
 
@@ -269,7 +278,7 @@ export function RegisterForm({ initialRole = "recruiter", onChangeRole }: Regist
 
           <div>
             <label htmlFor="reg-email" className="block text-xs font-semibold text-foreground mb-1">
-              {role === "recruiter" ? "Work Email" : "Email Address"}{" "}
+              {role === "applicant" ? "Email Address" : "Work Email"}{" "}
               <span className="text-destructive">*</span>
             </label>
             <div className="relative">
@@ -280,7 +289,7 @@ export function RegisterForm({ initialRole = "recruiter", onChangeRole }: Regist
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={role === "recruiter" ? "name@company.com" : "name@gmail.com"}
+                placeholder={role === "applicant" ? "name@gmail.com" : "name@company.com"}
                 className="h-9.5 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-xs outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
               />
             </div>
@@ -288,14 +297,15 @@ export function RegisterForm({ initialRole = "recruiter", onChangeRole }: Regist
         </div>
 
         {/* Dynamic Role Fields */}
-        {role === "recruiter" ? (
+        {role === "recruiter" || role === "hiring_manager" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in-50 duration-200">
             <div>
               <label
                 htmlFor="reg-company"
                 className="block text-xs font-semibold text-foreground mb-1"
               >
-                Company Name <span className="text-destructive">*</span>
+                {role === "hiring_manager" ? "Company / Org" : "Company Name"}{" "}
+                <span className="text-destructive">*</span>
               </label>
               <div className="relative">
                 <Building className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -316,14 +326,18 @@ export function RegisterForm({ initialRole = "recruiter", onChangeRole }: Regist
                 htmlFor="reg-jobtitle"
                 className="block text-xs font-semibold text-foreground mb-1"
               >
-                Your Title
+                {role === "hiring_manager" ? "Department / Team" : "Your Title"}
               </label>
               <input
                 id="reg-jobtitle"
                 type="text"
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
-                placeholder="e.g. Talent Lead, HR Manager"
+                placeholder={
+                  role === "hiring_manager"
+                    ? "e.g. Engineering Lead, Product Director"
+                    : "e.g. Talent Lead, HR Manager"
+                }
                 className="h-9.5 w-full rounded-lg border border-input bg-card px-3 text-xs outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
               />
             </div>
@@ -431,7 +445,13 @@ export function RegisterForm({ initialRole = "recruiter", onChangeRole }: Regist
           ) : (
             <>
               <Sparkles className="size-3.5" />
-              Create {role === "recruiter" ? "Recruiter" : "Applicant"} Account
+              Create{" "}
+              {role === "recruiter"
+                ? "Recruiter"
+                : role === "hiring_manager"
+                  ? "Hiring Manager"
+                  : "Applicant"}{" "}
+              Account
               <ArrowRight className="size-3.5" />
             </>
           )}

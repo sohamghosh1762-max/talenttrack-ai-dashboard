@@ -21,6 +21,8 @@ const DEFAULT_SEED_JOBS: IJob[] = [
     skills: ["React", "TypeScript", "Tailwind CSS", "Next.js"],
     salaryRange: { min: 140000, max: 180000, currency: "USD", isNegotiable: true },
     recruiterId: "65f1a2b3c4d5e6f7a8b9c003",
+    hiringManagerId: "65f1a2b3c4d5e6f7a8b9c020",
+    hiringManagerIds: ["65f1a2b3c4d5e6f7a8b9c020"],
     status: "PUBLISHED",
     applicationsCount: 72,
     deadline: "2026-12-31",
@@ -38,6 +40,8 @@ const DEFAULT_SEED_JOBS: IJob[] = [
     skills: ["Node.js", "Express", "TypeScript", "MongoDB", "PostgreSQL"],
     salaryRange: { min: 150000, max: 195000, currency: "USD", isNegotiable: true },
     recruiterId: "65f1a2b3c4d5e6f7a8b9c003",
+    hiringManagerId: "65f1a2b3c4d5e6f7a8b9c020",
+    hiringManagerIds: ["65f1a2b3c4d5e6f7a8b9c020"],
     status: "PUBLISHED",
     applicationsCount: 58,
     deadline: "2026-12-31",
@@ -55,6 +59,8 @@ const DEFAULT_SEED_JOBS: IJob[] = [
     skills: ["Python", "PyTorch", "Hugging Face", "Vector Search", "FastAPI"],
     salaryRange: { min: 160000, max: 210000, currency: "USD", isNegotiable: false },
     recruiterId: "65f1a2b3c4d5e6f7a8b9c004",
+    hiringManagerId: "65f1a2b3c4d5e6f7a8b9c020",
+    hiringManagerIds: ["65f1a2b3c4d5e6f7a8b9c020"],
     status: "PUBLISHED",
     applicationsCount: 36,
     deadline: "2026-11-30",
@@ -120,6 +126,13 @@ class JobRepository {
         query["recruiterId"] = params.recruiterId;
       }
 
+      if (params.hiringManagerId) {
+        query["$or"] = [
+          { hiringManagerId: params.hiringManagerId },
+          { hiringManagerIds: params.hiringManagerId },
+        ];
+      }
+
       const sortField = params.sortBy || "createdAt";
       const sortDirection = params.sortOrder === "asc" ? 1 : -1;
 
@@ -143,6 +156,8 @@ class JobRepository {
         skills: doc.skills || [],
         salaryRange: doc.salaryRange || undefined,
         recruiterId: doc.recruiterId?.toString() || "",
+        hiringManagerId: doc.hiringManagerId?.toString() || undefined,
+        hiringManagerIds: doc.hiringManagerIds ? doc.hiringManagerIds.map((id: any) => id.toString()) : undefined,
         status: doc.status,
         applicationsCount: doc.applicationsCount || 0,
         deadline: doc.deadline || undefined,
@@ -192,6 +207,13 @@ class JobRepository {
         return false;
       }
 
+      if (params.hiringManagerId) {
+        const matchesHM =
+          job.hiringManagerId === params.hiringManagerId ||
+          (job.hiringManagerIds && job.hiringManagerIds.includes(params.hiringManagerId));
+        if (!matchesHM) return false;
+      }
+
       return true;
     });
 
@@ -236,6 +258,8 @@ class JobRepository {
         skills: doc.skills || [],
         salaryRange: doc.salaryRange || undefined,
         recruiterId: doc.recruiterId?.toString() || "",
+        hiringManagerId: doc.hiringManagerId?.toString() || undefined,
+        hiringManagerIds: doc.hiringManagerIds ? doc.hiringManagerIds.map((id: any) => id.toString()) : undefined,
         status: doc.status,
         applicationsCount: doc.applicationsCount || 0,
         deadline: doc.deadline || undefined,
@@ -263,6 +287,8 @@ class JobRepository {
       skills: input.skills || [],
       salaryRange: input.salaryRange || undefined,
       recruiterId: input.recruiterId,
+      hiringManagerId: input.hiringManagerId || undefined,
+      hiringManagerIds: input.hiringManagerIds || undefined,
       status: input.status || "PUBLISHED",
       applicationsCount: 0,
       deadline: input.deadline || undefined,
@@ -282,6 +308,8 @@ class JobRepository {
         skills: jobData.skills,
         salaryRange: jobData.salaryRange,
         recruiterId: jobData.recruiterId,
+        hiringManagerId: jobData.hiringManagerId,
+        hiringManagerIds: jobData.hiringManagerIds,
         status: jobData.status,
         applicationsCount: 0,
         deadline: jobData.deadline,
@@ -322,6 +350,8 @@ class JobRepository {
         skills: updatedDoc.skills || [],
         salaryRange: updatedDoc.salaryRange || undefined,
         recruiterId: updatedDoc.recruiterId?.toString() || "",
+        hiringManagerId: updatedDoc.hiringManagerId?.toString() || undefined,
+        hiringManagerIds: updatedDoc.hiringManagerIds ? updatedDoc.hiringManagerIds.map((id: any) => id.toString()) : undefined,
         status: updatedDoc.status,
         applicationsCount: updatedDoc.applicationsCount || 0,
         deadline: updatedDoc.deadline || undefined,

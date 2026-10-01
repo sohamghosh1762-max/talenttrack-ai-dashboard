@@ -1,66 +1,107 @@
-# TalentTrack AI — Environment Configuration
+# TalentTrack AI — Environment Configuration Reference
 
-This document specifies the environment variable architecture, validation mechanisms, and security isolation rules.
+This document outlines all environment variables required by **TalentTrack AI**, categorized by runtime boundary (Frontend vs. Backend) and external service integrations.
 
----
-
-## 1. Overview & Principles
-
-1. **No Committed Secrets:** Real credentials, signing keys, and secrets must never be committed to Git. `.env` and `.env.*` (except `.env.example`) are ignored in `.gitignore`.
-2. **Strict Client/Server Separation:** Server-only variables (such as database connection strings, JWT signing keys, and AI provider API keys) must never be bundled into the client browser bundle.
-3. **Zod Boundary Validation:** All server environment variables are parsed and validated on server startup in `src/server/config/env.ts`.
+> [!CAUTION]
+> **Never commit real secret credentials or `.env` files to git.** The `.env` file is excluded in `.gitignore`. Use `.env.example` as a template containing placeholder values only.
 
 ---
 
-## 2. Configuration Variables Reference
+## 1. Frontend Configuration (Client-Visible `VITE_*`)
 
-### Application Settings
+Variables prefixed with `VITE_` are bundled into the client application by Vite. They must **never** contain private backend secrets, database connection strings, or service account keys.
 
-- `NODE_ENV` (`development` | `test` | `production`): Application runtime environment. Default: `development`.
-- `PORT` (number): Server port. Default: `3000`.
-- `APP_URL` (string): Public base URL for the web application. Default: `http://localhost:3000`.
-- `API_URL` (string): Base URL for API requests. Default: `http://localhost:3000`.
-
-### Database (Planned Phase 4)
-
-- `DATABASE_URL` (string): MongoDB connection string.
-
-### Authentication & Session (Planned Phase 2)
-
-- `SESSION_SECRET` (string): Secret used for signing session cookies. Minimum 32 characters in production.
-- `JWT_SECRET` (string): Secret used for signing JSON Web Tokens. Minimum 32 characters in production.
-- `JWT_EXPIRES_IN` (string): Expiration duration (e.g. `7d`, `24h`).
-
-### AI Providers (Planned Phase 7)
-
-- `OPENAI_API_KEY` (string): OpenAI API Key for embeddings and analysis.
-- `GEMINI_API_KEY` (string): Google Gemini API Key for candidate screening assistance.
-
-### Object Storage / Resumes (Planned Phase 5)
-
-- `AWS_REGION` (string): AWS S3 region. Default: `us-east-1`.
-- `AWS_ACCESS_KEY_ID` (string): S3 IAM access key.
-- `AWS_SECRET_ACCESS_KEY` (string): S3 IAM secret key.
-- `AWS_S3_BUCKET` (string): S3 bucket name for resume uploads.
-
-### Email / SMTP (Planned Phase 8)
-
-- `SMTP_HOST` (string): SMTP server host.
-- `SMTP_PORT` (number): SMTP port (e.g. `587`, `465`).
-- `SMTP_USER` (string): SMTP username.
-- `SMTP_PASSWORD` (string): SMTP password.
-- `SMTP_FROM_EMAIL` (string): From email address. Default: `no-reply@talenttrack.ai`.
-- `SMTP_FROM_NAME` (string): From display name. Default: `TalentTrack AI`.
+| Variable Name | Required | Default / Example | Purpose |
+| :--- | :---: | :--- | :--- |
+| `VITE_API_BASE_URL` | No | `/api` | Base URL prefix for backend REST API requests. |
+| `VITE_FIREBASE_API_KEY` | Yes | `<your-firebase-api-key>` | Firebase Web API key for client-side authentication. |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Yes | `<project-id>.firebaseapp.com` | Firebase Auth domain for OAuth callbacks. |
+| `VITE_FIREBASE_PROJECT_ID` | Yes | `<project-id>` | Firebase Project ID. |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Yes | `<project-id>.firebasestorage.app` | Firebase Web storage bucket identifier. |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Yes | `1234567890` | Firebase Cloud Messaging sender ID. |
+| `VITE_FIREBASE_APP_ID` | Yes | `1:1234567890:web:...` | Firebase Web Application ID. |
 
 ---
 
-## 3. Server Configuration Access
+## 2. Backend Server & Core Configuration
 
-Application code should never access raw `process.env` directly in deep business logic. Always import the typed configuration object:
+These variables are consumed strictly on the server by `src/server/config/env.ts` and validated with Zod on startup.
 
-```typescript
-import { config } from "@/server/config";
+| Variable Name | Required | Default / Placeholder | Purpose |
+| :--- | :---: | :--- | :--- |
+| `NODE_ENV` | No | `development` | Server runtime environment (`development`, `production`, `test`). |
+| `PORT` | No | `8080` (or `3000`) | Server HTTP port for Express / Vite dev middleware. |
+| `SESSION_SECRET` | Yes | `<configured-secret-32-chars>` | High-entropy secret used for cryptographic session signing. |
+| `LOG_LEVEL` | No | `info` | Logging verbosity (`debug`, `info`, `warn`, `error`). |
 
-console.log(config.app.nodeEnv);
-console.log(config.auth.jwtExpiresIn);
+---
+
+## 3. Database & Storage Configuration
+
+| Variable Name | Required | Default / Placeholder | Purpose |
+| :--- | :---: | :--- | :--- |
+| `MONGODB_URI` | Yes | `<configured-mongodb-uri>` | MongoDB connection string (e.g. `mongodb+srv://...`). |
+| `AWS_REGION` | Yes | `us-east-1` | AWS S3 region hosting resume storage buckets. |
+| `AWS_ACCESS_KEY_ID` | Yes | `<configured-aws-access-key>` | AWS IAM access key with S3 read/write permissions. |
+| `AWS_SECRET_ACCESS_KEY` | Yes | `<configured-aws-secret-key>` | AWS IAM secret access key. |
+| `AWS_S3_BUCKET_NAME` | Yes | `talenttrack-resumes` | Name of the private S3 bucket for storing resumes. |
+
+---
+
+## 4. AI & Gemini Integration
+
+| Variable Name | Required | Default / Placeholder | Purpose |
+| :--- | :---: | :--- | :--- |
+| `GEMINI_API_KEY` | Yes | `<configured-gemini-key>` | Google Gemini API key used by `@google/genai` for structured resume parsing and ATS semantic analysis. |
+| `GEMINI_MODEL` | No | `gemini-3.6-flash` | Primary Gemini model identifier for AI evaluations. |
+
+---
+
+## 5. Firebase Admin SDK Configuration (Server)
+
+Used by `FirebaseAdminService` to verify applicant Firebase ID tokens server-side.
+
+| Variable Name | Required | Default / Placeholder | Purpose |
+| :--- | :---: | :--- | :--- |
+| `FIREBASE_PROJECT_ID` | Yes | `<configured-project-id>` | Firebase Project ID. |
+| `FIREBASE_CLIENT_EMAIL` | Yes | `<configured-service-account-email>` | Firebase service account client email. |
+| `FIREBASE_PRIVATE_KEY` | Yes | `<configured-private-key>` | Firebase service account RSA private key (with escaped `\n`). |
+
+---
+
+## 6. Template `.env.example` Reference
+
+```bash
+# Frontend Public Variables
+VITE_API_BASE_URL=/api
+VITE_FIREBASE_API_KEY=your-firebase-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-firebase-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=1234567890
+VITE_FIREBASE_APP_ID=1:1234567890:web:abcdef
+
+# Backend Server
+NODE_ENV=development
+PORT=8080
+SESSION_SECRET=replace-with-a-secure-32-character-random-secret
+LOG_LEVEL=info
+
+# Database
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/talenttrack?retryWrites=true&w=majority
+
+# AWS S3 Storage
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-aws-access-key-id
+AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
+AWS_S3_BUCKET_NAME=talenttrack-resumes
+
+# Google Gemini AI
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-3.6-flash
+
+# Firebase Admin SDK (Server)
+FIREBASE_PROJECT_ID=your-firebase-project-id
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n<your-private-key-here>\n-----END PRIVATE KEY-----\n"
 ```

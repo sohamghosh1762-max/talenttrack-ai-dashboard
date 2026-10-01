@@ -64,10 +64,14 @@ export async function handleRegister(req: Request): Promise<Response> {
   const normalizedRole = rawRole.toUpperCase() as UserRole;
 
   const recruiterProfile =
-    normalizedRole === "RECRUITER" || validated.companyName
+    normalizedRole === "RECRUITER" ||
+    normalizedRole === "HIRING_MANAGER" ||
+    validated.companyName
       ? {
-          companyName: validated.companyName || "Independent Hiring",
-          jobTitle: validated.jobTitle || "Recruiter",
+          companyName: validated.companyName || "TalentTrack Hiring",
+          jobTitle:
+            validated.jobTitle ||
+            (normalizedRole === "HIRING_MANAGER" ? "Hiring Manager" : "Recruiter"),
           ...(validated.department ? { department: validated.department } : {}),
         }
       : undefined;

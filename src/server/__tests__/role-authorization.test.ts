@@ -214,8 +214,13 @@ describe("ROLE-BASED AUTHORIZATION & RBAC SUITE", () => {
     it("Directs RECRUITER to /dashboard", () => {
       assert.strictEqual(getDefaultRouteForRole("RECRUITER"), "/dashboard");
       assert.strictEqual(getDefaultRouteForRole("recruiter"), "/dashboard");
-      assert.strictEqual(getDefaultRouteForRole("HIRING_MANAGER"), "/dashboard");
       assert.strictEqual(getWorkspaceInfoForRole("RECRUITER").path, "/dashboard");
+    });
+
+    it("Directs HIRING_MANAGER to /hiring-manager", () => {
+      assert.strictEqual(getDefaultRouteForRole("HIRING_MANAGER"), "/hiring-manager");
+      assert.strictEqual(getDefaultRouteForRole("hiring_manager"), "/hiring-manager");
+      assert.strictEqual(getWorkspaceInfoForRole("HIRING_MANAGER").path, "/hiring-manager");
     });
 
     it("Directs APPLICANT to /applicant", () => {

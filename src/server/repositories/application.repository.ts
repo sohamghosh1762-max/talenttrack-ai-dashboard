@@ -173,6 +173,8 @@ class ApplicationRepository {
 
       if (params.jobId && isValidObjectId(params.jobId)) {
         query["jobId"] = params.jobId;
+      } else if (params.jobIds && params.jobIds.length > 0) {
+        query["jobId"] = { $in: params.jobIds.filter(isValidObjectId) };
       }
       if (params.applicantId && isValidObjectId(params.applicantId)) {
         query["applicantId"] = params.applicantId;
@@ -219,6 +221,8 @@ class ApplicationRepository {
             jobTitle: doc.jobId && typeof doc.jobId === "object" && "title" in doc.jobId ? (doc.jobId as { title: string }).title : undefined,
             applicantName: doc.applicantId && typeof doc.applicantId === "object" && "name" in doc.applicantId ? (doc.applicantId as { name: string }).name : undefined,
             applicantEmail: doc.applicantId && typeof doc.applicantId === "object" && "email" in doc.applicantId ? (doc.applicantId as { email: string }).email : undefined,
+            hiringManagerFeedback: doc.hiringManagerFeedback || undefined,
+            hiringDecision: doc.hiringDecision || undefined,
           };
 
           if (doc.jobId && typeof doc.jobId === "object") {
@@ -272,6 +276,7 @@ class ApplicationRepository {
 
     const filtered = enrichedAll.filter((app) => {
       if (params.jobId && app.jobId !== params.jobId) return false;
+      if (params.jobIds && params.jobIds.length > 0 && !params.jobIds.includes(app.jobId)) return false;
       if (params.applicantId && app.applicantId !== params.applicantId) return false;
       if (params.recruiterId && app.recruiterId !== params.recruiterId) return false;
       if (params.status && app.status !== params.status) return false;
@@ -336,6 +341,8 @@ class ApplicationRepository {
         jobTitle: doc.jobId && typeof doc.jobId === "object" && "title" in doc.jobId ? (doc.jobId as { title: string }).title : undefined,
         applicantName: doc.applicantId && typeof doc.applicantId === "object" && "name" in doc.applicantId ? (doc.applicantId as { name: string }).name : undefined,
         applicantEmail: doc.applicantId && typeof doc.applicantId === "object" && "email" in doc.applicantId ? (doc.applicantId as { email: string }).email : undefined,
+        hiringManagerFeedback: doc.hiringManagerFeedback || undefined,
+        hiringDecision: doc.hiringDecision || undefined,
       };
 
       return this.enrichApplicationDetails(app);
@@ -343,6 +350,79 @@ class ApplicationRepository {
 
     const app = this.inMemoryApplications.get(id);
     return app ? this.enrichApplicationDetails(app) : null;
+  }
+
+  public async addHiringManagerFeedback(
+    id: string,
+    feedback: import("../types/application-types.ts").HiringManagerFeedbackItem,
+  ): Promise<IApplication | null> {
+    const now = new Date().toISOString();
+
+    if (isDatabaseConnected() && isValidObjectId(id)) {
+      const doc = await Application.findByIdAndUpdate(
+        id,
+        {
+          $push: { hiringManagerFeedback: feedback },
+          $set: { updatedAt: new Date() },
+        },
+        { new: true },
+      )
+        .populate("jobId", "title department location employmentType status")
+        .populate("applicantId", "name email applicantProfile")
+        .lean<any>();
+
+      if (!doc) return null;
+      return this.findById(id);
+    }
+
+    const app = this.inMemoryApplications.get(id);
+    if (!app) return null;
+
+    const existingFeedback = app.hiringManagerFeedback || [];
+    app.hiringManagerFeedback = [...existingFeedback, feedback];
+    app.updatedAt = now;
+    this.inMemoryApplications.set(id, app);
+    return this.enrichApplicationDetails(app);
+  }
+
+  public async setHiringDecision(
+    id: string,
+    decision: import("../types/application-types.ts").HiringDecision,
+  ): Promise<IApplication | null> {
+    const now = new Date().toISOString();
+
+    let newStage: import("../types/application-types.ts").ApplicationStage | undefined;
+    let newStatus: import("../types/application-types.ts").ApplicationStatus | undefined;
+
+    if (decision.status === "APPROVED") {
+      newStage = "OFFERED";
+      newStatus = "Shortlisted";
+    } else if (decision.status === "REJECTED") {
+      newStage = "REJECTED";
+      newStatus = "REJECTED";
+    }
+
+    if (isDatabaseConnected() && isValidObjectId(id)) {
+      const updatePayload: Record<string, unknown> = {
+        hiringDecision: decision,
+        updatedAt: new Date(),
+      };
+      if (newStage) updatePayload["currentStage"] = newStage;
+      if (newStatus) updatePayload["status"] = newStatus;
+
+      await Application.findByIdAndUpdate(id, { $set: updatePayload }, { new: true });
+      return this.findById(id);
+    }
+
+    const app = this.inMemoryApplications.get(id);
+    if (!app) return null;
+
+    app.hiringDecision = decision;
+    if (newStage) app.currentStage = newStage;
+    if (newStatus) app.status = newStatus;
+    app.updatedAt = now;
+    this.inMemoryApplications.set(id, app);
+    return this.enrichApplicationDetails(app);
   }
 
   public async findByJobAndApplicant(jobId: string, applicantId: string): Promise<IApplication | null> {
@@ -397,8 +477,9 @@ class ApplicationRepository {
       recruiterId: recruiterId || "65f1a2b3c4d5e6f7a8b9c003",
       resumeId: input.resumeId || undefined,
       coverLetter: input.coverLetter || undefined,
-      status: "APPLIED",
-      currentStage: "APPLIED",
+      status: (input as any).status || "APPLIED",
+      currentStage: (input as any).currentStage || (input as any).stage || "APPLIED",
+      aiScore: (input as any).aiScore || (input as any).atsScore || undefined,
       notes: input.notes || undefined,
       appliedAt: now,
       updatedAt: now,

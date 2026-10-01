@@ -2,16 +2,23 @@
 .env
 .env.*
 !.env.example
+!.env.example.*
 .env.local
 .env.development
 .env.development.local
 .env.production
 .env.production.local
+.env.test
+.env.test.local
 
 # Local development / temporary
 *.local
 tmp/
 temp/
+*.tmp
+*.temp
+*.swp
+*.swo
 
 # Dependencies
 node_modules/
@@ -28,6 +35,7 @@ build/
 .nuxt/
 .vite/
 coverage/
+.nyc_output/
 
 # Logs
 logs/
@@ -45,23 +53,30 @@ lerna-debug.log*
 *- Copy/
 * - Copy/
 
-# Firebase / Service Credentials / Private Keys
+# Firebase / Service Credentials / Private Keys / Secrets
 serviceAccountKey*.json
+service-account*.json
 firebase-service-account*.json
 *-firebase-adminsdk-*.json
 firebase-adminsdk*.json
 credentials.json
+secrets.json
 credentials
 .aws/
 *.pem
 *.key
 *.p12
 *.pfx
+*.crt
+*.cer
 
-# Local databases
+# Local databases & runtime files
 *.db
 *.sqlite
 *.sqlite3
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
 
 # Uploads and applicant files
 uploads/
@@ -78,9 +93,7 @@ venv/
 .DS_Store
 Thumbs.db
 .idea/
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
+.vscode/
 *.suo
 *.ntvs*
 *.njsproj
