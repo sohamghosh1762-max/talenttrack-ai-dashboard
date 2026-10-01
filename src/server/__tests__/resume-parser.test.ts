@@ -64,6 +64,8 @@ describe("AI RESUME PARSING & STRUCTURED EXTRACTION SUITE", () => {
     applicationRepository.clearAll();
     jobRepository.clearAll();
     s3Service.clearMockStorage();
+    (geminiService as any).customApiKey = "mock-gemini-key-for-tests";
+    geminiService.resetClient();
 
     // 1. Create Applicant 1
     applicant1User = userRepository.createUser({

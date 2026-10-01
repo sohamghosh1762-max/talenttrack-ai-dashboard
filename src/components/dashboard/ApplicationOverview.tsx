@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { applicationOverviewChartData } from "@/data/mockData";
+import { useRecruiterDashboard } from "@/hooks/api/useRecruiterDashboard";
 
 const seriesConfig = [
   {
@@ -39,6 +39,17 @@ const seriesConfig = [
 ];
 
 export function ApplicationOverview() {
+  const { data: dashboardData } = useRecruiterDashboard();
+
+  const chartData = dashboardData?.applicationOverviewChartData || [
+    { date: "Mon", applications: 20, shortlisted: 8, interviewed: 4, offered: 1 },
+    { date: "Tue", applications: 42, shortlisted: 15, interviewed: 8, offered: 2 },
+    { date: "Wed", applications: 68, shortlisted: 25, interviewed: 12, offered: 4 },
+    { date: "Thu", applications: 85, shortlisted: 34, interviewed: 15, offered: 7 },
+    { date: "Fri", applications: 104, shortlisted: 40, interviewed: 17, offered: 10 },
+    { date: "Sat", applications: 112, shortlisted: 42, interviewed: 18, offered: 12 },
+  ];
+
   return (
     <section className="dashboard-card flex flex-col h-[286px] min-w-0 overflow-hidden p-3.5">
       <div className="flex items-center justify-between pb-1">
@@ -56,7 +67,7 @@ export function ApplicationOverview() {
       <div className="flex-1 w-full min-h-0 pt-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            data={applicationOverviewChartData}
+            data={chartData}
             margin={{ top: 8, right: 15, left: -20, bottom: 0 }}
           >
             <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -67,8 +78,7 @@ export function ApplicationOverview() {
               tickLine={false}
             />
             <YAxis
-              domain={[0, 100]}
-              ticks={[0, 20, 40, 60, 80, 100]}
+              domain={[0, "auto"]}
               tick={{ fontSize: 9.5, fill: "var(--muted-foreground)" }}
               axisLine={false}
               tickLine={false}

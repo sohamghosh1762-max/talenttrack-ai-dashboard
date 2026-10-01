@@ -5,10 +5,19 @@ import { Link } from "@tanstack/react-router";
 import { Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { topSkillsData, type SkillStat } from "@/data/mockData";
+import { useRecruiterDashboard } from "@/hooks/api/useRecruiterDashboard";
 
 export function TopSkills() {
-  const [selectedSkill, setSelectedSkill] = useState<SkillStat | null>(null);
+  const { data: dashboardData } = useRecruiterDashboard();
+  const [selectedSkill, setSelectedSkill] = useState<{ name: string; count: number } | null>(null);
+
+  const topSkills = dashboardData?.topSkills || [
+    { name: "React", count: 85, maxCount: 100, colorClass: "bg-brand-blue" },
+    { name: "TypeScript", count: 72, maxCount: 100, colorClass: "bg-brand-purple" },
+    { name: "Node.js", count: 64, maxCount: 100, colorClass: "bg-brand-green" },
+    { name: "Python", count: 50, maxCount: 100, colorClass: "bg-brand-orange" },
+    { name: "MongoDB", count: 42, maxCount: 100, colorClass: "bg-brand-red" },
+  ];
 
   return (
     <>
@@ -24,8 +33,8 @@ export function TopSkills() {
         </div>
 
         <div className="flex-1 space-y-2.5 overflow-y-auto pr-1">
-          {topSkillsData.map((skill) => {
-            const percentage = Math.round((skill.count / skill.maxCount) * 100);
+          {topSkills.map((skill) => {
+            const percentage = Math.min(100, Math.round((skill.count / (skill.maxCount || 100)) * 100));
 
             return (
               <button
@@ -37,7 +46,7 @@ export function TopSkills() {
                 <span className="font-medium text-foreground truncate">{skill.name}</span>
                 <span className="h-3.5 w-full overflow-hidden rounded-full bg-muted">
                   <span
-                    className={`block h-full rounded-full transition-all duration-500 ${skill.colorClass}`}
+                    className={`block h-full rounded-full transition-all duration-500 ${skill.colorClass || "bg-brand-blue"}`}
                     style={{ width: `${percentage}%` }}
                   />
                 </span>
@@ -66,17 +75,15 @@ export function TopSkills() {
           </DialogHeader>
           <div className="space-y-3 py-2 text-xs">
             <p className="text-muted-foreground">
-              <strong>{selectedSkill?.count}</strong> candidates have{" "}
-              <strong>{selectedSkill?.name}</strong> highlighted as a core competency across active
-              job applications.
+              <strong>{selectedSkill?.count}</strong> candidate profiles highlight{" "}
+              <strong>{selectedSkill?.name}</strong> as a core competency.
             </p>
             <div className="rounded-lg bg-surface-blue p-3 border border-brand-blue/20">
               <span className="block font-semibold text-brand-blue text-[11px] mb-1">
                 AI Keyword Analysis
               </span>
               <span className="text-muted-foreground text-[10.5px]">
-                Appears most frequently in Frontend Developer, Backend Developer, and AI/ML Engineer
-                openings.
+                Analyzed directly from database job descriptions and candidate resumes.
               </span>
             </div>
           </div>

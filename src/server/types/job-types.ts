@@ -34,7 +34,9 @@ export interface IJob {
   location: string;
   employmentType: EmploymentType;
   experienceRequired?: string | undefined;
+  education?: string | undefined;
   skills: string[];
+  preferredSkills?: string[] | undefined;
   salaryRange?: SalaryRange | undefined;
   recruiterId: string; // Ref to User / Recruiter
   status: JobStatus;
@@ -75,7 +77,9 @@ export interface CreateJobInput {
   location: string;
   employmentType?: EmploymentType | undefined;
   experienceRequired?: string | undefined;
+  education?: string | undefined;
   skills?: string[] | undefined;
+  preferredSkills?: string[] | undefined;
   salaryRange?: SalaryRange | undefined;
   recruiterId: string;
   status?: JobStatus | undefined;
@@ -89,7 +93,9 @@ export interface UpdateJobInput {
   location?: string | undefined;
   employmentType?: EmploymentType | undefined;
   experienceRequired?: string | undefined;
+  education?: string | undefined;
   skills?: string[] | undefined;
+  preferredSkills?: string[] | undefined;
   salaryRange?: SalaryRange | undefined;
   status?: JobStatus | undefined;
   deadline?: string | undefined;

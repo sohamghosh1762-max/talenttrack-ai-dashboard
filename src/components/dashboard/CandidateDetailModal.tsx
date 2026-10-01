@@ -230,16 +230,28 @@ export function CandidateDetailModal({
 
           {/* AI Match & Summary */}
           <div>
-            <h4 className="font-semibold text-foreground mb-1 flex items-center gap-1.5">
-              <Brain className="size-3.5 text-brand-purple" />
-              AI Match & Profile Summary
-            </h4>
+            <div className="flex items-center justify-between mb-1">
+              <h4 className="font-semibold text-foreground flex items-center gap-1.5">
+                <Brain className="size-3.5 text-brand-purple" />
+                AI Candidate-to-Job Match Analysis
+              </h4>
+            </div>
             <p className="text-muted-foreground text-[11.5px] leading-relaxed">
               {parsedProfile?.summary ||
                 candidate.summary ||
                 candidate.coverLetter ||
-                `${candidate.name} demonstrates a high semantic similarity score of ${score}% with the job specification for ${candidate.job || "this role"}. Strong alignment across core skill proficiencies and domain experience.`}
+                `${candidate.name} demonstrates an alignment score of ${score}% with the job specification for ${candidate.job || "this role"}.`}
             </p>
+          </div>
+
+          {/* Recruiter Notes */}
+          <div>
+            <h4 className="font-semibold text-foreground mb-1">Recruiter Notes</h4>
+            <div className="rounded-lg border border-border bg-card p-2.5">
+              <p className="text-[11px] text-muted-foreground italic">
+                {candidate.notes || candidate.summary || "No recruiter evaluation notes added yet."}
+              </p>
+            </div>
           </div>
 
           {/* Skills */}

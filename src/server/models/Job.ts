@@ -60,10 +60,18 @@ const JobSchema = new Schema<IJobDocument>(
       type: String,
       trim: true,
     },
+    education: {
+      type: String,
+      trim: true,
+    },
     skills: {
       type: [String],
       default: [],
       index: true,
+    },
+    preferredSkills: {
+      type: [String],
+      default: [],
     },
     salaryRange: {
       type: SalaryRangeSchema,

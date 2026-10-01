@@ -6,6 +6,11 @@ import { handleResumeApiRequest } from "./resume-routes.ts";
 import { handleAiApiRequest } from "./ai-routes.ts";
 import { handleAtsApiRequest } from "./ats-routes.ts";
 import { handleApplicantApiRequest } from "./applicant-routes.ts";
+import { handleInterviewApiRequest } from "./interview-routes.ts";
+import { handleRecruiterDashboardApiRequest } from "./recruiter-dashboard-routes.ts";
+import { handleRecruiterReportsApiRequest } from "./recruiter-reports-routes.ts";
+import { handleRecruiterSettingsApiRequest } from "./recruiter-settings-routes.ts";
+import { handleRecruiterAiApiRequest } from "./recruiter-ai-routes.ts";
 import { getDatabaseStatus } from "../db/mongodb.ts";
 import { errorResponse, successResponse } from "../utils/response.ts";
 import { NotFoundError } from "../utils/errors.ts";
@@ -85,7 +90,52 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 6. Application routes: /api/applications/* and /api/recruiter/*
+    // 6. Recruiter Interviews: /api/recruiter/interviews/*
+    if (pathname.startsWith("/api/recruiter/interviews")) {
+      const response = await handleInterviewApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 7. Recruiter Dashboard Telemetry: /api/recruiter/dashboard
+    if (pathname === "/api/recruiter/dashboard") {
+      const response = await handleRecruiterDashboardApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 8. Recruiter Reports Analytics: /api/recruiter/reports
+    if (pathname === "/api/recruiter/reports") {
+      const response = await handleRecruiterReportsApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 9. Recruiter Settings: /api/recruiter/settings/*
+    if (pathname.startsWith("/api/recruiter/settings")) {
+      const response = await handleRecruiterSettingsApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 10. Recruiter AI Match Analysis: /api/recruiter/applications/*/ai-match
+    if (pathname.includes("/ai-match")) {
+      const response = await handleRecruiterAiApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 11. Application routes: /api/applications/* and /api/recruiter/*
     if (pathname.startsWith("/api/applications") || pathname.startsWith("/api/recruiter")) {
       const response = await handleApplicationApiRequest(req);
       if (response) {
@@ -94,7 +144,7 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 7. Applicant routes: /api/applicant/* (Profile & ATS Score)
+    // 12. Applicant routes: /api/applicant/* (Profile & ATS Score)
     if (pathname.startsWith("/api/applicant")) {
       const response = await handleApplicantApiRequest(req);
       if (response) {
@@ -103,7 +153,7 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 8. AI routes: /api/ai/*
+    // 13. AI routes: /api/ai/*
     if (pathname.startsWith("/api/ai")) {
       const response = await handleAiApiRequest(req);
       if (response) {
@@ -112,7 +162,7 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 9. Fallthrough for unhandled /api/* route
+    // 14. Fallthrough for unhandled /api/* route
     const notFoundErr = new NotFoundError(`API endpoint not found: ${req.method} ${pathname}`);
     const response = errorResponse(notFoundErr, 404);
     requestLogger(req, startTime, 404, notFoundErr.message);
@@ -137,3 +187,9 @@ export * from "./resume-routes.ts";
 export * from "./ai-routes.ts";
 export * from "./ats-routes.ts";
 export * from "./applicant-routes.ts";
+export * from "./interview-routes.ts";
+export * from "./recruiter-dashboard-routes.ts";
+export * from "./recruiter-reports-routes.ts";
+export * from "./recruiter-settings-routes.ts";
+export * from "./recruiter-ai-routes.ts";
+

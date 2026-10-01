@@ -12,6 +12,8 @@ import { RecentApplications } from "@/components/dashboard/RecentApplications";
 import { HiringPipeline } from "@/components/dashboard/HiringPipeline";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { PostJobModal } from "@/components/dashboard/PostJobModal";
+import { useAuth } from "@/auth/AuthProvider";
+import { useRecruiterSettings } from "@/hooks/api/useRecruiterSettings";
 import { recruiterProfile } from "@/data/mockData";
 
 interface DashboardViewProps {
@@ -20,6 +22,11 @@ interface DashboardViewProps {
 
 export function DashboardView({ searchQuery = "" }: DashboardViewProps) {
   const [postJobOpen, setPostJobOpen] = useState(false);
+  const { user } = useAuth();
+  const { data: serverSettings } = useRecruiterSettings();
+
+  const recruiterName = serverSettings?.name || user?.name || recruiterProfile.name;
+  const firstName = recruiterName.trim().split(" ")[0] || recruiterName;
 
   return (
     <div className="space-y-4">
@@ -30,7 +37,7 @@ export function DashboardView({ searchQuery = "" }: DashboardViewProps) {
       >
         <div className="min-w-0">
           <h1 className="flex items-center gap-2 text-[22px] font-extrabold leading-tight text-foreground sm:text-[26px]">
-            <span className="truncate">Welcome back, {recruiterProfile.name.split(" ")[0]}!</span>
+            <span className="truncate">Welcome back, {firstName}!</span>
             <Hand className="size-6 shrink-0 rotate-[-18deg] text-brand-orange animate-bounce" />
           </h1>
           <p className="mt-1 text-xs text-muted-foreground sm:text-sm">

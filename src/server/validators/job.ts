@@ -66,7 +66,20 @@ export const createJobSchema = z.object({
     .max(150, "Location cannot exceed 150 characters"),
   employmentType: employmentTypeEnum.default("Full-Time").optional(),
   experienceRequired: z.string().trim().max(100).optional(),
+  education: z.string().trim().max(100).optional(),
   skills: z
+    .union([
+      z.array(z.string().trim().min(1)),
+      z.string().transform((val) =>
+        val
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
+    ])
+    .default([])
+    .optional(),
+  preferredSkills: z
     .union([
       z.array(z.string().trim().min(1)),
       z.string().transform((val) =>
@@ -90,7 +103,19 @@ export const updateJobSchema = z.object({
   location: z.string().trim().min(1).max(150).optional(),
   employmentType: employmentTypeEnum.optional(),
   experienceRequired: z.string().trim().max(100).optional(),
+  education: z.string().trim().max(100).optional(),
   skills: z
+    .union([
+      z.array(z.string().trim().min(1)),
+      z.string().transform((val) =>
+        val
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
+    ])
+    .optional(),
+  preferredSkills: z
     .union([
       z.array(z.string().trim().min(1)),
       z.string().transform((val) =>

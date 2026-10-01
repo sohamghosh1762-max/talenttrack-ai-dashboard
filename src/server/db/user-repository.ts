@@ -973,6 +973,49 @@ class UserRepository {
   }
 
   /**
+   * Update user profile fields (name, email, recruiterProfile)
+   */
+  public updateUserProfile(
+    userId: string,
+    updates: {
+      name?: string | undefined;
+      email?: string | undefined;
+      recruiterProfile?: RecruiterProfileInfo | undefined;
+    },
+  ): IUser | null {
+    const user = this.users.get(userId);
+    if (!user) return null;
+
+    const now = new Date().toISOString();
+    if (updates.name && updates.name.trim()) {
+      user.name = updates.name.trim();
+    }
+    if (updates.email && updates.email.trim()) {
+      user.email = updates.email.trim().toLowerCase();
+    }
+    if (updates.recruiterProfile) {
+      user.recruiterProfile = {
+        ...(user.recruiterProfile || { companyName: "", jobTitle: "", department: "" }),
+        ...updates.recruiterProfile,
+      };
+    }
+    user.updatedAt = now;
+
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      const dbUpdates: Record<string, any> = { updatedAt: new Date() };
+      if (updates.name && updates.name.trim()) dbUpdates["name"] = updates.name.trim();
+      if (updates.email && updates.email.trim()) dbUpdates["email"] = updates.email.trim().toLowerCase();
+      if (updates.recruiterProfile) dbUpdates["recruiterProfile"] = user.recruiterProfile;
+
+      User.findByIdAndUpdate(userId, { $set: dbUpdates }).catch((err) => {
+        console.error(`[MongoDB] Error updating user profile for ${userId}:`, err);
+      });
+    }
+
+    return { ...user };
+  }
+
+  /**
    * Update password hash for a user and touch updatedAt
    */
   public updatePassword(userId: string, newPasswordHash: string): boolean {

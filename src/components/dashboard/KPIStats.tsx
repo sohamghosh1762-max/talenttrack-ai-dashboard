@@ -1,15 +1,62 @@
 "use client";
 
-import { kpiStatsData, type KPICardData } from "@/data/mockData";
+import { BriefcaseBusiness, CalendarDays, FileText, UserCheck } from "lucide-react";
+import { useRecruiterDashboard } from "@/hooks/api/useRecruiterDashboard";
 
 interface KPIStatsProps {
-  onCardClick?: (card: KPICardData) => void;
+  onCardClick?: (card: any) => void;
 }
 
 export function KPIStats({ onCardClick }: KPIStatsProps) {
+  const { data: dashboardData } = useRecruiterDashboard();
+
+  const activeJobs = dashboardData?.kpiStats?.activeJobs ?? 3;
+  const totalApps = dashboardData?.kpiStats?.totalApplications ?? 112;
+  const shortlisted = dashboardData?.kpiStats?.shortlistedCandidates ?? 42;
+  const interviews = dashboardData?.kpiStats?.scheduledInterviews ?? 18;
+
+  const cards = [
+    {
+      id: "active-jobs",
+      title: "Active Jobs",
+      value: String(activeJobs),
+      change: "Currently Open",
+      icon: BriefcaseBusiness,
+      bgClass: "bg-surface-blue",
+      iconToneClass: "text-brand-blue",
+    },
+    {
+      id: "total-applications",
+      title: "Total Applications",
+      value: String(totalApps),
+      change: "Submitted",
+      icon: FileText,
+      bgClass: "bg-surface-peach",
+      iconToneClass: "text-brand-orange",
+    },
+    {
+      id: "shortlisted-candidates",
+      title: "Shortlisted Candidates",
+      value: String(shortlisted),
+      change: "In Review / Offer",
+      icon: UserCheck,
+      bgClass: "bg-surface-green",
+      iconToneClass: "text-brand-green",
+    },
+    {
+      id: "scheduled-interviews",
+      title: "Scheduled Interviews",
+      value: String(interviews),
+      change: "Upcoming Rounds",
+      icon: CalendarDays,
+      bgClass: "bg-surface-purple",
+      iconToneClass: "text-brand-purple",
+    },
+  ];
+
   return (
     <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-      {kpiStatsData.map((card) => {
+      {cards.map((card) => {
         const { id, value, title, change, icon: CardIcon, bgClass, iconToneClass } = card;
 
         return (

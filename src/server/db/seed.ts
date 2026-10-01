@@ -4,6 +4,7 @@ import { Recruiter } from "../models/Recruiter.ts";
 import { Applicant } from "../models/Applicant.ts";
 import { Job } from "../models/Job.ts";
 import { Application } from "../models/Application.ts";
+import { Interview } from "../models/Interview.ts";
 import { hashPassword } from "../auth/password.ts";
 
 async function runSeed() {
@@ -17,11 +18,12 @@ async function runSeed() {
 
     // Clean up development seed documents
     await Promise.all([
-      User.deleteMany({ email: { $in: ["admin@talenttrack.ai", "rahul.mehta@talenttrack.ai", "aarav.mehta@example.com"] } }),
+      User.deleteMany({ email: { $in: ["admin@talenttrack.ai", "rahul.mehta@talenttrack.ai", "aarav.mehta@example.com", "priya.sharma@example.com", "vikram.singh@example.com"] } }),
       Job.deleteMany({ title: { $in: ["Senior Frontend Developer", "Lead Backend Developer", "AI/ML Systems Engineer"] } }),
       Recruiter.deleteMany({}),
       Applicant.deleteMany({}),
       Application.deleteMany({}),
+      Interview.deleteMany({}),
     ]);
 
     console.log("[Seed] Cleared existing demo data.");
@@ -63,7 +65,7 @@ async function runSeed() {
       },
     });
 
-    const recruiterDoc = await Recruiter.create({
+    await Recruiter.create({
       userId: recruiterUser._id,
       companyName: "TalentTrack Technologies",
       designation: "Principal Talent Acquisition Lead",
@@ -73,8 +75,8 @@ async function runSeed() {
     });
     console.log(`[Seed] Created Recruiter: ${recruiterUser.email} (ID: ${recruiterUser._id})`);
 
-    // 3. Seed Applicant User & Applicant Profile
-    const applicantUser = await User.create({
+    // 3. Seed Applicants
+    const applicantUser1 = await User.create({
       _id: "65f1a2b3c4d5e6f7a8b9c008",
       name: "Aarav Mehta",
       email: "aarav.mehta@example.com",
@@ -93,8 +95,8 @@ async function runSeed() {
       },
     });
 
-    const applicantDoc = await Applicant.create({
-      userId: applicantUser._id,
+    await Applicant.create({
+      userId: applicantUser1._id,
       headline: "Senior Frontend Engineer | React, TypeScript & Next.js",
       phone: "+1 (555) 234-5678",
       location: "San Jose, CA",
@@ -104,7 +106,70 @@ async function runSeed() {
       resume: "Aarav_Mehta_Resume_2026.pdf",
       summary: "Senior Frontend Engineer specializing in responsive web applications and state management architectures.",
     });
-    console.log(`[Seed] Created Applicant: ${applicantUser.email} (ID: ${applicantUser._id})`);
+
+    const applicantUser2 = await User.create({
+      _id: "65f1a2b3c4d5e6f7a8b9c009",
+      name: "Priya Sharma",
+      email: "priya.sharma@example.com",
+      passwordHash: secureHash,
+      role: "APPLICANT",
+      status: "ACTIVE",
+      emailVerified: true,
+      emailVerifiedAt: new Date().toISOString(),
+      applicantProfile: {
+        headline: "Lead Backend & Distributed Systems Engineer",
+        location: "Austin, TX",
+        phone: "+1 (555) 345-6789",
+        skills: ["Node.js", "Express", "TypeScript", "MongoDB", "PostgreSQL", "Docker"],
+        experienceYears: "6 years",
+        resumeFileName: "Priya_Sharma_Resume.pdf",
+      },
+    });
+
+    await Applicant.create({
+      userId: applicantUser2._id,
+      headline: "Lead Backend & Distributed Systems Engineer",
+      phone: "+1 (555) 345-6789",
+      location: "Austin, TX",
+      skills: ["Node.js", "Express", "TypeScript", "MongoDB", "PostgreSQL", "Docker"],
+      experience: "6 years",
+      education: ["M.S. in Computer Science — UT Austin (2019)"],
+      resume: "Priya_Sharma_Resume.pdf",
+      summary: "Passionate Backend Lead focused on high performance API gateways, database optimization, and microservice architecture.",
+    });
+
+    const applicantUser3 = await User.create({
+      _id: "65f1a2b3c4d5e6f7a8b9c010",
+      name: "Vikram Singh",
+      email: "vikram.singh@example.com",
+      passwordHash: secureHash,
+      role: "APPLICANT",
+      status: "ACTIVE",
+      emailVerified: true,
+      emailVerifiedAt: new Date().toISOString(),
+      applicantProfile: {
+        headline: "AI/ML Engineer & Natural Language Processing Specialist",
+        location: "New York, NY",
+        phone: "+1 (555) 456-7890",
+        skills: ["Python", "PyTorch", "FastAPI", "Vector Search", "Hugging Face", "LLMs"],
+        experienceYears: "4 years",
+        resumeFileName: "Vikram_Singh_CV.pdf",
+      },
+    });
+
+    await Applicant.create({
+      userId: applicantUser3._id,
+      headline: "AI/ML Engineer & Natural Language Processing Specialist",
+      phone: "+1 (555) 456-7890",
+      location: "New York, NY",
+      skills: ["Python", "PyTorch", "FastAPI", "Vector Search", "Hugging Face", "LLMs"],
+      experience: "4 years",
+      education: ["B.Tech in Computer Engineering — IIT Bombay (2021)"],
+      resume: "Vikram_Singh_CV.pdf",
+      summary: "Machine learning researcher and systems developer building generative AI agents and semantic search engines.",
+    });
+
+    console.log(`[Seed] Created 3 Applicants: ${applicantUser1.email}, ${applicantUser2.email}, ${applicantUser3.email}`);
 
     // 4. Seed Production Jobs
     const job1 = await Job.create({
@@ -116,10 +181,12 @@ async function runSeed() {
       employmentType: "Full-Time",
       experienceRequired: "3-5 years",
       skills: ["React", "TypeScript", "Tailwind CSS", "Next.js"],
+      preferredSkills: ["GraphQL", "Web Workers", "Tailwind CSS v4"],
+      education: "Bachelor's Degree in Computer Science or equivalent",
       salaryRange: { min: 140000, max: 180000, currency: "USD", isNegotiable: true },
       recruiterId: recruiterUser._id,
       status: "PUBLISHED",
-      applicationsCount: 1,
+      applicationsCount: 2,
       deadline: "2026-12-31",
     });
 
@@ -132,10 +199,12 @@ async function runSeed() {
       employmentType: "Full-Time",
       experienceRequired: "4+ years",
       skills: ["Node.js", "Express", "TypeScript", "MongoDB", "PostgreSQL"],
+      preferredSkills: ["Redis", "AWS Lambda", "Kafka"],
+      education: "Master's or Bachelor's in CS / Software Engineering",
       salaryRange: { min: 150000, max: 195000, currency: "USD", isNegotiable: true },
       recruiterId: recruiterUser._id,
       status: "PUBLISHED",
-      applicationsCount: 0,
+      applicationsCount: 1,
       deadline: "2026-12-31",
     });
 
@@ -148,19 +217,21 @@ async function runSeed() {
       employmentType: "Full-Time",
       experienceRequired: "3+ years",
       skills: ["Python", "PyTorch", "Hugging Face", "Vector Search", "FastAPI"],
+      preferredSkills: ["CUDA", "LangChain", "Fine-tuning Llama"],
+      education: "Master's or Ph.D. in AI / Machine Learning",
       salaryRange: { min: 160000, max: 210000, currency: "USD", isNegotiable: false },
       recruiterId: recruiterUser._id,
       status: "PUBLISHED",
-      applicationsCount: 0,
+      applicationsCount: 1,
       deadline: "2026-11-30",
     });
     console.log(`[Seed] Created 3 Jobs: "${job1.title}", "${job2.title}", "${job3.title}"`);
 
-    // 5. Seed Sample Application
+    // 5. Seed Applications
     const application1 = await Application.create({
       _id: "65f1a2b3c4d5e6f7a8b9c201",
       jobId: job1._id,
-      applicantId: applicantUser._id,
+      applicantId: applicantUser1._id,
       recruiterId: recruiterUser._id,
       resumeId: "res_65f1a2b3c4d5e6f7a8b9c008",
       coverLetter: "I have 5+ years of extensive experience building scalable frontend web platforms.",
@@ -168,17 +239,84 @@ async function runSeed() {
       currentStage: "INTERVIEW",
       aiScore: 92,
       notes: "Strong technical background with modern React 19 and TanStack router.",
-      appliedAt: new Date().toISOString(),
+      appliedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
     });
-    console.log(`[Seed] Created Application: ID ${application1._id} (Candidate: ${applicantUser.name} -> Job: ${job1.title})`);
+
+    const application2 = await Application.create({
+      _id: "65f1a2b3c4d5e6f7a8b9c202",
+      jobId: job2._id,
+      applicantId: applicantUser2._id,
+      recruiterId: recruiterUser._id,
+      resumeId: "res_65f1a2b3c4d5e6f7a8b9c009",
+      coverLetter: "Lead backend developer with deep experience in Node.js and MongoDB performance tuning.",
+      status: "Shortlisted",
+      currentStage: "INTERVIEW",
+      aiScore: 95,
+      notes: "Top candidate for Backend Lead role.",
+      appliedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+    });
+
+    const application3 = await Application.create({
+      _id: "65f1a2b3c4d5e6f7a8b9c203",
+      jobId: job3._id,
+      applicantId: applicantUser3._id,
+      recruiterId: recruiterUser._id,
+      resumeId: "res_65f1a2b3c4d5e6f7a8b9c010",
+      coverLetter: "Focused on AI agents, RAG architectures, and vector embeddings.",
+      status: "Under Review",
+      currentStage: "SCREENING",
+      aiScore: 89,
+      notes: "High potential match for ML systems engineer role.",
+      appliedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+    });
+
+    console.log(`[Seed] Created 3 Applications.`);
+
+    // 6. Seed Interviews
+    const interview1 = await Interview.create({
+      _id: "65f1a2b3c4d5e6f7a8b9c301",
+      jobId: job1._id,
+      applicationId: application1._id,
+      applicantId: applicantUser1._id,
+      recruiterId: recruiterUser._id,
+      candidateName: applicantUser1.name,
+      candidateEmail: applicantUser1.email,
+      jobRole: job1.title,
+      interviewer: "Sarah Jenkins (VP Eng)",
+      dateTime: "Tomorrow at 3:00 PM EST",
+      interviewType: "Video Call",
+      meetingLink: "https://meet.google.com/abc-defg-hij",
+      status: "Scheduled",
+      notes: "Technical Round: Architecture design and Live React coding.",
+    } as any);
+
+    const interview2 = await Interview.create({
+      _id: "65f1a2b3c4d5e6f7a8b9c302",
+      jobId: job2._id,
+      applicationId: application2._id,
+      applicantId: applicantUser2._id,
+      recruiterId: recruiterUser._id,
+      candidateName: applicantUser2.name,
+      candidateEmail: applicantUser2.email,
+      jobRole: job2.title,
+      interviewer: "David Kim (Lead Architect)",
+      dateTime: "Oct 3, 2026 at 1:30 PM EST",
+      interviewType: "Video Call",
+      meetingLink: "https://zoom.us/j/9876543210",
+      status: "Scheduled",
+      notes: "System Design Round: High throughput API gateway & Mongo indexing.",
+    } as any);
+
+    console.log(`[Seed] Created 2 Interviews: ID ${interview1._id} & ID ${interview2._id}`);
 
     console.log("==================================================");
     console.log("✅ Development Database Seed Complete!");
     console.log("  - 1 Admin user (admin@talenttrack.ai / password123)");
     console.log("  - 1 Recruiter user (rahul.mehta@talenttrack.ai / password123)");
-    console.log("  - 1 Applicant user (aarav.mehta@example.com / password123)");
+    console.log("  - 3 Applicant users (password123)");
     console.log("  - 3 Active jobs");
-    console.log("  - 1 Linked application");
+    console.log("  - 3 Applications across pipeline stages");
+    console.log("  - 2 Scheduled interviews");
     console.log("==================================================");
   } catch (err) {
     console.error("[Seed] Seeding failed with error:", err);
@@ -189,3 +327,4 @@ async function runSeed() {
 }
 
 runSeed();
+

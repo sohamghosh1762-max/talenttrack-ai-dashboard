@@ -132,6 +132,12 @@ export async function handleCreateJob(req: Request): Promise<Response> {
       ? (validated.skills as string).split(",").map((s) => s.trim()).filter(Boolean)
       : [];
 
+  const normalizedPreferredSkills: string[] = Array.isArray(validated.preferredSkills)
+    ? validated.preferredSkills
+    : typeof validated.preferredSkills === "string"
+      ? (validated.preferredSkills as string).split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+
   const createdJob = await jobRepository.create({
     title: validated.title,
     description: validated.description,
@@ -139,7 +145,9 @@ export async function handleCreateJob(req: Request): Promise<Response> {
     location: validated.location,
     employmentType: validated.employmentType,
     experienceRequired: validated.experienceRequired || undefined,
+    education: validated.education || undefined,
     skills: normalizedSkills,
+    preferredSkills: normalizedPreferredSkills,
     salaryRange: validated.salaryRange || undefined,
     recruiterId: user.id, // Strictly bind to authenticated user identity
     status: validated.status || "PUBLISHED",
@@ -187,6 +195,15 @@ export async function handleUpdateJob(req: Request, jobId: string): Promise<Resp
           : undefined
       : undefined;
 
+  const normalizedPreferredSkills: string[] | undefined =
+    validated.preferredSkills !== undefined
+      ? Array.isArray(validated.preferredSkills)
+        ? validated.preferredSkills
+        : typeof validated.preferredSkills === "string"
+          ? (validated.preferredSkills as string).split(",").map((s) => s.trim()).filter(Boolean)
+          : undefined
+      : undefined;
+
   const updated = await jobRepository.update(jobId, {
     title: validated.title || undefined,
     description: validated.description || undefined,
@@ -194,7 +211,9 @@ export async function handleUpdateJob(req: Request, jobId: string): Promise<Resp
     location: validated.location || undefined,
     employmentType: validated.employmentType || undefined,
     experienceRequired: validated.experienceRequired || undefined,
+    education: validated.education || undefined,
     skills: normalizedSkills,
+    preferredSkills: normalizedPreferredSkills,
     salaryRange: validated.salaryRange || undefined,
     deadline: validated.deadline || undefined,
     status: validated.status || undefined,

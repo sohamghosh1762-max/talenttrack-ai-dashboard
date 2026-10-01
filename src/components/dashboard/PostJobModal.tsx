@@ -33,8 +33,10 @@ export function PostJobModal({ open, onOpenChange, jobToEdit, onJobCreated }: Po
   const [location, setLocation] = useState("San Francisco, CA (Hybrid)");
   const [type, setType] = useState("Full-Time");
   const [experience, setExperience] = useState("3-5 years");
+  const [education, setEducation] = useState("Bachelor's Degree in CS or equivalent");
   const [description, setDescription] = useState("");
   const [skills, setSkills] = useState("");
+  const [preferredSkills, setPreferredSkills] = useState("");
   const [minSalary, setMinSalary] = useState<string>("");
   const [maxSalary, setMaxSalary] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -53,11 +55,17 @@ export function PostJobModal({ open, onOpenChange, jobToEdit, onJobCreated }: Po
           ? jobToEdit.experienceRequired
           : (jobToEdit as JobOpening).experience) || "2-4 years",
       );
+      setEducation(("education" in jobToEdit ? jobToEdit.education : undefined) || "Bachelor's Degree in CS or equivalent");
       setDescription(jobToEdit.description || "");
       if ("skills" in jobToEdit && Array.isArray(jobToEdit.skills)) {
         setSkills(jobToEdit.skills.join(", "));
       } else {
         setSkills("");
+      }
+      if ("preferredSkills" in jobToEdit && Array.isArray(jobToEdit.preferredSkills)) {
+        setPreferredSkills(jobToEdit.preferredSkills.join(", "));
+      } else {
+        setPreferredSkills("");
       }
       if ("salaryRange" in jobToEdit && jobToEdit.salaryRange) {
         setMinSalary(jobToEdit.salaryRange.min?.toString() || "");
@@ -73,8 +81,10 @@ export function PostJobModal({ open, onOpenChange, jobToEdit, onJobCreated }: Po
       setLocation("San Francisco, CA (Hybrid)");
       setType("Full-Time");
       setExperience("3-5 years");
+      setEducation("Bachelor's Degree in CS or equivalent");
       setDescription("");
       setSkills("");
+      setPreferredSkills("");
       setMinSalary("");
       setMaxSalary("");
       setIsSuccess(false);
@@ -355,6 +365,20 @@ export function PostJobModal({ open, onOpenChange, jobToEdit, onJobCreated }: Po
             </div>
 
             <div>
+              <label htmlFor="job-education" className="block text-xs font-semibold text-foreground mb-1">
+                Education Requirement
+              </label>
+              <input
+                id="job-education"
+                type="text"
+                value={education}
+                onChange={(e) => setEducation(e.target.value)}
+                placeholder="e.g. Bachelor's in Computer Science or equivalent"
+                className="h-9.5 w-full rounded-md border border-input bg-card px-3 text-xs outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              />
+            </div>
+
+            <div>
               <label htmlFor="job-req" className="block text-xs font-semibold text-foreground mb-1">
                 Required Technical Skills (comma separated)
               </label>
@@ -364,6 +388,20 @@ export function PostJobModal({ open, onOpenChange, jobToEdit, onJobCreated }: Po
                 value={skills}
                 onChange={(e) => setSkills(e.target.value)}
                 placeholder="e.g. React, TypeScript, Python, Node.js, AWS"
+                className="h-9.5 w-full rounded-md border border-input bg-card px-3 text-xs outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="job-pref" className="block text-xs font-semibold text-foreground mb-1">
+                Preferred / Nice-to-Have Skills (comma separated)
+              </label>
+              <input
+                id="job-pref"
+                type="text"
+                value={preferredSkills}
+                onChange={(e) => setPreferredSkills(e.target.value)}
+                placeholder="e.g. GraphQL, Docker, Kubernetes, Next.js"
                 className="h-9.5 w-full rounded-md border border-input bg-card px-3 text-xs outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
               />
             </div>
