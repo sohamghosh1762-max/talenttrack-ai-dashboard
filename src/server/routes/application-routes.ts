@@ -5,6 +5,7 @@ import { authenticate } from "../middleware/auth-middleware.ts";
 import { successResponse, errorResponse } from "../utils/response.ts";
 import { NotFoundError, ValidationError, ForbiddenError, ConflictError } from "../utils/errors.ts";
 import { isValidObjectId } from "../db/user-repository.ts";
+import { notificationService } from "../services/notification-service.ts";
 import type {
   CreateApplicationInput,
   UpdateApplicationStatusInput,
@@ -51,6 +52,14 @@ export async function handleCreateApplication(req: Request): Promise<Response> {
     throw new NotFoundError("This job opening is not currently accepting applications.");
   }
 
+  // Check application deadline
+  if (job.deadline) {
+    const deadlineTime = new Date(job.deadline.includes("T") ? job.deadline : `${job.deadline}T23:59:59.999Z`).getTime();
+    if (!isNaN(deadlineTime) && deadlineTime < Date.now()) {
+      throw new ValidationError("The application deadline for this job opening has passed.");
+    }
+  }
+
   // 2. Validate Resume if provided
   let resumeId: string | undefined = undefined;
   if (raw.resumeId && typeof raw.resumeId === "string" && raw.resumeId.trim()) {
@@ -82,6 +91,19 @@ export async function handleCreateApplication(req: Request): Promise<Response> {
     coverLetter: raw.coverLetter ? String(raw.coverLetter).trim() : undefined,
     notes: raw.notes ? String(raw.notes).trim() : undefined,
   });
+
+  // Notify applicant of successful submission
+  try {
+    await notificationService.notifyApplicationSubmitted({
+      applicantId: user.id,
+      applicationId: createdApp.id,
+      jobId: job.id,
+      jobTitle: job.title,
+      companyName: job.company,
+    });
+  } catch (err) {
+    console.error("Failed to create application submission notification:", err);
+  }
 
   return successResponse(
     {
@@ -318,6 +340,25 @@ export async function handleUpdateApplicationStage(
     throw new NotFoundError(`Application with ID ${trimmedId} could not be updated.`);
   }
 
+  // Notify applicant of stage transition if stage changed
+  if (existing.currentStage !== trimmedStage) {
+    try {
+      const job = await jobRepository.findById(existing.jobId);
+      await notificationService.notifyApplicationStatusChanged({
+        applicantId: existing.applicantId,
+        applicationId: existing.id,
+        jobId: existing.jobId,
+        jobTitle: job?.title || "Job Application",
+        companyName: job?.company,
+        oldStage: existing.currentStage,
+        newStage: trimmedStage,
+        status: updated.status,
+      });
+    } catch (err) {
+      console.error("Failed to create stage change notification:", err);
+    }
+  }
+
   return successResponse(
     {
       application: updated,
@@ -360,6 +401,36 @@ export async function handleUpdateApplicationStatus(
 
   const raw = body as UpdateApplicationStatusInput;
   const updated = await applicationRepository.updateStatus(appId, raw);
+
+  // Notify applicant if stage or status meaningfully updated
+  try {
+    const job = await jobRepository.findById(existing.jobId);
+    if (raw.currentStage && raw.currentStage !== existing.currentStage) {
+      await notificationService.notifyApplicationStatusChanged({
+        applicantId: existing.applicantId,
+        applicationId: existing.id,
+        jobId: existing.jobId,
+        jobTitle: job?.title || "Job Application",
+        companyName: job?.company,
+        oldStage: existing.currentStage,
+        newStage: raw.currentStage,
+        status: raw.status || updated?.status,
+      });
+    } else if (raw.status && raw.status !== existing.status) {
+      await notificationService.notifyApplicationStatusChanged({
+        applicantId: existing.applicantId,
+        applicationId: existing.id,
+        jobId: existing.jobId,
+        jobTitle: job?.title || "Job Application",
+        companyName: job?.company,
+        oldStage: existing.currentStage,
+        newStage: existing.currentStage,
+        status: raw.status,
+      });
+    }
+  } catch (err) {
+    console.error("Failed to create application status notification:", err);
+  }
 
   return successResponse({ application: updated }, "Application status updated successfully.");
 }

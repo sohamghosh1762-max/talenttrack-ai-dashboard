@@ -1,10 +1,190 @@
 import { resumeRepository } from "../repositories/resume.repository.ts";
+import { jobRepository } from "../repositories/job.repository.ts";
+import { userRepository } from "../db/user-repository.ts";
 import { atsService } from "../services/ats-service.ts";
 import { resumeParserService } from "../services/resume-parser-service.ts";
-import { authenticate } from "../middleware/auth-middleware.ts";
+import { authenticate, authenticateOptional } from "../middleware/auth-middleware.ts";
 import { successResponse, errorResponse } from "../utils/response.ts";
 import { ForbiddenError, NotFoundError } from "../utils/errors.ts";
 import type { AtsScoreResponse } from "../types/ats-types.ts";
+import type { ApplicantJobMatchResponse } from "../types/job-types.ts";
+
+/**
+ * Handle GET /api/applicant/jobs/:jobId/match (or /api/jobs/:jobId/match)
+ * - Computes authoritative ATS qualification match for the authenticated applicant against a specific job
+ * - Uses deterministic hybrid ATS scoring baselines
+ * - Strictly protects internal model keys and private recruiter data
+ */
+export async function handleGetApplicantJobMatch(req: Request, jobId: string): Promise<Response> {
+  const job = await jobRepository.findById(jobId);
+  if (!job) {
+    throw new NotFoundError(`Job opening with ID ${jobId} not found.`);
+  }
+
+  const authUser = await authenticateOptional(req);
+  const isOwnerOrAdmin =
+    authUser &&
+    (authUser.role === "ADMIN" ||
+      authUser.role === "SUPER_ADMIN" ||
+      job.recruiterId === authUser.id);
+
+  if ((job.status === "DRAFT" || job.status === "ARCHIVED") && !isOwnerOrAdmin) {
+    throw new NotFoundError(`Job opening with ID ${jobId} not found.`);
+  }
+
+  const jobSkills = job.skills || [];
+
+  if (!authUser) {
+    const unauthResponse: ApplicantJobMatchResponse = {
+      jobId: job.id,
+      hasResume: false,
+      hasProfile: false,
+      isAvailable: false,
+      matchScore: null,
+      matchedSkills: [],
+      missingSkills: jobSkills,
+      experienceMatch: null,
+      summary: "Sign in to your candidate account to see your personalized AI match score.",
+    };
+    return successResponse(unauthResponse, "Candidate sign-in required for job matching.", 200);
+  }
+
+  if (authUser.role !== "APPLICANT" && authUser.role !== "ADMIN" && authUser.role !== "SUPER_ADMIN") {
+    const nonApplicantResponse: ApplicantJobMatchResponse = {
+      jobId: job.id,
+      hasResume: false,
+      hasProfile: false,
+      isAvailable: false,
+      matchScore: null,
+      matchedSkills: [],
+      missingSkills: jobSkills,
+      experienceMatch: null,
+      summary: "Job matching analysis is configured for candidate applicant profiles.",
+    };
+    return successResponse(nonApplicantResponse, "Candidate applicant profile required.", 200);
+  }
+
+  const fullUser = userRepository.findFullUserById(authUser.id);
+  const applicantProfile = fullUser?.applicantProfile || {};
+  const resumes = await resumeRepository.findByApplicantId(authUser.id);
+
+  let latestResume = resumes.find((r) => r.parsingStatus === "COMPLETED" && r.parsedProfile) || resumes[0];
+
+  // Auto-parse if needed
+  if (latestResume && (latestResume.parsingStatus !== "COMPLETED" || !latestResume.parsedProfile)) {
+    try {
+      const parsed = await resumeParserService.parseResume(latestResume.id);
+      if (parsed && parsed.parsingStatus === "COMPLETED" && parsed.parsedProfile) {
+        latestResume = parsed;
+      }
+    } catch (parseErr) {
+      console.warn("[ATS-DEBUG] Auto-parsing in handleGetApplicantJobMatch:", parseErr);
+    }
+  }
+
+  const hasResume = Boolean(latestResume && latestResume.parsingStatus === "COMPLETED" && latestResume.parsedProfile);
+  const resumeSkills = latestResume?.parsedProfile?.skills || [];
+  const profileSkills = applicantProfile.skills || [];
+  const allCandidateSkills = Array.from(new Set([...resumeSkills, ...profileSkills])).filter(Boolean);
+
+  const matchedSkills: string[] = [];
+  const missingSkills: string[] = [];
+
+  const lowerCandidateSkills = allCandidateSkills.map((s) => s.toLowerCase().trim());
+  for (const js of jobSkills) {
+    const lowerJs = js.toLowerCase().trim();
+    if (
+      lowerCandidateSkills.some(
+        (cs) => cs === lowerJs || cs.includes(lowerJs) || lowerJs.includes(cs),
+      )
+    ) {
+      matchedSkills.push(js);
+    } else {
+      missingSkills.push(js);
+    }
+  }
+
+  if (!hasResume && allCandidateSkills.length === 0) {
+    const noDataResponse: ApplicantJobMatchResponse = {
+      jobId: job.id,
+      hasResume: false,
+      hasProfile: false,
+      isAvailable: false,
+      matchScore: null,
+      matchedSkills: [],
+      missingSkills: jobSkills,
+      experienceMatch: null,
+      summary: "Upload your resume to see how well your profile matches this position.",
+    };
+    return successResponse(noDataResponse, "Resume required for job match evaluation.", 200);
+  }
+
+  let calculatedScore = 70;
+  let expMatch = false;
+
+  if (hasResume && latestResume?.parsedProfile) {
+    const baselines = atsService.calculateDeterministicBaselines(latestResume.parsedProfile, {
+      requiredSkills: jobSkills,
+      title: job.title,
+    });
+
+    const skillsScore = baselines.skills.score;
+    const expScore = baselines.experience.score;
+    const kwScore = baselines.keywords.score;
+    const eduScore = baselines.education.score;
+    const compScore = baselines.completeness.score;
+    const structScore = baselines.structure.score;
+
+    calculatedScore = Math.min(
+      98,
+      Math.max(
+        40,
+        Math.round(
+          skillsScore * 0.35 +
+            expScore * 0.25 +
+            kwScore * 0.15 +
+            eduScore * 0.10 +
+            compScore * 0.10 +
+            structScore * 0.05,
+        ),
+      ),
+    );
+    expMatch = expScore >= 60;
+  } else {
+    // Deterministic fallback based on profile skills
+    const skillRatio = jobSkills.length > 0 ? matchedSkills.length / jobSkills.length : 0.7;
+    calculatedScore = Math.min(95, Math.max(45, Math.round(52 + skillRatio * 42)));
+    expMatch = Boolean(applicantProfile.experiences && applicantProfile.experiences.length > 0);
+  }
+
+  let summary = "";
+  if (calculatedScore >= 85) {
+    summary = "Your profile has strong skill alignment with the required technical qualifications and seniority criteria for this position.";
+  } else if (calculatedScore >= 70) {
+    summary = "Solid qualification match across key requirements with strong alignment to core responsibilities.";
+  } else if (calculatedScore >= 55) {
+    summary = "Moderate alignment with some core requirements met. Consider highlighting relevant projects or skills.";
+  } else {
+    summary = "Foundational profile match with notable qualification gaps for this specific position.";
+  }
+
+  const tier = atsService.getCompatibilityTier(calculatedScore).label;
+
+  const matchResult: ApplicantJobMatchResponse = {
+    jobId: job.id,
+    hasResume,
+    hasProfile: true,
+    isAvailable: true,
+    matchScore: calculatedScore,
+    matchedSkills,
+    missingSkills,
+    experienceMatch: expMatch,
+    summary,
+    tier,
+  };
+
+  return successResponse(matchResult, "Applicant job match retrieved successfully.", 200);
+}
 
 /**
  * Handle GET /api/applicant/ats-score

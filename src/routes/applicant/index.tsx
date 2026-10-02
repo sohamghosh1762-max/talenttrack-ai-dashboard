@@ -34,6 +34,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/auth/AuthProvider";
 import { useMyApplications, useCreateApplication } from "@/hooks/api/useApplications";
+import { useMyInterviews } from "@/hooks/api/useInterviews";
 import { useJobs } from "@/hooks/api/useJobs";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
 import {
@@ -73,6 +74,11 @@ export function ApplicantDashboardPage() {
   } = useMyApplications();
 
   const {
+    data: interviews = [],
+    isLoading: isInterviewsLoading,
+  } = useMyInterviews();
+
+  const {
     data: jobsData,
     isLoading: isJobsLoading,
     error: jobsError,
@@ -105,13 +111,12 @@ export function ApplicantDashboardPage() {
     ).length;
   }, [applications]);
 
-  const interviewCount = useMemo(() => {
-    return applications.filter(
-      (a) =>
-        a.currentStage?.toUpperCase() === "INTERVIEW" ||
-        a.status?.toUpperCase() === "INTERVIEW",
+  const activeInterviewsCount = useMemo(() => {
+    return interviews.filter(
+      (i) => i.status !== "CANCELLED" && i.status !== "COMPLETED",
     ).length;
-  }, [applications]);
+  }, [interviews]);
+
 
   // Derived recommended jobs
   const publishedJobs: IJob[] = jobsData?.jobs || jobsData?.data || [];
@@ -151,11 +156,11 @@ export function ApplicantDashboardPage() {
     },
     {
       title: "Interviews Scheduled",
-      value: isAppsLoading ? "—" : `${interviewCount}`,
+      value: isInterviewsLoading ? "—" : `${activeInterviewsCount}`,
       change:
-        interviewCount > 0
-          ? `${interviewCount} active interview stage`
-          : "No interviews scheduled",
+        activeInterviewsCount > 0
+          ? `${activeInterviewsCount} scheduled session${activeInterviewsCount > 1 ? "s" : ""}`
+          : "No scheduled interviews",
       icon: CalendarDays,
       bg: "bg-surface-peach",
       tone: "text-brand-orange",

@@ -5,6 +5,7 @@ import {
   Bookmark,
   Briefcase,
   Building,
+  Calendar,
   Check,
   CheckCircle2,
   DollarSign,
@@ -27,7 +28,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/auth/AuthProvider";
-import { useJob } from "@/hooks/api/useJobs";
+import { useJob, useApplicantJobMatch } from "@/hooks/api/useJobs";
+import { useApplicantProfile } from "@/hooks/api/useApplicantProfile";
 import { useUploadResume } from "@/hooks/api/useResumes";
 import { useMyApplications, useCreateApplication } from "@/hooks/api/useApplications";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
@@ -52,6 +54,10 @@ function ApplicantJobDetailsPage() {
   const { isSaved, toggleSave } = useSavedJobs();
 
   const { data: job, isLoading, error } = useJob(jobId);
+  const { data: matchData, isLoading: matchLoading } = useApplicantJobMatch(jobId, {
+    enabled: !!jobId && !!user,
+  });
+  const { data: applicantProfileData } = useApplicantProfile({ enabled: !!user });
   const { data: myApps } = useMyApplications();
   const uploadResumeMutation = useUploadResume();
   const createApplicationMutation = useCreateApplication();
@@ -64,9 +70,14 @@ function ApplicantJobDetailsPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const applicantSkills = ["React", "TypeScript", "Tailwind CSS", "Redux", "Jest", "Node.js", "Python"];
+  // Dynamic applicant skills from authenticated user profile or resume
+  const applicantSkills: string[] =
+    user?.applicantProfile?.skills ||
+    applicantProfileData?.skills ||
+    (applicantProfileData?.applicantProfile?.skills as string[]) ||
+    [];
 
-  // Determine if applicant has applied from persistent MongoDB query
+  // Determine if applicant has applied from authoritative MongoDB query
   const hasApplied = myApps?.some((a) => a.jobId === jobId) || false;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,6 +171,32 @@ function ApplicantJobDetailsPage() {
   const isPublished = job.status === "PUBLISHED";
   const isArchived = job.status === "ARCHIVED";
 
+  const formattedDeadline = job.deadline
+    ? new Date(job.deadline.includes("T") ? job.deadline : `${job.deadline}T00:00:00`).toLocaleDateString(
+        "en-US",
+        {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        },
+      )
+    : null;
+
+  const isPastDeadline = job.deadline
+    ? new Date(job.deadline.includes("T") ? job.deadline : `${job.deadline}T23:59:59.999Z`).getTime() <
+      Date.now()
+    : false;
+
+  const formattedPostedDate = job.createdAt
+    ? new Date(job.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+
+  const companyDisplayName = job.company || job.companyName || "Organization";
+
   return (
     <ApplicantLayout>
       <div className="space-y-4 max-w-4xl">
@@ -194,9 +231,9 @@ function ApplicantJobDetailsPage() {
               </div>
               <h1 className="text-xl sm:text-2xl font-black text-foreground mt-2">{job.title}</h1>
               <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground mt-2">
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1 font-medium text-foreground">
                   <Building className="size-3.5 text-muted-foreground" />
-                  TalentTrack Technologies
+                  {companyDisplayName}
                 </span>
                 <span className="flex items-center gap-1">
                   <MapPin className="size-3.5 text-muted-foreground" />
@@ -213,6 +250,12 @@ function ApplicantJobDetailsPage() {
                     {job.salaryRange.max ? ` - $${job.salaryRange.max?.toLocaleString()}` : "+"} / year
                   </span>
                 )}
+                {formattedDeadline && (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Calendar className="size-3.5 text-muted-foreground" />
+                    Deadline: {formattedDeadline}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -227,14 +270,29 @@ function ApplicantJobDetailsPage() {
                 <Bookmark className={`size-3.5 ${saved ? "fill-current" : ""}`} />
                 {saved ? "Saved" : "Save Role"}
               </Button>
-              {isPublished ? (
+
+              {hasApplied ? (
+                <Link to="/applicant/applications">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-brand-green/40 bg-surface-green text-brand-green hover:bg-surface-green/80 text-xs font-semibold px-3.5 gap-1.5 shadow-sm"
+                  >
+                    <CheckCircle2 className="size-3.5" />
+                    View Application
+                  </Button>
+                </Link>
+              ) : isPublished && !isPastDeadline ? (
                 <Button
                   size="sm"
-                  disabled={hasApplied}
                   onClick={() => setApplyModalOpen(true)}
                   className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs font-semibold px-4 shadow-sm"
                 >
-                  {hasApplied ? "Application Submitted" : "Apply for Position"}
+                  Apply for Position
+                </Button>
+              ) : isPastDeadline ? (
+                <Button size="sm" disabled variant="secondary" className="text-xs">
+                  Deadline Passed
                 </Button>
               ) : (
                 <Button size="sm" disabled variant="secondary" className="text-xs">
@@ -244,22 +302,119 @@ function ApplicantJobDetailsPage() {
             </div>
           </div>
 
-          {/* AI Semantic Match Box */}
-          <div className="rounded-xl border border-brand-blue/20 bg-surface-blue/30 p-4 space-y-2">
-            <div className="flex items-center justify-between">
+          {/* Dynamic AI Semantic Match Box */}
+          {matchLoading ? (
+            <div className="rounded-xl border border-brand-blue/20 bg-surface-blue/20 p-4 space-y-2">
               <div className="flex items-center gap-2">
-                <Sparkles className="size-4 text-brand-blue" />
-                <strong className="text-xs font-bold text-foreground">
-                  AI Semantic Qualification Match: 92%
-                </strong>
+                <Loader2 className="size-4 animate-spin text-brand-blue" />
+                <span className="text-xs font-bold text-foreground">Calculating qualification match...</span>
               </div>
-              <span className="text-[11px] font-semibold text-brand-green">High Fit</span>
+              <p className="text-[11.5px] text-muted-foreground">
+                Evaluating your profile skills and experience against position requirements.
+              </p>
             </div>
-            <p className="text-[11.5px] text-muted-foreground leading-relaxed">
-              Your profile has strong skill alignment with the required technical qualifications.
-              Your verified experience matches the seniority criteria for this position.
-            </p>
-          </div>
+          ) : !user ? (
+            <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-4 text-brand-blue" />
+                  <strong className="text-xs font-bold text-foreground">
+                    AI Semantic Qualification Match
+                  </strong>
+                </div>
+                <span className="text-[11px] font-semibold text-muted-foreground">Sign In Required</span>
+              </div>
+              <p className="text-[11.5px] text-muted-foreground leading-relaxed">
+                Sign in to your candidate account to see your personalized AI match score for this position.
+              </p>
+              <div className="pt-1">
+                <Link to="/login">
+                  <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5 text-brand-blue border-brand-blue/30 hover:bg-surface-blue">
+                    Sign In to View Match
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : !matchData?.isAvailable || matchData.matchScore === null ? (
+            <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-4 text-brand-blue" />
+                  <strong className="text-xs font-bold text-foreground">
+                    AI Semantic Qualification Match
+                  </strong>
+                </div>
+                <span className="text-[11px] font-medium text-muted-foreground">Analysis Pending</span>
+              </div>
+              <p className="text-[11.5px] text-muted-foreground leading-relaxed">
+                {matchData?.summary || "Upload your resume to see how well your profile matches this position."}
+              </p>
+              <div className="pt-1 flex items-center gap-2">
+                <Link to="/applicant/profile">
+                  <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5 text-brand-blue border-brand-blue/30 hover:bg-surface-blue">
+                    <Upload className="size-3.5" />
+                    Upload Resume
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-brand-blue/20 bg-surface-blue/30 p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-4 text-brand-blue" />
+                  <strong className="text-xs font-bold text-foreground">
+                    AI Semantic Qualification Match: {matchData.matchScore}%
+                  </strong>
+                </div>
+                <span
+                  className={`text-[11px] font-semibold ${
+                    matchData.matchScore >= 80
+                      ? "text-brand-green"
+                      : matchData.matchScore >= 60
+                        ? "text-brand-blue"
+                        : "text-brand-orange"
+                  }`}
+                >
+                  {matchData.matchScore >= 80
+                    ? "High Fit"
+                    : matchData.matchScore >= 60
+                      ? "Moderate Fit"
+                      : "Potential Match"}
+                </span>
+              </div>
+              <p className="text-[11.5px] text-muted-foreground leading-relaxed">
+                {matchData.summary}
+              </p>
+              {matchData.matchedSkills && matchData.matchedSkills.length > 0 && (
+                <div className="pt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="font-semibold text-foreground text-[10.5px]">Matched Skills:</span>
+                  {matchData.matchedSkills.map((sk) => (
+                    <span
+                      key={sk}
+                      className="inline-flex items-center gap-1 rounded bg-surface-green px-1.5 py-0.5 text-[10.5px] font-medium text-brand-green border border-brand-green/20"
+                    >
+                      <Check className="size-2.5" />
+                      {sk}
+                    </span>
+                  ))}
+                  {matchData.missingSkills && matchData.missingSkills.length > 0 && (
+                    <>
+                      <span className="ml-1 font-semibold text-foreground text-[10.5px]">Missing:</span>
+                      {matchData.missingSkills.map((sk) => (
+                        <span
+                          key={sk}
+                          className="rounded bg-muted px-1.5 py-0.5 text-[10.5px] font-medium text-muted-foreground"
+                        >
+                          {sk}
+                        </span>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Detailed Job Information */}
           <div className="space-y-6 pt-2">
@@ -275,7 +430,11 @@ function ApplicantJobDetailsPage() {
                 <h2 className="text-sm font-bold text-foreground">Required Skills & Proficiencies</h2>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {job.skills.map((skill) => {
-                    const isMatch = applicantSkills.some((s) => s.toLowerCase() === skill.toLowerCase());
+                    const isMatch =
+                      applicantSkills.some((s) => s.toLowerCase() === skill.toLowerCase()) ||
+                      (matchData?.matchedSkills || []).some(
+                        (s) => s.toLowerCase() === skill.toLowerCase(),
+                      );
                     return (
                       <span
                         key={skill}
@@ -292,6 +451,12 @@ function ApplicantJobDetailsPage() {
                   })}
                 </div>
               </section>
+            )}
+
+            {formattedPostedDate && (
+              <div className="border-t border-border/40 pt-3 text-[11px] text-muted-foreground">
+                Posted on {formattedPostedDate}
+              </div>
             )}
           </div>
         </div>

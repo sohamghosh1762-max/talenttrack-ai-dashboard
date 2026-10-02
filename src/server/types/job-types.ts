@@ -37,6 +37,8 @@ export interface IJob {
   skills: string[];
   salaryRange?: SalaryRange | undefined;
   recruiterId: string; // Ref to User / Recruiter
+  company?: string | undefined;
+  companyName?: string | undefined;
   hiringManagerId?: string | undefined; // Ref to User / Hiring Manager
   hiringManagerIds?: string[] | undefined;
   status: JobStatus;
@@ -44,6 +46,19 @@ export interface IJob {
   deadline?: string | undefined;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ApplicantJobMatchResponse {
+  jobId: string;
+  hasResume: boolean;
+  hasProfile: boolean;
+  isAvailable: boolean;
+  matchScore: number | null;
+  matchedSkills: string[];
+  missingSkills: string[];
+  experienceMatch: boolean | null;
+  summary: string;
+  tier?: string;
 }
 
 export interface JobQueryParams {
@@ -81,6 +96,8 @@ export interface CreateJobInput {
   skills?: string[] | undefined;
   salaryRange?: SalaryRange | undefined;
   recruiterId: string;
+  company?: string | undefined;
+  companyName?: string | undefined;
   hiringManagerId?: string | undefined;
   hiringManagerIds?: string[] | undefined;
   status?: JobStatus | undefined;
@@ -96,6 +113,8 @@ export interface UpdateJobInput {
   experienceRequired?: string | undefined;
   skills?: string[] | undefined;
   salaryRange?: SalaryRange | undefined;
+  company?: string | undefined;
+  companyName?: string | undefined;
   hiringManagerId?: string | undefined;
   hiringManagerIds?: string[] | undefined;
   status?: JobStatus | undefined;

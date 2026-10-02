@@ -1,6 +1,6 @@
 import { Job, type IJobDocument } from "../models/Job.ts";
 import { isDatabaseConnected } from "../db/mongodb.ts";
-import { generateObjectId, isValidObjectId } from "../db/user-repository.ts";
+import { generateObjectId, isValidObjectId, userRepository } from "../db/user-repository.ts";
 import type {
   IJob,
   JobQueryParams,
@@ -21,6 +21,8 @@ const DEFAULT_SEED_JOBS: IJob[] = [
     skills: ["React", "TypeScript", "Tailwind CSS", "Next.js"],
     salaryRange: { min: 140000, max: 180000, currency: "USD", isNegotiable: true },
     recruiterId: "65f1a2b3c4d5e6f7a8b9c003",
+    company: "TalentTrack Technologies",
+    companyName: "TalentTrack Technologies",
     hiringManagerId: "65f1a2b3c4d5e6f7a8b9c020",
     hiringManagerIds: ["65f1a2b3c4d5e6f7a8b9c020"],
     status: "PUBLISHED",
@@ -40,6 +42,8 @@ const DEFAULT_SEED_JOBS: IJob[] = [
     skills: ["Node.js", "Express", "TypeScript", "MongoDB", "PostgreSQL"],
     salaryRange: { min: 150000, max: 195000, currency: "USD", isNegotiable: true },
     recruiterId: "65f1a2b3c4d5e6f7a8b9c003",
+    company: "TalentTrack Technologies",
+    companyName: "TalentTrack Technologies",
     hiringManagerId: "65f1a2b3c4d5e6f7a8b9c020",
     hiringManagerIds: ["65f1a2b3c4d5e6f7a8b9c020"],
     status: "PUBLISHED",
@@ -59,6 +63,8 @@ const DEFAULT_SEED_JOBS: IJob[] = [
     skills: ["Python", "PyTorch", "Hugging Face", "Vector Search", "FastAPI"],
     salaryRange: { min: 160000, max: 210000, currency: "USD", isNegotiable: false },
     recruiterId: "65f1a2b3c4d5e6f7a8b9c004",
+    company: "Stripe",
+    companyName: "Stripe",
     hiringManagerId: "65f1a2b3c4d5e6f7a8b9c020",
     hiringManagerIds: ["65f1a2b3c4d5e6f7a8b9c020"],
     status: "PUBLISHED",
@@ -87,6 +93,15 @@ class JobRepository {
     this.inMemoryJobs.clear();
   }
 
+  public resolveRecruiterCompany(recruiterId?: string): string {
+    if (!recruiterId) return "Organization";
+    const recruiterUser = userRepository.findFullUserById(recruiterId);
+    if (recruiterUser?.recruiterProfile?.companyName) {
+      return recruiterUser.recruiterProfile.companyName;
+    }
+    return "Organization";
+  }
+
   public async findAll(params: JobQueryParams = {}): Promise<PaginatedJobsResponse> {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(params.limit) || 20));
@@ -103,6 +118,7 @@ class JobRepository {
           { department: searchRegex },
           { location: searchRegex },
           { skills: searchRegex },
+          { company: searchRegex },
         ];
       }
 
@@ -145,25 +161,30 @@ class JobRepository {
         Job.countDocuments(query),
       ]);
 
-      const jobs: IJob[] = docs.map((doc: any) => ({
-        id: doc._id ? doc._id.toString() : doc.id,
-        title: doc.title,
-        description: doc.description,
-        department: doc.department,
-        location: doc.location,
-        employmentType: doc.employmentType,
-        experienceRequired: doc.experienceRequired || undefined,
-        skills: doc.skills || [],
-        salaryRange: doc.salaryRange || undefined,
-        recruiterId: doc.recruiterId?.toString() || "",
-        hiringManagerId: doc.hiringManagerId?.toString() || undefined,
-        hiringManagerIds: doc.hiringManagerIds ? doc.hiringManagerIds.map((id: any) => id.toString()) : undefined,
-        status: doc.status,
-        applicationsCount: doc.applicationsCount || 0,
-        deadline: doc.deadline || undefined,
-        createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
-        updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
-      }));
+      const jobs: IJob[] = docs.map((doc: any) => {
+        const companyName = doc.company || this.resolveRecruiterCompany(doc.recruiterId?.toString());
+        return {
+          id: doc._id ? doc._id.toString() : doc.id,
+          title: doc.title,
+          description: doc.description,
+          department: doc.department,
+          location: doc.location,
+          employmentType: doc.employmentType,
+          experienceRequired: doc.experienceRequired || undefined,
+          skills: doc.skills || [],
+          salaryRange: doc.salaryRange || undefined,
+          recruiterId: doc.recruiterId?.toString() || "",
+          company: companyName,
+          companyName: companyName,
+          hiringManagerId: doc.hiringManagerId?.toString() || undefined,
+          hiringManagerIds: doc.hiringManagerIds ? doc.hiringManagerIds.map((id: any) => id.toString()) : undefined,
+          status: doc.status,
+          applicationsCount: doc.applicationsCount || 0,
+          deadline: doc.deadline || undefined,
+          createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
+          updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
+        };
+      });
 
       return {
         jobs,
@@ -187,6 +208,7 @@ class JobRepository {
           job.description.toLowerCase().includes(s) ||
           job.department.toLowerCase().includes(s) ||
           job.location.toLowerCase().includes(s) ||
+          (job.company && job.company.toLowerCase().includes(s)) ||
           job.skills.some((sk) => sk.toLowerCase().includes(s));
         if (!matches) return false;
       }
@@ -227,7 +249,14 @@ class JobRepository {
     });
 
     const total = filtered.length;
-    const paginated = filtered.slice(skip, skip + limit);
+    const paginated = filtered.slice(skip, skip + limit).map((j) => {
+      const company = j.company || this.resolveRecruiterCompany(j.recruiterId);
+      return {
+        ...j,
+        company,
+        companyName: company,
+      };
+    });
 
     return {
       jobs: paginated,
@@ -247,6 +276,7 @@ class JobRepository {
     if (isDatabaseConnected() && isValidObjectId(id)) {
       const doc = await Job.findById(id).lean<any>();
       if (!doc) return null;
+      const company = doc.company || this.resolveRecruiterCompany(doc.recruiterId?.toString());
       return {
         id: doc._id ? doc._id.toString() : doc.id,
         title: doc.title,
@@ -258,6 +288,8 @@ class JobRepository {
         skills: doc.skills || [],
         salaryRange: doc.salaryRange || undefined,
         recruiterId: doc.recruiterId?.toString() || "",
+        company,
+        companyName: company,
         hiringManagerId: doc.hiringManagerId?.toString() || undefined,
         hiringManagerIds: doc.hiringManagerIds ? doc.hiringManagerIds.map((id: any) => id.toString()) : undefined,
         status: doc.status,
@@ -269,12 +301,19 @@ class JobRepository {
     }
 
     const job = this.inMemoryJobs.get(id);
-    return job ? { ...job } : null;
+    if (!job) return null;
+    const company = job.company || this.resolveRecruiterCompany(job.recruiterId);
+    return {
+      ...job,
+      company,
+      companyName: company,
+    };
   }
 
   public async create(input: CreateJobInput): Promise<IJob> {
     const now = new Date().toISOString();
     const id = generateObjectId();
+    const company = input.company || input.companyName || this.resolveRecruiterCompany(input.recruiterId);
 
     const jobData: IJob = {
       id,
@@ -287,6 +326,8 @@ class JobRepository {
       skills: input.skills || [],
       salaryRange: input.salaryRange || undefined,
       recruiterId: input.recruiterId,
+      company,
+      companyName: company,
       hiringManagerId: input.hiringManagerId || undefined,
       hiringManagerIds: input.hiringManagerIds || undefined,
       status: input.status || "PUBLISHED",
@@ -308,6 +349,7 @@ class JobRepository {
         skills: jobData.skills,
         salaryRange: jobData.salaryRange,
         recruiterId: jobData.recruiterId,
+        company: jobData.company,
         hiringManagerId: jobData.hiringManagerId,
         hiringManagerIds: jobData.hiringManagerIds,
         status: jobData.status,
@@ -339,6 +381,7 @@ class JobRepository {
 
       if (!updatedDoc) return null;
 
+      const company = updatedDoc.company || this.resolveRecruiterCompany(updatedDoc.recruiterId?.toString());
       const job: IJob = {
         id: updatedDoc._id ? updatedDoc._id.toString() : id,
         title: updatedDoc.title,
@@ -350,6 +393,8 @@ class JobRepository {
         skills: updatedDoc.skills || [],
         salaryRange: updatedDoc.salaryRange || undefined,
         recruiterId: updatedDoc.recruiterId?.toString() || "",
+        company,
+        companyName: company,
         hiringManagerId: updatedDoc.hiringManagerId?.toString() || undefined,
         hiringManagerIds: updatedDoc.hiringManagerIds ? updatedDoc.hiringManagerIds.map((id: any) => id.toString()) : undefined,
         status: updatedDoc.status,
@@ -367,6 +412,10 @@ class JobRepository {
     if (!job) return null;
 
     Object.assign(job, input, { updatedAt: now });
+    if (input.company || input.companyName) {
+      job.company = input.company || input.companyName;
+      job.companyName = job.company;
+    }
     this.inMemoryJobs.set(id, job);
     return { ...job };
   }

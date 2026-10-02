@@ -2,6 +2,7 @@ import { jobRepository } from "../repositories/job.repository.ts";
 import { authenticateOptional, authenticate } from "../middleware/auth-middleware.ts";
 import { successResponse, errorResponse } from "../utils/response.ts";
 import { NotFoundError, ValidationError, ForbiddenError } from "../utils/errors.ts";
+import { handleGetApplicantJobMatch } from "./ats-routes.ts";
 import {
   createJobSchema,
   updateJobSchema,
@@ -279,7 +280,13 @@ export async function handleJobApiRequest(req: Request): Promise<Response | null
       }
     }
 
-    // 4. Match /api/jobs/:id
+    // 4. Match /api/jobs/:id/match
+    const jobMatch = pathname.match(/^\/api\/jobs\/([a-zA-Z0-9_-]+)\/match$/);
+    if (jobMatch && jobMatch[1] && req.method === "GET") {
+      return await handleGetApplicantJobMatch(req, jobMatch[1]);
+    }
+
+    // 5. Match /api/jobs/:id
     const match = pathname.match(/^\/api\/jobs\/([a-zA-Z0-9_-]+)$/);
     if (match && match[1]) {
       const jobId = match[1];

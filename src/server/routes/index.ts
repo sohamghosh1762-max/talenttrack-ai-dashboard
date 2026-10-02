@@ -6,6 +6,8 @@ import { handleResumeApiRequest } from "./resume-routes.ts";
 import { handleAiApiRequest } from "./ai-routes.ts";
 import { handleAtsApiRequest } from "./ats-routes.ts";
 import { handleApplicantApiRequest } from "./applicant-routes.ts";
+import { handleConversationApiRequest } from "./conversation-routes.ts";
+import { handleNotificationApiRequest } from "./notification-routes.ts";
 import { getDatabaseStatus } from "../db/mongodb.ts";
 import { errorResponse, successResponse } from "../utils/response.ts";
 import { NotFoundError } from "../utils/errors.ts";
@@ -103,7 +105,35 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 8. Hiring Manager routes: /api/hiring-manager/*
+    // 8. Conversation & Messaging routes: /api/conversations/*
+    if (pathname.startsWith("/api/conversations")) {
+      const response = await handleConversationApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 9. Notification routes: /api/notifications/*
+    if (pathname.startsWith("/api/notifications")) {
+      const response = await handleNotificationApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 10. Interview routes: /api/interviews/*
+    if (pathname.startsWith("/api/interviews")) {
+      const { handleInterviewApiRequest } = await import("./interview-routes.ts");
+      const response = await handleInterviewApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 11. Hiring Manager routes: /api/hiring-manager/*
     if (pathname.startsWith("/api/hiring-manager")) {
       const { handleHiringManagerApiRequest } = await import("./hiring-manager-routes.ts");
       const response = await handleHiringManagerApiRequest(req);
@@ -113,7 +143,7 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 9. AI routes: /api/ai/*
+    // 12. AI routes: /api/ai/*
     if (pathname.startsWith("/api/ai")) {
       const response = await handleAiApiRequest(req);
       if (response) {
@@ -122,7 +152,7 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 10. Fallthrough for unhandled /api/* route
+    // 13. Fallthrough for unhandled /api/* route
     const notFoundErr = new NotFoundError(`API endpoint not found: ${req.method} ${pathname}`);
     const response = errorResponse(notFoundErr, 404);
     requestLogger(req, startTime, 404, notFoundErr.message);
@@ -147,4 +177,9 @@ export * from "./resume-routes.ts";
 export * from "./ai-routes.ts";
 export * from "./ats-routes.ts";
 export * from "./applicant-routes.ts";
+export * from "./conversation-routes.ts";
+export * from "./notification-routes.ts";
+export * from "./interview-routes.ts";
 export * from "./hiring-manager-routes.ts";
+
+

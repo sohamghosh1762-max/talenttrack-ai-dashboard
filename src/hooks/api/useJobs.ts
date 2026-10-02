@@ -6,9 +6,10 @@ import type {
   PaginatedJobsResponse,
   CreateJobInput,
   UpdateJobInput,
+  ApplicantJobMatchResponse,
 } from "../../server/types/job-types.ts";
 
-export type { JobQueryParams } from "../../server/types/job-types.ts";
+export type { JobQueryParams, ApplicantJobMatchResponse } from "../../server/types/job-types.ts";
 
 export const jobKeys = {
   all: ["jobs"] as const,
@@ -16,7 +17,24 @@ export const jobKeys = {
   list: (filters: JobQueryParams) => [...jobKeys.lists(), filters] as const,
   details: () => [...jobKeys.all, "detail"] as const,
   detail: (id: string) => [...jobKeys.details(), id] as const,
+  match: (id: string) => ["applicant", "job-match", id] as const,
 };
+
+/**
+ * TanStack Query hook to fetch applicant-specific job match calculation
+ */
+export function useApplicantJobMatch(id: string | undefined, options: { enabled?: boolean } = {}) {
+  return useQuery<ApplicantJobMatchResponse>({
+    queryKey: jobKeys.match(id || ""),
+    queryFn: async () => {
+      if (!id) throw new Error("Job ID is required");
+      const res = await apiClient.get<ApplicantJobMatchResponse>(`/api/applicant/jobs/${id}/match`);
+      return res;
+    },
+    enabled: !!id && (options.enabled ?? true),
+    staleTime: 60_000,
+  });
+}
 
 /**
  * TanStack Query hook to fetch paginated jobs list
