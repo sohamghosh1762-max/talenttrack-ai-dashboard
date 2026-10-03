@@ -33,7 +33,7 @@ import { calculateJobMatch } from "@/lib/applicant-utils";
 import type { IJob } from "@/server/types/job-types";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/applicant/jobs")({
+export const Route = createFileRoute("/applicant/jobs/")({
   head: () => ({
     meta: [
       { title: "Browse Jobs — TalentTrack AI" },
@@ -228,15 +228,16 @@ function ApplicantJobsPage() {
                     )}
 
                     <div className="flex items-center gap-1.5">
-                      <Link to="/applicant/jobs/$jobId" params={{ jobId: job.id }}>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7.5 px-2.5 text-xs font-semibold"
-                        >
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="h-7.5 px-2.5 text-xs font-semibold"
+                      >
+                        <Link to="/applicant/jobs/$jobId" params={{ jobId: job.id }}>
                           Details
-                        </Button>
-                      </Link>
+                        </Link>
+                      </Button>
 
                       {hasApplied ? (
                         <Button

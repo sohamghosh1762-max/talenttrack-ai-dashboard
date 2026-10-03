@@ -546,4 +546,164 @@ describe("JOB MANAGEMENT REST API & RBAC SUITE", () => {
       assert.strictEqual(ids.includes(jobId), false, "Archived job must not appear in public listings");
     });
   });
+
+  describe("Phase 8: Applicant Job Details & Unique Job ID Resolution", () => {
+    let job1: any;
+    let job2: any;
+    let job3: any;
+
+    beforeEach(async () => {
+      job1 = await jobRepository.create({
+        title: "AI/ML Systems Engineer",
+        description: "Develop ML infrastructure and fine-tune transformer models.",
+        department: "Research",
+        location: "New York, NY (Hybrid)",
+        employmentType: "Full-Time",
+        experienceRequired: "3+ years",
+        skills: ["Python", "PyTorch", "FastAPI", "Vector Search"],
+        salaryRange: { min: 160000, max: 210000, currency: "USD", isNegotiable: false },
+        recruiterId: recruiterUser.id,
+        status: "PUBLISHED",
+        deadline: "2026-11-30",
+      });
+
+      job2 = await jobRepository.create({
+        title: "Lead Backend Developer",
+        description: "Design distributed microservices and database architectures.",
+        department: "Engineering",
+        location: "Austin, TX (Remote)",
+        employmentType: "Full-Time",
+        experienceRequired: "4+ years",
+        skills: ["Node.js", "TypeScript", "PostgreSQL", "MongoDB"],
+        salaryRange: { min: 150000, max: 195000, currency: "USD", isNegotiable: true },
+        recruiterId: recruiterUser.id,
+        status: "PUBLISHED",
+        deadline: "2026-12-31",
+      });
+
+      job3 = await jobRepository.create({
+        title: "Senior Frontend Developer",
+        description: "Create responsive client dashboards with React and TypeScript.",
+        department: "Engineering",
+        location: "San Francisco, CA (Hybrid)",
+        employmentType: "Full-Time",
+        experienceRequired: "3-5 years",
+        skills: ["React", "TypeScript", "Tailwind CSS"],
+        salaryRange: { min: 140000, max: 180000, currency: "USD", isNegotiable: true },
+        recruiterId: recruiterUser.id,
+        status: "PUBLISHED",
+        deadline: "2026-12-31",
+      });
+    });
+
+    it("Applicant GET /api/jobs returns all published jobs each with their unique ID", async () => {
+      const req = createApiRequest("https://app.talenttrack.io/api/jobs", {
+        token: applicantToken,
+      });
+
+      const res = await handleApiRequest(req);
+      assert.ok(res);
+      assert.strictEqual(res.status, 200);
+
+      const json = await res.json();
+      const jobs = json.data.jobs || json.data;
+
+      assert.ok(jobs.length >= 3);
+      const ids = jobs.map((j: any) => j.id);
+      assert.ok(ids.includes(job1.id));
+      assert.ok(ids.includes(job2.id));
+      assert.ok(ids.includes(job3.id));
+
+      // Each ID is unique and non-empty string
+      const uniqueIds = new Set(ids);
+      assert.strictEqual(uniqueIds.size, ids.length);
+    });
+
+    it("GET /api/jobs/:jobId returns the exact matching AI/ML Systems Engineer job", async () => {
+      const req = createApiRequest(`https://app.talenttrack.io/api/jobs/${job1.id}`, {
+        token: applicantToken,
+      });
+
+      const res = await handleApiRequest(req);
+      assert.ok(res);
+      assert.strictEqual(res.status, 200);
+
+      const json = await res.json();
+      const job = json.data.job || json.data;
+
+      assert.strictEqual(job.id, job1.id);
+      assert.strictEqual(job.title, "AI/ML Systems Engineer");
+      assert.strictEqual(job.department, "Research");
+      assert.strictEqual(job.location, "New York, NY (Hybrid)");
+      assert.strictEqual(job.salaryRange.min, 160000);
+      assert.strictEqual(job.salaryRange.max, 210000);
+      assert.deepStrictEqual(job.skills, ["Python", "PyTorch", "FastAPI", "Vector Search"]);
+    });
+
+    it("GET /api/jobs/:jobId returns the exact matching Lead Backend Developer job", async () => {
+      const req = createApiRequest(`https://app.talenttrack.io/api/jobs/${job2.id}`, {
+        token: applicantToken,
+      });
+
+      const res = await handleApiRequest(req);
+      assert.ok(res);
+      assert.strictEqual(res.status, 200);
+
+      const json = await res.json();
+      const job = json.data.job || json.data;
+
+      assert.strictEqual(job.id, job2.id);
+      assert.strictEqual(job.title, "Lead Backend Developer");
+      assert.strictEqual(job.department, "Engineering");
+      assert.strictEqual(job.location, "Austin, TX (Remote)");
+    });
+
+    it("GET /api/jobs/:jobId returns the exact matching Senior Frontend Developer job", async () => {
+      const req = createApiRequest(`https://app.talenttrack.io/api/jobs/${job3.id}`, {
+        token: applicantToken,
+      });
+
+      const res = await handleApiRequest(req);
+      assert.ok(res);
+      assert.strictEqual(res.status, 200);
+
+      const json = await res.json();
+      const job = json.data.job || json.data;
+
+      assert.strictEqual(job.id, job3.id);
+      assert.strictEqual(job.title, "Senior Frontend Developer");
+      assert.strictEqual(job.department, "Engineering");
+      assert.strictEqual(job.location, "San Francisco, CA (Hybrid)");
+    });
+
+    it("GET /api/jobs/:jobId returns 404 for nonexistent or invalid job ID", async () => {
+      const req = createApiRequest("https://app.talenttrack.io/api/jobs/job-nonexistent-9999", {
+        token: applicantToken,
+      });
+
+      const res = await handleApiRequest(req);
+      assert.ok(res);
+      assert.strictEqual(res.status, 404);
+    });
+
+    it("GET /api/jobs/:jobId blocks applicant from viewing unpublished DRAFT job (404)", async () => {
+      const draftJob = await jobRepository.create({
+        title: "Unpublished Internal Role",
+        description: "Draft role not yet open.",
+        department: "Engineering",
+        location: "Remote",
+        employmentType: "Full-Time",
+        recruiterId: recruiterUser.id,
+        status: "DRAFT",
+      });
+
+      const req = createApiRequest(`https://app.talenttrack.io/api/jobs/${draftJob.id}`, {
+        token: applicantToken,
+      });
+
+      const res = await handleApiRequest(req);
+      assert.ok(res);
+      assert.strictEqual(res.status, 404);
+    });
+  });
 });
