@@ -6,28 +6,29 @@ import type { IResume, UploadResumeInput } from "../types/resume-types.ts";
 const DEFAULT_SEED_RESUMES: IResume[] = [
   {
     id: "65f1a2b3c4d5e6f7a8b9c301",
-    applicantId: "65f1a2b3c4d5e6f7a8b9c004", // Jane Applicant
+    applicantId: "65f1a2b3c4d5e6f7a8b9c008", // Aarav Mehta
     applicationId: "65f1a2b3c4d5e6f7a8b9c201",
-    originalFileName: "Jane_Applicant_Resume.pdf",
-    storedFileName: "uuid-jane-applicant-resume.pdf",
+    originalFileName: "Aarav_Mehta_Resume_2026.pdf",
+    storedFileName: "uuid-aarav-mehta-resume.pdf",
     mimeType: "application/pdf",
     fileSize: 245678,
-    s3Key: "resumes/65f1a2b3c4d5e6f7a8b9c004/uuid-jane-applicant-resume.pdf",
+    s3Key: "resumes/65f1a2b3c4d5e6f7a8b9c008/uuid-aarav-mehta-resume.pdf",
     s3Bucket: "talenttrack-resumes-private",
     uploadedAt: "2025-08-20T10:00:00.000Z",
     parsingStatus: "COMPLETED",
+    atsScore: 92,
     parsedProfile: {
       personal: {
-        fullName: "Jane Applicant",
-        email: "jane.applicant@example.com",
-        phone: "+1 555-0199",
-        location: "San Francisco, CA",
-        linkedin: "https://linkedin.com/in/janeapplicant",
-        github: "https://github.com/janeapplicant",
-        portfolio: "https://janeapplicant.dev",
+        fullName: "Aarav Mehta",
+        email: "aarav.mehta@example.com",
+        phone: "+1 (555) 234-5678",
+        location: "San Jose, CA",
+        linkedin: "https://linkedin.com/in/aaravmehta",
+        github: "https://github.com/aaravmehta",
+        portfolio: "https://aaravmehta.dev",
       },
-      summary: "Full Stack Engineer with 4+ years of experience in React, TypeScript, and Node.js.",
-      skills: ["React", "TypeScript", "Node.js", "Express", "MongoDB", "PostgreSQL", "Docker", "AWS", "Tailwind CSS"],
+      summary: "Senior Frontend Engineer with 5+ years of experience in React, TypeScript, and Next.js.",
+      skills: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Redux", "Node.js", "GraphQL", "AWS"],
       education: [
         {
           degree: "B.S. in Computer Science",
@@ -49,7 +50,7 @@ const DEFAULT_SEED_RESUMES: IResume[] = [
             "Architected scalable microservices handling 2M+ daily requests.",
             "Led a team of 4 frontend engineers building Next.js dashboards.",
           ],
-          technologies: ["React", "TypeScript", "Node.js", "AWS"],
+          technologies: ["React", "TypeScript", "Next.js", "AWS"],
         },
       ],
       projects: [
@@ -57,7 +58,7 @@ const DEFAULT_SEED_RESUMES: IResume[] = [
           name: "OpenSource ATS",
           description: "An automated candidate ranking and resume parsing pipeline.",
           technologies: ["TypeScript", "Next.js", "MongoDB"],
-          url: "https://github.com/janeapplicant/ats",
+          url: "https://github.com/aaravmehta/ats",
         },
       ],
       certifications: [
@@ -310,6 +311,23 @@ class ResumeRepository {
 
     Object.assign(item, updateFields);
     return JSON.parse(JSON.stringify(item));
+  }
+
+  public async findAll(params: { applicantId?: string } = {}): Promise<IResume[]> {
+    if (isDatabaseConnected()) {
+      const query: Record<string, unknown> = {};
+      if (params.applicantId && isValidObjectId(params.applicantId)) {
+        query["applicantId"] = params.applicantId;
+      }
+      const docs = await Resume.find(query).sort({ createdAt: -1 }).lean<any[]>();
+      return docs.map((doc) => this.mapDocumentToResume(doc));
+    }
+
+    const all = Array.from(this.inMemoryResumes.values());
+    return all
+      .filter((r) => !params.applicantId || r.applicantId === params.applicantId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map((r) => JSON.parse(JSON.stringify(r)));
   }
 
   public async delete(id: string): Promise<boolean> {

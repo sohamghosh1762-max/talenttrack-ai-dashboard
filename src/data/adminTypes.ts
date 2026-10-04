@@ -8,7 +8,7 @@ export interface AdminStatItem {
   changePct: string;
   isPositive: boolean;
   trend: "up" | "down" | "neutral";
-  description?: string;
+  description?: string | undefined;
 }
 
 export interface AdminOverviewStats {
@@ -37,7 +37,7 @@ export interface RecruitmentStageCard {
   label: string;
   count: number;
   status: string;
-  trend?: string;
+  trend?: string | undefined;
   tone: "blue" | "purple" | "indigo" | "emerald";
 }
 
@@ -58,10 +58,10 @@ export interface AdminUserRecord {
   role: AdminUserRole;
   status: AdminUserStatus;
   joined: string;
-  avatarUrl?: string;
-  company?: string;
-  location?: string;
-  lastActive?: string;
+  avatarUrl?: string | undefined;
+  company?: string | undefined;
+  location?: string | undefined;
+  lastActive?: string | undefined;
 }
 
 export type ActivityCategory = "job" | "user" | "application" | "company" | "system";
@@ -72,8 +72,8 @@ export interface PlatformActivityItem {
   timeAgo: string;
   timestamp: string;
   category: ActivityCategory;
-  actorName?: string;
-  badgeText?: string;
+  actorName?: string | undefined;
+  badgeText?: string | undefined;
 }
 
 export type ServiceHealthStatus = "Operational" | "Degraded" | "Maintenance";

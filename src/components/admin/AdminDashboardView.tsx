@@ -29,6 +29,7 @@ import { AdminActivityView } from "./AdminActivityView";
 import { AdminReportsView } from "./AdminReportsView";
 import { AdminSettingsView } from "./AdminSettingsView";
 import { AdminOrganizationsView } from "./AdminOrganizationsView";
+import { AdminApplicantsView } from "./AdminApplicantsView";
 
 interface AdminDashboardViewProps {
   activeNav?: AdminNavItemKey;
@@ -69,6 +70,10 @@ export function AdminDashboardView({
     setSimulateEmpty,
     handleRefresh,
     stats,
+    growthData,
+    growthDataByTimeframe,
+    userDistribution,
+    recruitmentOverview,
     recentUsersData,
     systemStatusData,
     recentActivityData,
@@ -98,22 +103,20 @@ export function AdminDashboardView({
         {/* View content switch */}
         {activeNav === "Users" ? (
           <AdminUsersView />
+        ) : activeNav === "Applicants" ? (
+          <AdminApplicantsView />
         ) : activeNav === "Organizations" || activeNav === "Companies" ? (
           <AdminOrganizationsView />
-        ) : activeNav === "Recruiters" || activeNav === "Applicants" ? (
+        ) : activeNav === "Recruiters" ? (
           <div className="rounded-xl border border-slate-200/80 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-3">
             <div className="flex size-12 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/50 mx-auto">
-              {activeNav === "Recruiters" ? (
-                <UserCheck className="size-6 text-blue-600 dark:text-blue-400" />
-              ) : (
-                <UserRound className="size-6 text-blue-600 dark:text-blue-400" />
-              )}
+              <UserCheck className="size-6 text-blue-600 dark:text-blue-400" />
             </div>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              {activeNav} Management
+              Recruiter Management
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              Dedicated {activeNav.toLowerCase()} management will be available in a future phase.
+              Dedicated recruiter management will be available in a future phase.
               Use the <strong>Users</strong> section to manage all platform accounts in the
               meantime.
             </p>
@@ -244,13 +247,20 @@ export function AdminDashboardView({
             aria-label="Platform analytics charts"
             className="grid grid-cols-1 gap-6 lg:grid-cols-[1.65fr_1fr]"
           >
-            <PlatformGrowthChart initialTimeframe={chartTimeframe} />
-            <UserDistributionChart />
+            <PlatformGrowthChart
+              initialTimeframe={chartTimeframe}
+              growthDataByTimeframe={growthDataByTimeframe}
+              data={growthData}
+            />
+            <UserDistributionChart data={userDistribution} />
           </section>
 
           {/* Recruitment Overview (Cards + Funnel) */}
           <section aria-label="Recruitment overview and pipeline funnel">
-            <RecruitmentOverview />
+            <RecruitmentOverview
+              cards={recruitmentOverview.cards}
+              funnel={recruitmentOverview.funnel}
+            />
           </section>
 
           {/* Quick Actions */}

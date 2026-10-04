@@ -13,8 +13,10 @@ import type { GrowthDataPoint, TimeframeRange } from "@/data/adminTypes";
 import { growthChartDataByTimeframe } from "@/data/adminData";
 
 interface PlatformGrowthChartProps {
-  initialTimeframe?: TimeframeRange;
-  onTimeframeChange?: (timeframe: TimeframeRange) => void;
+  initialTimeframe?: TimeframeRange | undefined;
+  onTimeframeChange?: ((timeframe: TimeframeRange) => void) | undefined;
+  growthDataByTimeframe?: Record<TimeframeRange, GrowthDataPoint[]> | undefined;
+  data?: GrowthDataPoint[] | undefined;
 }
 
 const timeframes: TimeframeRange[] = ["7 Days", "30 Days", "3 Months", "12 Months"];
@@ -56,6 +58,8 @@ function CustomGrowthTooltip({ active, payload, label }: CustomTooltipProps) {
 export function PlatformGrowthChart({
   initialTimeframe = "7 Days",
   onTimeframeChange,
+  growthDataByTimeframe,
+  data,
 }: PlatformGrowthChartProps) {
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeRange>(initialTimeframe);
 
@@ -65,7 +69,10 @@ export function PlatformGrowthChart({
   };
 
   const chartData: GrowthDataPoint[] =
-    growthChartDataByTimeframe[selectedTimeframe] || growthChartDataByTimeframe["7 Days"];
+    (growthDataByTimeframe && growthDataByTimeframe[selectedTimeframe]) ||
+    data ||
+    growthChartDataByTimeframe[selectedTimeframe] ||
+    [];
 
   return (
     <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:border-slate-800 dark:bg-slate-900/90 flex flex-col justify-between">

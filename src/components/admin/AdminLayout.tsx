@@ -6,29 +6,47 @@ import { AdminDashboardView } from "./AdminDashboardView";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { USER_ROLES } from "@/auth/route-access";
 
-export function AdminLayout({ initialNav = "Dashboard" }: { initialNav?: AdminNavItemKey }) {
+export function AdminLayout({
+  initialNav = "Dashboard",
+  children,
+  customTitle,
+  customSubtitle,
+}: {
+  initialNav?: AdminNavItemKey;
+  children?: React.ReactNode;
+  customTitle?: string;
+  customSubtitle?: string;
+}) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const isApplicantRoute =
+    location.pathname === "/admin/applicants" ||
+    location.pathname.startsWith("/admin/applicants/");
+
   const [activeNav, setActiveNav] = useState<AdminNavItemKey>(
-    location.pathname === "/admin/users"
-      ? "Users"
-      : location.pathname === "/admin/organizations"
-        ? "Organizations"
-        : location.pathname === "/admin/activity"
-          ? "Audit Logs"
-          : location.pathname === "/admin/reports"
-            ? "Reports"
-            : location.pathname === "/admin/settings"
-              ? "Settings"
-              : initialNav,
+    isApplicantRoute
+      ? "Applicants"
+      : location.pathname === "/admin/users"
+        ? "Users"
+        : location.pathname === "/admin/organizations"
+          ? "Organizations"
+          : location.pathname === "/admin/activity"
+            ? "Audit Logs"
+            : location.pathname === "/admin/reports"
+              ? "Reports"
+              : location.pathname === "/admin/settings"
+                ? "Settings"
+                : initialNav,
   );
 
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSelectNav = (nav: AdminNavItemKey) => {
     setActiveNav(nav);
-    if (nav === "Users" && location.pathname !== "/admin/users") {
+    if (nav === "Applicants" && location.pathname !== "/admin/applicants") {
+      void navigate({ to: "/admin/applicants" as any });
+    } else if (nav === "Users" && location.pathname !== "/admin/users") {
       void navigate({ to: "/admin/users" });
     } else if (nav === "Organizations" && location.pathname !== "/admin/organizations") {
       void navigate({ to: "/admin/organizations" });
@@ -47,7 +65,12 @@ export function AdminLayout({ initialNav = "Dashboard" }: { initialNav?: AdminNa
   };
 
   useEffect(() => {
-    if (location.pathname === "/admin/users") {
+    if (
+      location.pathname === "/admin/applicants" ||
+      location.pathname.startsWith("/admin/applicants/")
+    ) {
+      setActiveNav("Applicants");
+    } else if (location.pathname === "/admin/users") {
       setActiveNav("Users");
     } else if (location.pathname === "/admin/organizations") {
       setActiveNav("Organizations");
@@ -89,8 +112,8 @@ export function AdminLayout({ initialNav = "Dashboard" }: { initialNav?: AdminNa
         <div className="flex flex-1 flex-col lg:pl-64">
           {/* Top Header */}
           <AdminHeader
-            title={activeNav}
-            subtitle={pageSubtitles[activeNav]}
+            title={customTitle || activeNav}
+            subtitle={customSubtitle || pageSubtitles[activeNav]}
             activeNav={activeNav}
             onSelectNav={handleSelectNav}
             searchQuery={searchQuery}
@@ -99,11 +122,15 @@ export function AdminLayout({ initialNav = "Dashboard" }: { initialNav?: AdminNa
 
           {/* Dashboard Content Canvas */}
           <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-            <AdminDashboardView
-              activeNav={activeNav}
-              onSelectNav={handleSelectNav}
-              searchQuery={searchQuery}
-            />
+            {children ? (
+              children
+            ) : (
+              <AdminDashboardView
+                activeNav={activeNav}
+                onSelectNav={handleSelectNav}
+                searchQuery={searchQuery}
+              />
+            )}
           </main>
 
           {/* Minimal Footer */}

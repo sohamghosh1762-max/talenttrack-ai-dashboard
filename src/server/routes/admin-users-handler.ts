@@ -1,7 +1,15 @@
 import { userRepository, isValidObjectId } from "../db/user-repository.ts";
+import { resumeRepository } from "../repositories/resume.repository.ts";
+import { applicationRepository } from "../repositories/application.repository.ts";
+import { jobRepository } from "../repositories/job.repository.ts";
+import { interviewRepository } from "../repositories/interview.repository.ts";
+import { conversationRepository } from "../repositories/conversation.repository.ts";
+import { notificationRepository } from "../repositories/notification.repository.ts";
+import { applicantPreferencesRepository } from "../repositories/applicant-preferences.repository.ts";
+import { handleGetAdminDashboard } from "./admin-dashboard-handler.ts";
 import { auditService } from "../services/audit-service.ts";
 import { authenticate, requireRole, AuthError } from "../middleware/auth-middleware.ts";
-import type { UserRole, UserStatus } from "../types/user-types.ts";
+import type { UserRole, UserStatus, AdminApplicantItem } from "../types/user-types.ts";
 
 // Standard JSON response helper
 function jsonResponse(data: unknown, status: number = 200, headers?: HeadersInit): Response {
@@ -322,6 +330,557 @@ export async function handleUpdateUserStatus(req: Request, id: string): Promise<
   }
 }
 
+const ALLOWED_APPLICANT_STATUSES: UserStatus[] = [
+  "ACTIVE",
+  "SUSPENDED",
+  "INACTIVE",
+  "PENDING_VERIFICATION",
+  "LOCKED",
+  "DEACTIVATED",
+];
+const ALLOWED_APPLICANT_SORT_FIELDS = [
+  "createdAt",
+  "name",
+  "email",
+  "status",
+  "headline",
+  "lastActive",
+];
+
+/**
+ * GET /api/admin/applicants
+ */
+export async function handleGetApplicants(req: Request): Promise<Response> {
+  // 1. Authorization
+  const admin = await authenticate(req);
+  requireRole("ADMIN")(admin);
+
+  // 2. Query parameter extraction & validation
+  const url = new URL(req.url);
+  const pageParam = url.searchParams.get("page");
+  const limitParam = url.searchParams.get("limit");
+  const searchParam = url.searchParams.get("search");
+  const statusParam = url.searchParams.get("status");
+  const emailVerifiedParam = url.searchParams.get("emailVerified");
+  const skillsParam = url.searchParams.get("skills") || url.searchParams.get("skill");
+  const locationParam = url.searchParams.get("location");
+  const sortByParam = url.searchParams.get("sortBy");
+  const sortOrderParam = url.searchParams.get("sortOrder");
+  const dateFromParam = url.searchParams.get("dateFrom");
+  const dateToParam = url.searchParams.get("dateTo");
+
+  const page = pageParam ? parseInt(pageParam, 10) : 1;
+  if (isNaN(page) || page < 1) {
+    return jsonResponse({ error: "Invalid 'page' parameter: must be a positive integer" }, 400);
+  }
+
+  const limit = limitParam ? parseInt(limitParam, 10) : 20;
+  if (isNaN(limit) || limit < 1 || limit > 100) {
+    return jsonResponse(
+      { error: "Invalid 'limit' parameter: must be an integer between 1 and 100" },
+      400,
+    );
+  }
+
+  let status: UserStatus | undefined = undefined;
+  if (statusParam) {
+    const normalizedStatus = statusParam.toUpperCase() as UserStatus;
+    if (!ALLOWED_APPLICANT_STATUSES.includes(normalizedStatus)) {
+      return jsonResponse(
+        {
+          error: `Invalid status parameter. Allowed values: ${ALLOWED_APPLICANT_STATUSES.join(", ")}`,
+        },
+        400,
+      );
+    }
+    status = normalizedStatus;
+  }
+
+  let emailVerified: boolean | undefined = undefined;
+  if (emailVerifiedParam !== null && emailVerifiedParam !== undefined) {
+    if (emailVerifiedParam === "true") emailVerified = true;
+    else if (emailVerifiedParam === "false") emailVerified = false;
+    else {
+      return jsonResponse(
+        { error: "Invalid 'emailVerified' parameter: must be 'true' or 'false'" },
+        400,
+      );
+    }
+  }
+
+  let sortBy: "createdAt" | "name" | "email" | "status" | "headline" | "lastActive" | undefined =
+    undefined;
+  if (sortByParam) {
+    if (!ALLOWED_APPLICANT_SORT_FIELDS.includes(sortByParam)) {
+      return jsonResponse(
+        {
+          error: `Invalid 'sortBy' parameter. Allowed values: ${ALLOWED_APPLICANT_SORT_FIELDS.join(", ")}`,
+        },
+        400,
+      );
+    }
+    sortBy = sortByParam as "createdAt" | "name" | "email" | "status" | "headline" | "lastActive";
+  }
+
+  let sortOrder: "asc" | "desc" | undefined = undefined;
+  if (sortOrderParam) {
+    const normalizedOrder = sortOrderParam.toLowerCase();
+    if (normalizedOrder !== "asc" && normalizedOrder !== "desc") {
+      return jsonResponse({ error: "Invalid 'sortOrder' parameter: must be 'asc' or 'desc'" }, 400);
+    }
+    sortOrder = normalizedOrder as "asc" | "desc";
+  }
+
+  // 3. Query repository
+  const result = userRepository.findApplicants({
+    page,
+    limit,
+    search: searchParam || undefined,
+    status,
+    emailVerified,
+    skills: skillsParam || undefined,
+    location: locationParam || undefined,
+    sortBy,
+    sortOrder,
+    dateFrom: dateFromParam || undefined,
+    dateTo: dateToParam || undefined,
+  });
+
+  // 4. Enrich with real resume and application counts from repositories
+  for (const app of result.applicants) {
+    try {
+      const resumes = await resumeRepository.findByApplicantId(app.id);
+      const latestResume = resumes.find((r) => r.parsingStatus === "COMPLETED") || resumes[0];
+      if (latestResume) {
+        app.resume = {
+          id: latestResume.id,
+          fileName: latestResume.originalFileName,
+          fileSize: latestResume.fileSize,
+          mimeType: latestResume.mimeType,
+          uploadedAt: latestResume.uploadedAt,
+          parsingStatus: latestResume.parsingStatus,
+          atsScore:
+            latestResume.atsScore !== undefined && latestResume.atsScore !== null
+              ? latestResume.atsScore
+              : null,
+        };
+      }
+    } catch {
+      // Keep existing resume object if error
+    }
+
+    try {
+      const userApps = await applicationRepository.findAll({ applicantId: app.id });
+      app.applicationsCount =
+        userApps.pagination?.total || (userApps.applications ? userApps.applications.length : 0);
+
+      // If resume ATS score is not yet populated from resume, inspect applications for existing aiScore
+      if (
+        (!app.resume || app.resume.atsScore === null || app.resume.atsScore === undefined) &&
+        userApps.applications &&
+        userApps.applications.length > 0
+      ) {
+        const appWithScore = userApps.applications.find(
+          (a: any) => typeof a.aiScore === "number" && a.aiScore > 0,
+        );
+        if (appWithScore) {
+          if (app.resume) {
+            app.resume.atsScore = appWithScore.aiScore;
+          } else {
+            app.resume = {
+              id: appWithScore.resume?.id || "",
+              fileName:
+                appWithScore.resume?.originalFileName ||
+                app.applicantProfile?.resumeFileName ||
+                "Resume.pdf",
+              fileSize: 0,
+              mimeType: "application/pdf",
+              uploadedAt: appWithScore.appliedAt || app.createdAt,
+              parsingStatus: "COMPLETED",
+              atsScore: appWithScore.aiScore,
+            };
+          }
+        }
+      }
+    } catch {
+      // Keep 0 if error
+    }
+  }
+
+  return jsonResponse(result, 200);
+}
+
+/**
+ * GET /api/admin/applicants/:id
+ */
+export async function handleGetApplicantById(req: Request, id: string): Promise<Response> {
+  // 1. Authorization
+  const admin = await authenticate(req);
+  requireRole("ADMIN")(admin);
+
+  // 2. Validate MongoDB ObjectId
+  if (!isValidObjectId(id)) {
+    return jsonResponse(
+      { error: "Invalid applicant ID format. Must be a 24-character hexadecimal ObjectId." },
+      400,
+    );
+  }
+
+  // 3. Find user
+  const user = userRepository.findFullUserById(id);
+  if (!user || user.role !== "APPLICANT") {
+    return jsonResponse({ error: "Applicant not found" }, 404);
+  }
+
+  const p = user.applicantProfile || {};
+  let resume: AdminApplicantItem["resume"] = null;
+  let applicationsCount = 0;
+  let applications: any[] = [];
+  let resumes: any[] = [];
+
+  try {
+    resumes = await resumeRepository.findByApplicantId(id);
+    const latest = resumes.find((r) => r.parsingStatus === "COMPLETED") || resumes[0];
+    if (latest) {
+      resume = {
+        id: latest.id,
+        fileName: latest.originalFileName,
+        fileSize: latest.fileSize,
+        mimeType: latest.mimeType,
+        uploadedAt: latest.uploadedAt,
+        parsingStatus: latest.parsingStatus,
+        atsScore:
+          latest.atsScore !== undefined && latest.atsScore !== null ? latest.atsScore : null,
+      };
+    }
+  } catch {
+    // Ignore
+  }
+
+  try {
+    const userApps = await applicationRepository.findAll({ applicantId: id });
+    applications = userApps.applications || [];
+    applicationsCount = userApps.pagination?.total || applications.length;
+
+    // Check if any application has an existing aiScore
+    if (
+      (!resume || resume.atsScore === null || resume.atsScore === undefined) &&
+      applications.length > 0
+    ) {
+      const appWithScore = applications.find(
+        (a: any) => typeof a.aiScore === "number" && a.aiScore > 0,
+      );
+      if (appWithScore) {
+        if (resume) {
+          resume.atsScore = appWithScore.aiScore;
+        } else {
+          resume = {
+            id: appWithScore.resume?.id || "",
+            fileName:
+              appWithScore.resume?.originalFileName ||
+              p.resumeFileName ||
+              "Resume.pdf",
+            fileSize: 0,
+            mimeType: "application/pdf",
+            uploadedAt: appWithScore.appliedAt || user.createdAt,
+            parsingStatus: "COMPLETED",
+            atsScore: appWithScore.aiScore,
+          };
+        }
+      }
+    }
+  } catch {
+    // Ignore
+  }
+
+  let interviews: any[] = [];
+  let conversations: any[] = [];
+  let notifications: any[] = [];
+  let preferences: any = null;
+
+  try {
+    interviews = await interviewRepository.findApplicantInterviews(id);
+  } catch {
+    // Ignore
+  }
+
+  try {
+    const rawConversations = await conversationRepository.findUserConversations(id);
+    // Expose metadata only (privacy protection: message bodies are not exposed to admin)
+    conversations = rawConversations.map((c: any) => ({
+      id: c.id,
+      participantIds: c.participantIds,
+      participant: c.participant
+        ? {
+          id: c.participant.id,
+          name: c.participant.name,
+          email: c.participant.email,
+          role: c.participant.role,
+        }
+        : undefined,
+      jobId: c.jobId,
+      job: c.job
+        ? {
+          id: c.job.id,
+          title: c.job.title,
+          company: c.job.company,
+          department: c.job.department,
+          location: c.job.location,
+        }
+        : undefined,
+      applicationId: c.applicationId,
+      unreadCount: c.unreadCount || 0,
+      lastMessageAt: c.lastMessageAt || c.updatedAt || c.createdAt,
+      lastMessageSenderId: c.lastMessageSenderId,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+    }));
+  } catch {
+    // Ignore
+  }
+
+  try {
+    const notifs = await notificationRepository.findUserNotifications(id);
+    notifications = notifs.notifications || [];
+  } catch {
+    // Ignore
+  }
+
+  try {
+    preferences = await applicantPreferencesRepository.findByUserId(id);
+  } catch {
+    // Ignore
+  }
+
+  const applicantItem: AdminApplicantItem = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: "APPLICANT",
+    status: user.status,
+    emailVerified: user.emailVerified,
+    emailVerifiedAt: user.emailVerifiedAt,
+    avatarUrl: user.avatarUrl,
+    headline: p.headline || "",
+    location: p.location || "",
+    phone: p.phone || "",
+    summary: p.summary || p.bio || "",
+    bio: p.bio || p.summary || "",
+    skills: p.skills || [],
+    experienceYears: p.experienceYears || "",
+    experiences: p.experiences || [],
+    education: p.education || [],
+    certifications: p.certifications || [],
+    projects: p.projects || [],
+    applicantProfile: { ...p },
+    resume,
+    applicationsCount,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    lastActive: user.lastActive,
+  };
+
+  return jsonResponse(
+    {
+      applicant: applicantItem,
+      resumes,
+      applications,
+      interviews,
+      conversations,
+      notifications,
+      preferences,
+    },
+    200,
+  );
+}
+
+/**
+ * GET /api/admin/applicants/:id/applications
+ * Returns paginated applications for a specific applicant with resolved Job details
+ */
+export async function handleGetApplicantApplications(req: Request, id: string): Promise<Response> {
+  // 1. Authorization
+  const admin = await authenticate(req);
+  requireRole("ADMIN")(admin);
+
+  // 2. Validate MongoDB ObjectId
+  if (!isValidObjectId(id)) {
+    return jsonResponse(
+      { error: "Invalid applicant ID format. Must be a 24-character hexadecimal ObjectId." },
+      400,
+    );
+  }
+
+  // 3. Find applicant user
+  const user = userRepository.findById(id);
+  if (!user || user.role !== "APPLICANT") {
+    return jsonResponse({ error: "Applicant not found" }, 404);
+  }
+
+  // 4. Parse query parameters
+  const url = new URL(req.url);
+  const pageParam = url.searchParams.get("page");
+  const limitParam = url.searchParams.get("limit");
+  const statusParam = url.searchParams.get("status");
+  const stageParam = url.searchParams.get("stage") || url.searchParams.get("currentStage");
+  const sortByParam = url.searchParams.get("sortBy");
+  const sortOrderParam = url.searchParams.get("sortOrder");
+  const searchParam = url.searchParams.get("search");
+
+  const page = pageParam ? parseInt(pageParam, 10) : 1;
+  const limit = limitParam ? parseInt(limitParam, 10) : 20;
+
+  // 5. Query applications for this applicant
+  const result = await applicationRepository.findAll({
+    applicantId: id,
+    page: isNaN(page) || page < 1 ? 1 : page,
+    limit: isNaN(limit) || limit < 1 || limit > 100 ? 20 : limit,
+    status: statusParam || undefined,
+    stage: stageParam || undefined,
+    sortBy: sortByParam || undefined,
+    sortOrder: sortOrderParam === "asc" || sortOrderParam === "desc" ? sortOrderParam : undefined,
+    search: searchParam || undefined,
+  });
+
+  return jsonResponse(
+    {
+      applications: result.applications,
+      pagination: result.pagination,
+      applicant: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    },
+    200,
+  );
+}
+
+/**
+ * GET /api/admin/applicants/:id/interviews
+ * Returns real interview records for a specific applicant
+ */
+export async function handleGetApplicantInterviews(req: Request, id: string): Promise<Response> {
+  const admin = await authenticate(req);
+  requireRole("ADMIN")(admin);
+
+  if (!isValidObjectId(id)) {
+    return jsonResponse(
+      { error: "Invalid applicant ID format. Must be a 24-character hexadecimal ObjectId." },
+      400,
+    );
+  }
+
+  const user = userRepository.findById(id);
+  if (!user || user.role !== "APPLICANT") {
+    return jsonResponse({ error: "Applicant not found" }, 404);
+  }
+
+  const interviews = await interviewRepository.findApplicantInterviews(id);
+  return jsonResponse({ interviews }, 200);
+}
+
+/**
+ * GET /api/admin/applicants/:id/conversations
+ * Returns messaging metadata for a specific applicant (message bodies excluded for privacy)
+ */
+export async function handleGetApplicantConversations(req: Request, id: string): Promise<Response> {
+  const admin = await authenticate(req);
+  requireRole("ADMIN")(admin);
+
+  if (!isValidObjectId(id)) {
+    return jsonResponse(
+      { error: "Invalid applicant ID format. Must be a 24-character hexadecimal ObjectId." },
+      400,
+    );
+  }
+
+  const user = userRepository.findById(id);
+  if (!user || user.role !== "APPLICANT") {
+    return jsonResponse({ error: "Applicant not found" }, 404);
+  }
+
+  const rawConversations = await conversationRepository.findUserConversations(id);
+  const conversations = rawConversations.map((c: any) => ({
+    id: c.id,
+    participantIds: c.participantIds,
+    participant: c.participant
+      ? {
+        id: c.participant.id,
+        name: c.participant.name,
+        email: c.participant.email,
+        role: c.participant.role,
+      }
+      : undefined,
+    jobId: c.jobId,
+    job: c.job
+      ? {
+        id: c.job.id,
+        title: c.job.title,
+        company: c.job.company,
+        department: c.job.department,
+        location: c.job.location,
+      }
+      : undefined,
+    applicationId: c.applicationId,
+    unreadCount: c.unreadCount || 0,
+    lastMessageAt: c.lastMessageAt || c.updatedAt || c.createdAt,
+    lastMessageSenderId: c.lastMessageSenderId,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+  }));
+
+  return jsonResponse({ conversations }, 200);
+}
+
+/**
+ * GET /api/admin/applicants/:id/notifications
+ * Returns notifications for a specific applicant in read-only mode (does not mark as read)
+ */
+export async function handleGetApplicantNotifications(req: Request, id: string): Promise<Response> {
+  const admin = await authenticate(req);
+  requireRole("ADMIN")(admin);
+
+  if (!isValidObjectId(id)) {
+    return jsonResponse(
+      { error: "Invalid applicant ID format. Must be a 24-character hexadecimal ObjectId." },
+      400,
+    );
+  }
+
+  const user = userRepository.findById(id);
+  if (!user || user.role !== "APPLICANT") {
+    return jsonResponse({ error: "Applicant not found" }, 404);
+  }
+
+  const result = await notificationRepository.findUserNotifications(id);
+  return jsonResponse({ notifications: result.notifications || [] }, 200);
+}
+
+/**
+ * GET /api/admin/applicants/:id/preferences
+ * Returns configured applicant preferences in read-only mode
+ */
+export async function handleGetApplicantPreferences(req: Request, id: string): Promise<Response> {
+  const admin = await authenticate(req);
+  requireRole("ADMIN")(admin);
+
+  if (!isValidObjectId(id)) {
+    return jsonResponse(
+      { error: "Invalid applicant ID format. Must be a 24-character hexadecimal ObjectId." },
+      400,
+    );
+  }
+
+  const user = userRepository.findById(id);
+  if (!user || user.role !== "APPLICANT") {
+    return jsonResponse({ error: "Applicant not found" }, 404);
+  }
+
+  const preferences = await applicantPreferencesRepository.findByUserId(id);
+  return jsonResponse({ preferences }, 200);
+}
+
 /**
  * Universal dispatcher for /api/admin/* endpoints
  */
@@ -335,31 +894,88 @@ export async function handleAdminApiRequest(req: Request): Promise<Response | nu
   }
 
   try {
-    // 1. PATCH /api/admin/users/bulk-status
+    // 1. GET /api/admin/dashboard (including /stats and /analytics sub-paths)
+    if (
+      (pathname === "/api/admin/dashboard" ||
+        pathname === "/api/admin/dashboard/stats" ||
+        pathname === "/api/admin/dashboard/analytics") &&
+      req.method === "GET"
+    ) {
+      return await handleGetAdminDashboard(req);
+    }
+
+    // 2. PATCH /api/admin/users/bulk-status
     if (pathname === "/api/admin/users/bulk-status" && req.method === "PATCH") {
       return await handleBulkUpdateUserStatus(req);
     }
 
-    // 2. GET /api/admin/users
+    // 3. GET /api/admin/applicants
+    if (pathname === "/api/admin/applicants" && req.method === "GET") {
+      return await handleGetApplicants(req);
+    }
+
+    // 3. GET /api/admin/applicants/:id/applications (Must match before /:id)
+    const applicationsMatch = pathname.match(/^\/api\/admin\/applicants\/([^/]+)\/applications$/);
+    if (applicationsMatch && req.method === "GET") {
+      const id = applicationsMatch[1]!;
+      return await handleGetApplicantApplications(req, id);
+    }
+
+    // 4. GET /api/admin/applicants/:id/interviews
+    const interviewsMatch = pathname.match(/^\/api\/admin\/applicants\/([^/]+)\/interviews$/);
+    if (interviewsMatch && req.method === "GET") {
+      const id = interviewsMatch[1]!;
+      return await handleGetApplicantInterviews(req, id);
+    }
+
+    // 5. GET /api/admin/applicants/:id/conversations
+    const conversationsMatch = pathname.match(/^\/api\/admin\/applicants\/([^/]+)\/conversations$/);
+    if (conversationsMatch && req.method === "GET") {
+      const id = conversationsMatch[1]!;
+      return await handleGetApplicantConversations(req, id);
+    }
+
+    // 6. GET /api/admin/applicants/:id/notifications
+    const notificationsMatch = pathname.match(/^\/api\/admin\/applicants\/([^/]+)\/notifications$/);
+    if (notificationsMatch && req.method === "GET") {
+      const id = notificationsMatch[1]!;
+      return await handleGetApplicantNotifications(req, id);
+    }
+
+    // 7. GET /api/admin/applicants/:id/preferences
+    const preferencesMatch = pathname.match(/^\/api\/admin\/applicants\/([^/]+)\/preferences$/);
+    if (preferencesMatch && req.method === "GET") {
+      const id = preferencesMatch[1]!;
+      return await handleGetApplicantPreferences(req, id);
+    }
+
+    // 8. GET /api/admin/applicants/:id
+    const applicantMatch = pathname.match(/^\/api\/admin\/applicants\/([^/]+)$/);
+    if (applicantMatch && req.method === "GET") {
+      const id = applicantMatch[1]!;
+      return await handleGetApplicantById(req, id);
+    }
+
+    // 9. GET /api/admin/users
     if (pathname === "/api/admin/users" && req.method === "GET") {
       return await handleGetUsers(req);
     }
 
-    // 3. GET /api/admin/users/:id/activity
+    // 10. GET /api/admin/users/:id/activity
     const activityMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)\/activity$/);
     if (activityMatch && req.method === "GET") {
       const id = activityMatch[1]!;
       return await handleGetUserActivity(req, id);
     }
 
-    // 4. PATCH /api/admin/users/:id/status
+    // 11. PATCH /api/admin/users/:id/status
     const statusMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)\/status$/);
     if (statusMatch && req.method === "PATCH") {
       const id = statusMatch[1]!;
       return await handleUpdateUserStatus(req, id);
     }
 
-    // 5. GET /api/admin/users/:id
+    // 12. GET /api/admin/users/:id
     const userMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)$/);
     if (userMatch && req.method === "GET") {
       const id = userMatch[1]!;
@@ -376,3 +992,4 @@ export async function handleAdminApiRequest(req: Request): Promise<Response | nu
     return jsonResponse({ error: "Internal server error occurred." }, 500);
   }
 }
+

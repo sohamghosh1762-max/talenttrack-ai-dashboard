@@ -17,6 +17,10 @@ import type {
   BulkUpdateStatusResult,
   UserActivityItem,
   UpdateApplicantProfileInput,
+  AdminApplicantQueryParams,
+  AdminApplicantItem,
+  AdminApplicantSummaryStats,
+  PaginatedAdminApplicantsResponse,
 } from "../types/user-types.ts";
 import type { IParsedResumeProfile } from "../types/resume-types.ts";
 import { auditService } from "../services/audit-service.ts";
@@ -424,6 +428,13 @@ class UserRepository {
   }
 
   /**
+   * Get all raw user entities
+   */
+  public getAllRawUsers(): IUser[] {
+    return Array.from(this.users.values()).map((u) => JSON.parse(JSON.stringify(u)));
+  }
+
+  /**
    * Query users with search, role/status/verification/date filtering, custom sorting, and pagination
    */
   public findAll(params: UserQueryParams = {}): PaginatedUsersResponse {
@@ -540,6 +551,200 @@ class UserRepository {
 
     return {
       users: safeUsers,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+      summary,
+    };
+  }
+
+  /**
+   * Query applicants with search, status/verification/skill/location/date filtering, custom sorting, and pagination
+   */
+  public findApplicants(
+    params: AdminApplicantQueryParams = {},
+  ): PaginatedAdminApplicantsResponse {
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(params.limit) || 20));
+    const search = params.search ? params.search.trim().toLowerCase() : "";
+    const statusFilter = params.status
+      ? (params.status.toUpperCase() as IUser["status"])
+      : undefined;
+    const emailVerifiedFilter =
+      typeof params.emailVerified === "boolean" ? params.emailVerified : undefined;
+    const skillFilter = params.skills ? params.skills.trim().toLowerCase() : undefined;
+    const locationFilter = params.location ? params.location.trim().toLowerCase() : undefined;
+
+    const dateFrom = params.dateFrom ? new Date(params.dateFrom).getTime() : undefined;
+    const dateTo = params.dateTo
+      ? new Date(
+          params.dateTo.includes("T") ? params.dateTo : `${params.dateTo}T23:59:59.999Z`,
+        ).getTime()
+      : undefined;
+
+    const sortBy = params.sortBy || "createdAt";
+    const sortOrder = params.sortOrder || (sortBy === "createdAt" ? "desc" : "asc");
+
+    // All registered users with role APPLICANT
+    const allApplicants = Array.from(this.users.values()).filter(
+      (u) => u.role === "APPLICANT",
+    );
+
+    // Summary metrics across all applicants
+    const summary: AdminApplicantSummaryStats = {
+      totalApplicants: allApplicants.length,
+      active: allApplicants.filter((u) => u.status === "ACTIVE").length,
+      suspended: allApplicants.filter((u) => u.status === "SUSPENDED").length,
+      inactive: allApplicants.filter((u) => u.status === "INACTIVE" || u.status === "DEACTIVATED").length,
+      verified: allApplicants.filter((u) => u.emailVerified).length,
+      unverified: allApplicants.filter((u) => !u.emailVerified).length,
+      withResume: allApplicants.filter(
+        (u) =>
+          !!u.applicantProfile?.resumeId ||
+          !!u.applicantProfile?.resumeFileName,
+      ).length,
+    };
+
+    // Filter matching criteria
+    const filtered = allApplicants.filter((u) => {
+      const profile = u.applicantProfile || {};
+      const skills = profile.skills || [];
+
+      // Search across name, email, headline, skills, location, summary, bio
+      if (search) {
+        const matchesName = u.name.toLowerCase().includes(search);
+        const matchesEmail = u.email.toLowerCase().includes(search);
+        const matchesHeadline = (profile.headline || "").toLowerCase().includes(search);
+        const matchesLocation = (profile.location || "").toLowerCase().includes(search);
+        const matchesSummary = (profile.summary || profile.bio || "").toLowerCase().includes(search);
+        const matchesSkills = skills.some((s) => s.toLowerCase().includes(search));
+
+        if (
+          !matchesName &&
+          !matchesEmail &&
+          !matchesHeadline &&
+          !matchesLocation &&
+          !matchesSummary &&
+          !matchesSkills
+        ) {
+          return false;
+        }
+      }
+
+      // Filter by status
+      if (statusFilter && u.status !== statusFilter) {
+        return false;
+      }
+
+      // Filter by email verification
+      if (emailVerifiedFilter !== undefined && u.emailVerified !== emailVerifiedFilter) {
+        return false;
+      }
+
+      // Filter by skills
+      if (skillFilter) {
+        const hasSkill = skills.some((s) => s.toLowerCase().includes(skillFilter));
+        if (!hasSkill) return false;
+      }
+
+      // Filter by location
+      if (locationFilter) {
+        const matchesLoc = (profile.location || "").toLowerCase().includes(locationFilter);
+        if (!matchesLoc) return false;
+      }
+
+      // Filter by date range (createdAt)
+      if (dateFrom !== undefined && !isNaN(dateFrom)) {
+        const createdTime = new Date(u.createdAt).getTime();
+        if (createdTime < dateFrom) return false;
+      }
+
+      if (dateTo !== undefined && !isNaN(dateTo)) {
+        const createdTime = new Date(u.createdAt).getTime();
+        if (createdTime > dateTo) return false;
+      }
+
+      return true;
+    });
+
+    // Sort by requested column
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === "name") {
+        comparison = a.name.localeCompare(b.name);
+      } else if (sortBy === "email") {
+        comparison = a.email.localeCompare(b.email);
+      } else if (sortBy === "status") {
+        comparison = a.status.localeCompare(b.status);
+      } else if (sortBy === "headline") {
+        const hA = a.applicantProfile?.headline || "";
+        const hB = b.applicantProfile?.headline || "";
+        comparison = hA.localeCompare(hB);
+      } else if (sortBy === "lastActive") {
+        const tA = a.lastActive ? new Date(a.lastActive).getTime() : 0;
+        const tB = b.lastActive ? new Date(b.lastActive).getTime() : 0;
+        comparison = tA - tB;
+      } else {
+        // Default createdAt
+        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+
+      return sortOrder === "desc" ? -comparison : comparison;
+    });
+
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit) || 0;
+    const skip = (page - 1) * limit;
+    const paginatedSlice = filtered.slice(skip, skip + limit);
+
+    // Map to AdminApplicantItem (exclude passwordHash)
+    const applicants: AdminApplicantItem[] = paginatedSlice.map((u) => {
+      const p = u.applicantProfile || {};
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: "APPLICANT",
+        status: u.status,
+        emailVerified: u.emailVerified,
+        emailVerifiedAt: u.emailVerifiedAt,
+        avatarUrl: u.avatarUrl,
+        headline: p.headline || "",
+        location: p.location || "",
+        phone: p.phone || "",
+        summary: p.summary || p.bio || "",
+        bio: p.bio || p.summary || "",
+        skills: p.skills || [],
+        experienceYears: p.experienceYears || "",
+        experiences: p.experiences || [],
+        education: p.education || [],
+        certifications: p.certifications || [],
+        projects: p.projects || [],
+        applicantProfile: { ...p },
+        resume:
+          p.resumeFileName || p.resumeId
+            ? {
+                id: p.resumeId || `res_${u.id}`,
+                fileName: p.resumeFileName || "resume.pdf",
+                fileSize: 0,
+                mimeType: "application/pdf",
+                uploadedAt: u.createdAt,
+                parsingStatus: "COMPLETED",
+                atsScore: null,
+              }
+            : null,
+        applicationsCount: 0,
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt,
+        lastActive: u.lastActive,
+      };
+    });
+
+    return {
+      applicants,
       pagination: {
         page,
         limit,

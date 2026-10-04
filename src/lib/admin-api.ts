@@ -6,6 +6,9 @@ import type {
   UserStatus,
   BulkUpdateStatusResult,
   UserActivityItem,
+  AdminApplicantQueryParams,
+  AdminApplicantItem,
+  PaginatedAdminApplicantsResponse,
 } from "@/server/types/user-types";
 
 // ─── Query Params ────────────────────────────────────────────────────────────
@@ -36,6 +39,32 @@ export interface AdminUpdateStatusResponse {
 
 export interface AdminUserActivityResponse {
   activity: UserActivityItem[];
+}
+
+export interface AdminApplicantDetailResponse {
+  applicant: AdminApplicantItem;
+  resumes: any[];
+  applications: any[];
+  interviews?: any[];
+  conversations?: any[];
+  notifications?: any[];
+  preferences?: any;
+}
+
+export interface AdminApplicantInterviewsResponse {
+  interviews: any[];
+}
+
+export interface AdminApplicantConversationsResponse {
+  conversations: any[];
+}
+
+export interface AdminApplicantNotificationsResponse {
+  notifications: any[];
+}
+
+export interface AdminApplicantPreferencesResponse {
+  preferences: any;
 }
 
 // ─── Token Helper ─────────────────────────────────────────────────────────────
@@ -158,3 +187,153 @@ export async function bulkUpdateAdminUserStatus(
     body: JSON.stringify({ userIds, status }),
   });
 }
+
+/**
+ * GET /api/admin/applicants
+ * Fetch a paginated, filtered applicant list.
+ */
+export async function fetchAdminApplicants(
+  params: AdminApplicantQueryParams = {},
+): Promise<PaginatedAdminApplicantsResponse> {
+  const qs = new URLSearchParams();
+
+  if (params.page != null) qs.set("page", String(params.page));
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  if (params.search) qs.set("search", params.search);
+  if (params.status) qs.set("status", params.status);
+  if (typeof params.emailVerified === "boolean") {
+    qs.set("emailVerified", String(params.emailVerified));
+  }
+  if (params.skills) qs.set("skills", params.skills);
+  if (params.location) qs.set("location", params.location);
+  if (params.sortBy) qs.set("sortBy", params.sortBy);
+  if (params.sortOrder) qs.set("sortOrder", params.sortOrder);
+  if (params.dateFrom) qs.set("dateFrom", params.dateFrom);
+  if (params.dateTo) qs.set("dateTo", params.dateTo);
+
+  const query = qs.toString();
+  return adminFetch<PaginatedAdminApplicantsResponse>(
+    `/api/admin/applicants${query ? `?${query}` : ""}`,
+  );
+}
+
+/**
+ * GET /api/admin/applicants/:id
+ * Fetch a single applicant's full details, resumes, and applications.
+ */
+export async function fetchAdminApplicantById(id: string): Promise<AdminApplicantDetailResponse> {
+  return adminFetch<AdminApplicantDetailResponse>(`/api/admin/applicants/${id}`);
+}
+
+export interface AdminApplicantApplicationsResponse {
+  applications: any[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  applicant: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+/**
+ * GET /api/admin/applicants/:id/applications
+ * Fetch an applicant's applications with resolved Job relationships and pagination.
+ */
+export async function fetchAdminApplicantApplications(
+  applicantId: string,
+  params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    stage?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    search?: string;
+  } = {},
+): Promise<AdminApplicantApplicationsResponse> {
+  const qs = new URLSearchParams();
+  if (params.page != null) qs.set("page", String(params.page));
+  if (params.limit != null) qs.set("limit", String(params.limit));
+  if (params.status) qs.set("status", params.status);
+  if (params.stage) qs.set("stage", params.stage);
+  if (params.sortBy) qs.set("sortBy", params.sortBy);
+  if (params.sortOrder) qs.set("sortOrder", params.sortOrder);
+  if (params.search) qs.set("search", params.search);
+
+  const query = qs.toString();
+  return adminFetch<AdminApplicantApplicationsResponse>(
+    `/api/admin/applicants/${applicantId}/applications${query ? `?${query}` : ""}`,
+  );
+}
+
+/**
+ * GET /api/admin/applicants/:id/interviews
+ * Fetch real interview records for a specific applicant.
+ */
+export async function fetchAdminApplicantInterviews(
+  applicantId: string,
+): Promise<AdminApplicantInterviewsResponse> {
+  return adminFetch<AdminApplicantInterviewsResponse>(
+    `/api/admin/applicants/${applicantId}/interviews`,
+  );
+}
+
+/**
+ * GET /api/admin/applicants/:id/conversations
+ * Fetch conversation metadata for a specific applicant.
+ */
+export async function fetchAdminApplicantConversations(
+  applicantId: string,
+): Promise<AdminApplicantConversationsResponse> {
+  return adminFetch<AdminApplicantConversationsResponse>(
+    `/api/admin/applicants/${applicantId}/conversations`,
+  );
+}
+
+/**
+ * GET /api/admin/applicants/:id/notifications
+ * Fetch notifications for a specific applicant (read-only).
+ */
+export async function fetchAdminApplicantNotifications(
+  applicantId: string,
+): Promise<AdminApplicantNotificationsResponse> {
+  return adminFetch<AdminApplicantNotificationsResponse>(
+    `/api/admin/applicants/${applicantId}/notifications`,
+  );
+}
+
+/**
+ * GET /api/admin/applicants/:id/preferences
+ * Fetch configured preferences for a specific applicant.
+ */
+export async function fetchAdminApplicantPreferences(
+  applicantId: string,
+): Promise<AdminApplicantPreferencesResponse> {
+  return adminFetch<AdminApplicantPreferencesResponse>(
+    `/api/admin/applicants/${applicantId}/preferences`,
+  );
+}
+
+/**
+ * GET /api/admin/dashboard
+ * Fetch live DB-driven admin dashboard analytics and overview metrics.
+ */
+export async function fetchAdminDashboard(params: {
+  range?: string;
+  dateFrom?: string;
+  dateTo?: string;
+} = {}): Promise<any> {
+  const qs = new URLSearchParams();
+  if (params.range) qs.set("range", params.range);
+  if (params.dateFrom) qs.set("dateFrom", params.dateFrom);
+  if (params.dateTo) qs.set("dateTo", params.dateTo);
+
+  const query = qs.toString();
+  return adminFetch<any>(`/api/admin/dashboard${query ? `?${query}` : ""}`);
+}
+
