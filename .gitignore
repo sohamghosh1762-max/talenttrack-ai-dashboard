@@ -1,0 +1,105 @@
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.example.*
+.env.local
+.env.development
+.env.development.local
+.env.production
+.env.production.local
+.env.test
+.env.test.local
+
+# Local development / temporary
+*.local
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Dependencies
+node_modules/
+
+# Production builds & generated output
+dist/
+dist-ssr/
+build/
+out/
+.output/
+.vinxi/
+.tanstack/
+.nitro/
+.next/
+.nuxt/
+.vite/
+.cache/
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Cloudflare / Wrangler
+.wrangler/
+.dev.vars
+
+# Local backup & temporary copy folders
+*- Copy/
+* - Copy/
+
+# Firebase / Service Credentials / Private Keys / Secrets
+serviceAccountKey*.json
+service-account*.json
+*-service-account*.json
+firebase-service-account*.json
+*-firebase-adminsdk-*.json
+firebase-adminsdk*.json
+credentials.json
+secrets.json
+credentials
+.aws/
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Local databases & runtime files
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+
+# Uploads and applicant files / local storage
+uploads/
+storage/
+*.pdf
+*.docx
+
+# Python (if any scripts run)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editor & OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
