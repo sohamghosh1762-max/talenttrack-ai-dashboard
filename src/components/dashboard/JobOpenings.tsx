@@ -39,7 +39,9 @@ export function JobOpenings({ onOpenJobDetail }: JobOpeningsProps) {
         id: job.id,
         data: { status: newStatus },
       });
-      toast.success(newStatus === "PUBLISHED" ? "Job opening published!" : "Job paused/moved to draft.");
+      toast.success(
+        newStatus === "PUBLISHED" ? "Job opening published!" : "Job paused/moved to draft.",
+      );
     } catch (err: any) {
       toast.error(err.message || "Failed to update status.");
     }
@@ -114,9 +116,13 @@ export function JobOpenings({ onOpenJobDetail }: JobOpeningsProps) {
                           {job.title}
                         </span>
                       </td>
-                      <td className="px-3 py-3 text-muted-foreground font-medium">{job.department}</td>
+                      <td className="px-3 py-3 text-muted-foreground font-medium">
+                        {job.department}
+                      </td>
                       <td className="px-3 py-3">
-                        <span className="font-bold text-foreground">{job.applicationsCount || 0}</span>
+                        <span className="font-bold text-foreground">
+                          {job.applicationsCount || 0}
+                        </span>
                       </td>
                       <td className="px-3 py-3">
                         <span

@@ -17,8 +17,16 @@ async function runSeed() {
 
     // Clean up development seed documents
     await Promise.all([
-      User.deleteMany({ email: { $in: ["admin@talenttrack.ai", "rahul.mehta@talenttrack.ai", "aarav.mehta@example.com"] } }),
-      Job.deleteMany({ title: { $in: ["Senior Frontend Developer", "Lead Backend Developer", "AI/ML Systems Engineer"] } }),
+      User.deleteMany({
+        email: {
+          $in: ["admin@talenttrack.ai", "rahul.mehta@talenttrack.ai", "aarav.mehta@example.com"],
+        },
+      }),
+      Job.deleteMany({
+        title: {
+          $in: ["Senior Frontend Developer", "Lead Backend Developer", "AI/ML Systems Engineer"],
+        },
+      }),
       Recruiter.deleteMany({}),
       Applicant.deleteMany({}),
       Application.deleteMany({}),
@@ -102,7 +110,8 @@ async function runSeed() {
       experience: "5 years",
       education: ["B.S. in Computer Science — UC Berkeley (2020)"],
       resume: "Aarav_Mehta_Resume_2026.pdf",
-      summary: "Senior Frontend Engineer specializing in responsive web applications and state management architectures.",
+      summary:
+        "Senior Frontend Engineer specializing in responsive web applications and state management architectures.",
     });
     console.log(`[Seed] Created Applicant: ${applicantUser.email} (ID: ${applicantUser._id})`);
 
@@ -110,7 +119,8 @@ async function runSeed() {
     const job1 = await Job.create({
       _id: "65f1a2b3c4d5e6f7a8b9c101",
       title: "Senior Frontend Developer",
-      description: "Build high-performance web applications using React, TypeScript, and modern CSS architecture.",
+      description:
+        "Build high-performance web applications using React, TypeScript, and modern CSS architecture.",
       department: "Engineering",
       location: "San Francisco, CA (Hybrid)",
       employmentType: "Full-Time",
@@ -126,7 +136,8 @@ async function runSeed() {
     const job2 = await Job.create({
       _id: "65f1a2b3c4d5e6f7a8b9c102",
       title: "Lead Backend Developer",
-      description: "Design scalable REST & GraphQL APIs, microservices, and high-throughput data processing systems.",
+      description:
+        "Design scalable REST & GraphQL APIs, microservices, and high-throughput data processing systems.",
       department: "Engineering",
       location: "Austin, TX (Remote)",
       employmentType: "Full-Time",
@@ -142,7 +153,8 @@ async function runSeed() {
     const job3 = await Job.create({
       _id: "65f1a2b3c4d5e6f7a8b9c103",
       title: "AI/ML Systems Engineer",
-      description: "Implement transformer models, embeddings pipelines, and semantic search algorithms.",
+      description:
+        "Implement transformer models, embeddings pipelines, and semantic search algorithms.",
       department: "Research",
       location: "New York, NY (Hybrid)",
       employmentType: "Full-Time",
@@ -163,14 +175,17 @@ async function runSeed() {
       applicantId: applicantUser._id,
       recruiterId: recruiterUser._id,
       resumeId: "res_65f1a2b3c4d5e6f7a8b9c008",
-      coverLetter: "I have 5+ years of extensive experience building scalable frontend web platforms.",
+      coverLetter:
+        "I have 5+ years of extensive experience building scalable frontend web platforms.",
       status: "Shortlisted",
       currentStage: "INTERVIEW",
       aiScore: 92,
       notes: "Strong technical background with modern React 19 and TanStack router.",
       appliedAt: new Date().toISOString(),
     });
-    console.log(`[Seed] Created Application: ID ${application1._id} (Candidate: ${applicantUser.name} -> Job: ${job1.title})`);
+    console.log(
+      `[Seed] Created Application: ID ${application1._id} (Candidate: ${applicantUser.name} -> Job: ${job1.title})`,
+    );
 
     console.log("==================================================");
     console.log("✅ Development Database Seed Complete!");

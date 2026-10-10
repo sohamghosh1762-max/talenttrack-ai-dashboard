@@ -51,8 +51,20 @@ describe("CONTROLLED HYBRID ATS & 10-RUN REPEATABILITY SUITE", () => {
       github: "https://github.com/alexrivera",
       portfolio: "https://alexrivera.dev",
     },
-    summary: "Senior Full-Stack Software Engineer with 7+ years architecting scalable cloud platforms and distributed systems.",
-    skills: ["TypeScript", "Node.js", "React", "PostgreSQL", "Redis", "Docker", "Kubernetes", "AWS", "Kafka", "Go"],
+    summary:
+      "Senior Full-Stack Software Engineer with 7+ years architecting scalable cloud platforms and distributed systems.",
+    skills: [
+      "TypeScript",
+      "Node.js",
+      "React",
+      "PostgreSQL",
+      "Redis",
+      "Docker",
+      "Kubernetes",
+      "AWS",
+      "Kafka",
+      "Go",
+    ],
     experience: [
       {
         company: "Stripe",
@@ -142,10 +154,16 @@ describe("CONTROLLED HYBRID ATS & 10-RUN REPEATABILITY SUITE", () => {
     const validGeminiData = {
       skillsRelevance: { score: 92, evidence: ["Strong TypeScript and backend coverage"] },
       experienceQuality: { score: 88, evidence: ["Measurable latency reductions at Stripe"] },
-      projectQuality: { score: 85, evidence: ["Distributed task queue demonstrates architecture skills"] },
+      projectQuality: {
+        score: 85,
+        evidence: ["Distributed task queue demonstrates architecture skills"],
+      },
       summaryQuality: { score: 90, evidence: ["Clear 7+ years professional trajectory"] },
       keywordRelevance: { score: 89, evidence: ["Modern stack keywords present"] },
-      achievementQuality: { score: 87, evidence: ["Quantified 35% latency reduction and 20M events"] },
+      achievementQuality: {
+        score: 87,
+        evidence: ["Quantified 35% latency reduction and 20M events"],
+      },
       strengths: ["Strong technical depth", "Measurable impact"],
       weaknesses: ["Could include more leadership certifications"],
       keywordInsights: ["TypeScript", "Redis", "Docker", "Node.js"],
@@ -219,7 +237,7 @@ describe("CONTROLLED HYBRID ATS & 10-RUN REPEATABILITY SUITE", () => {
         createJsonRequest("http://localhost:3000/api/applicant/ats-score", {
           method: "GET",
           token: applicantToken,
-        })
+        }),
       );
 
       assert.ok(response, `Run ${run} response exists`);
@@ -236,25 +254,37 @@ describe("CONTROLLED HYBRID ATS & 10-RUN REPEATABILITY SUITE", () => {
 
     for (let i = 1; i < 10; i++) {
       const current = results[i];
-      assert.strictEqual(current.overallScore, firstRun.overallScore, `Run ${i + 1} overallScore (${current.overallScore}) matches Run 1 (${firstRun.overallScore})`);
-      assert.strictEqual(current.compatibilityTier, firstRun.compatibilityTier, `Run ${i + 1} compatibilityTier matches Run 1`);
-      assert.strictEqual(current.categories.length, firstRun.categories.length, `Run ${i + 1} categories count matches Run 1`);
+      assert.strictEqual(
+        current.overallScore,
+        firstRun.overallScore,
+        `Run ${i + 1} overallScore (${current.overallScore}) matches Run 1 (${firstRun.overallScore})`,
+      );
+      assert.strictEqual(
+        current.compatibilityTier,
+        firstRun.compatibilityTier,
+        `Run ${i + 1} compatibilityTier matches Run 1`,
+      );
+      assert.strictEqual(
+        current.categories.length,
+        firstRun.categories.length,
+        `Run ${i + 1} categories count matches Run 1`,
+      );
 
       for (let c = 0; c < firstRun.categories.length; c++) {
         assert.strictEqual(
           current.categories[c].score,
           firstRun.categories[c].score,
-          `Run ${i + 1} category '${current.categories[c].name}' score (${current.categories[c].score}) matches Run 1 (${firstRun.categories[c].score})`
+          `Run ${i + 1} category '${current.categories[c].name}' score (${current.categories[c].score}) matches Run 1 (${firstRun.categories[c].score})`,
         );
         assert.strictEqual(
           current.categories[c].deterministicScore,
           firstRun.categories[c].deterministicScore,
-          `Run ${i + 1} category '${current.categories[c].name}' deterministicScore matches Run 1`
+          `Run ${i + 1} category '${current.categories[c].name}' deterministicScore matches Run 1`,
         );
         assert.strictEqual(
           current.categories[c].geminiScore,
           firstRun.categories[c].geminiScore,
-          `Run ${i + 1} category '${current.categories[c].name}' geminiScore matches Run 1`
+          `Run ${i + 1} category '${current.categories[c].name}' geminiScore matches Run 1`,
         );
       }
     }
@@ -282,7 +312,7 @@ describe("CONTROLLED HYBRID ATS & 10-RUN REPEATABILITY SUITE", () => {
       createJsonRequest("http://localhost:3000/api/applicant/ats-score", {
         method: "GET",
         token: applicantToken,
-      })
+      }),
     );
     assert.ok(initRes);
     const initData = ((await initRes.json()) as any).data.analysis;
@@ -292,7 +322,7 @@ describe("CONTROLLED HYBRID ATS & 10-RUN REPEATABILITY SUITE", () => {
       createJsonRequest("http://localhost:3000/api/applicant/ats-score/analyze", {
         method: "POST",
         token: applicantToken,
-      })
+      }),
     );
     assert.ok(reanalyzeRes);
     assert.strictEqual(reanalyzeRes.status, 200);
@@ -325,7 +355,7 @@ describe("CONTROLLED HYBRID ATS & 10-RUN REPEATABILITY SUITE", () => {
       createJsonRequest("http://localhost:3000/api/applicant/ats-score", {
         method: "GET",
         token: applicantToken,
-      })
+      }),
     );
     assert.ok(resA);
     const dataA = ((await resA.json()) as any).data.analysis;
@@ -380,14 +410,18 @@ describe("CONTROLLED HYBRID ATS & 10-RUN REPEATABILITY SUITE", () => {
       createJsonRequest("http://localhost:3000/api/applicant/ats-score", {
         method: "GET",
         token: applicantToken,
-      })
+      }),
     );
     assert.ok(resB);
     const dataB = ((await resB.json()) as any).data.analysis;
 
     assert.notStrictEqual(dataB.resumeId, dataA.resumeId);
     assert.notStrictEqual(dataB.analysisKey, dataA.analysisKey);
-    assert.strictEqual(dataB.overallScore < dataA.overallScore, true, "Junior profile should receive lower ATS score");
+    assert.strictEqual(
+      dataB.overallScore < dataA.overallScore,
+      true,
+      "Junior profile should receive lower ATS score",
+    );
   });
 
   it("7. Auditing & metadata are correctly persisted with versions", async () => {
@@ -411,7 +445,7 @@ describe("CONTROLLED HYBRID ATS & 10-RUN REPEATABILITY SUITE", () => {
       createJsonRequest("http://localhost:3000/api/applicant/ats-score", {
         method: "GET",
         token: applicantToken,
-      })
+      }),
     );
     assert.ok(res);
     const data = ((await res.json()) as any).data.analysis;

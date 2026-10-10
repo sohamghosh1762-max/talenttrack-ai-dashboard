@@ -56,9 +56,14 @@ export class S3Service {
    * Generates a safe, collision-resistant S3 object key
    * Format: resumes/{applicantId}/{uuid}-{sanitizedName}
    */
-  public generateS3Key(applicantId: string, originalFileName: string): { s3Key: string; storedFileName: string } {
+  public generateS3Key(
+    applicantId: string,
+    originalFileName: string,
+  ): { s3Key: string; storedFileName: string } {
     const cleanName = this.sanitizeFileName(originalFileName);
-    const uniqueId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString("hex");
+    const uniqueId = crypto.randomUUID
+      ? crypto.randomUUID()
+      : crypto.randomBytes(16).toString("hex");
     const storedFileName = `${uniqueId}-${cleanName}`;
     const s3Key = `resumes/${applicantId}/${storedFileName}`;
     return { s3Key, storedFileName };
@@ -74,7 +79,10 @@ export class S3Service {
     mimeType: string;
     fileSize: number;
   }): Promise<S3UploadResult> {
-    const { s3Key, storedFileName } = this.generateS3Key(params.applicantId, params.originalFileName);
+    const { s3Key, storedFileName } = this.generateS3Key(
+      params.applicantId,
+      params.originalFileName,
+    );
 
     if (this.isConfigured && this.s3Client) {
       const command = new PutObjectCommand({
@@ -111,7 +119,10 @@ export class S3Service {
   /**
    * Generates a secure, time-limited presigned URL for downloading the private S3 object
    */
-  public async getSignedDownloadUrl(s3Key: string, expiresInSeconds: number = 900): Promise<string> {
+  public async getSignedDownloadUrl(
+    s3Key: string,
+    expiresInSeconds: number = 900,
+  ): Promise<string> {
     if (this.isConfigured && this.s3Client) {
       const command = new GetObjectCommand({
         Bucket: this.bucket,

@@ -25,7 +25,10 @@ export const Route = createFileRoute("/register")({
     const r = search["role"];
     const s = search["step"];
     return {
-      role: r === "applicant" || r === "recruiter" || r === "hiring_manager" ? (r as UserRole) : undefined,
+      role:
+        r === "applicant" || r === "recruiter" || r === "hiring_manager"
+          ? (r as UserRole)
+          : undefined,
       step: s === "select" || s === "form" ? s : undefined,
     };
   },

@@ -151,9 +151,12 @@ describe("PERSISTENT CONVERSATION & MESSAGING API TEST SUITE", () => {
   });
 
   it("2. Applicant cannot retrieve another user's conversation by ID (403 Forbidden)", async () => {
-    const req = createJsonRequest(`http://localhost:3000/api/conversations/${testConversation.id}`, {
-      token: applicantBToken, // Applicant B is NOT a participant
-    });
+    const req = createJsonRequest(
+      `http://localhost:3000/api/conversations/${testConversation.id}`,
+      {
+        token: applicantBToken, // Applicant B is NOT a participant
+      },
+    );
     const res = await handleApiRequest(req);
     assert.ok(res);
     assert.equal(res.status, 403);
@@ -171,9 +174,12 @@ describe("PERSISTENT CONVERSATION & MESSAGING API TEST SUITE", () => {
       text: "Hello Aarav, we are excited to move forward with your interview.",
     });
 
-    const req = createJsonRequest(`http://localhost:3000/api/conversations/${testConversation.id}/messages`, {
-      token: applicantAToken,
-    });
+    const req = createJsonRequest(
+      `http://localhost:3000/api/conversations/${testConversation.id}/messages`,
+      {
+        token: applicantAToken,
+      },
+    );
     const res = await handleApiRequest(req);
     assert.ok(res);
     assert.equal(res.status, 200);
@@ -181,27 +187,36 @@ describe("PERSISTENT CONVERSATION & MESSAGING API TEST SUITE", () => {
     const data = await res.json();
     assert.equal(data.success, true);
     assert.equal(data.data.length, 1);
-    assert.equal(data.data[0].text, "Hello Aarav, we are excited to move forward with your interview.");
+    assert.equal(
+      data.data[0].text,
+      "Hello Aarav, we are excited to move forward with your interview.",
+    );
     assert.equal(data.data[0].sender?.name, "Rohan Varma");
   });
 
   it("4. Applicant cannot retrieve messages for an unrelated conversation (403 Forbidden)", async () => {
-    const req = createJsonRequest(`http://localhost:3000/api/conversations/${testConversation.id}/messages`, {
-      token: applicantBToken,
-    });
+    const req = createJsonRequest(
+      `http://localhost:3000/api/conversations/${testConversation.id}/messages`,
+      {
+        token: applicantBToken,
+      },
+    );
     const res = await handleApiRequest(req);
     assert.ok(res);
     assert.equal(res.status, 403);
   });
 
   it("5. Applicant can send a message and senderId is derived strictly from authentication session", async () => {
-    const req = createJsonRequest(`http://localhost:3000/api/conversations/${testConversation.id}/messages`, {
-      method: "POST",
-      token: applicantAToken,
-      body: {
-        text: "Thank you Rohan, I am available on Tuesday afternoon.",
+    const req = createJsonRequest(
+      `http://localhost:3000/api/conversations/${testConversation.id}/messages`,
+      {
+        method: "POST",
+        token: applicantAToken,
+        body: {
+          text: "Thank you Rohan, I am available on Tuesday afternoon.",
+        },
       },
-    });
+    );
     const res = await handleApiRequest(req);
     assert.ok(res);
     assert.equal(res.status, 201);
@@ -214,15 +229,18 @@ describe("PERSISTENT CONVERSATION & MESSAGING API TEST SUITE", () => {
   });
 
   it("6. Applicant cannot spoof senderId or recipientId via request body", async () => {
-    const req = createJsonRequest(`http://localhost:3000/api/conversations/${testConversation.id}/messages`, {
-      method: "POST",
-      token: applicantAToken,
-      body: {
-        text: "Spoof attempt",
-        senderId: recruiterR.id, // Attempt to spoof recruiter sender
-        recipientId: "fake_id_12345",
+    const req = createJsonRequest(
+      `http://localhost:3000/api/conversations/${testConversation.id}/messages`,
+      {
+        method: "POST",
+        token: applicantAToken,
+        body: {
+          text: "Spoof attempt",
+          senderId: recruiterR.id, // Attempt to spoof recruiter sender
+          recipientId: "fake_id_12345",
+        },
       },
-    });
+    );
     const res = await handleApiRequest(req);
     assert.ok(res);
     assert.equal(res.status, 201);
@@ -234,13 +252,16 @@ describe("PERSISTENT CONVERSATION & MESSAGING API TEST SUITE", () => {
   });
 
   it("7. Empty or whitespace-only messages are rejected (400 Bad Request)", async () => {
-    const req = createJsonRequest(`http://localhost:3000/api/conversations/${testConversation.id}/messages`, {
-      method: "POST",
-      token: applicantAToken,
-      body: {
-        text: "     \n\t   ",
+    const req = createJsonRequest(
+      `http://localhost:3000/api/conversations/${testConversation.id}/messages`,
+      {
+        method: "POST",
+        token: applicantAToken,
+        body: {
+          text: "     \n\t   ",
+        },
       },
-    });
+    );
     const res = await handleApiRequest(req);
     assert.ok(res);
     assert.equal(res.status, 400);
@@ -251,13 +272,16 @@ describe("PERSISTENT CONVERSATION & MESSAGING API TEST SUITE", () => {
 
   it("8. Overly long message (>3000 chars) is rejected (400 Bad Request)", async () => {
     const longText = "a".repeat(3050);
-    const req = createJsonRequest(`http://localhost:3000/api/conversations/${testConversation.id}/messages`, {
-      method: "POST",
-      token: applicantAToken,
-      body: {
-        text: longText,
+    const req = createJsonRequest(
+      `http://localhost:3000/api/conversations/${testConversation.id}/messages`,
+      {
+        method: "POST",
+        token: applicantAToken,
+        body: {
+          text: longText,
+        },
       },
-    });
+    );
     const res = await handleApiRequest(req);
     assert.ok(res);
     assert.equal(res.status, 400);
@@ -355,9 +379,12 @@ describe("PERSISTENT CONVERSATION & MESSAGING API TEST SUITE", () => {
   });
 
   it("13. Non-existent conversation ID returns 404 Not Found", async () => {
-    const req = createJsonRequest("http://localhost:3000/api/conversations/non_existent_conv_id_999", {
-      token: applicantAToken,
-    });
+    const req = createJsonRequest(
+      "http://localhost:3000/api/conversations/non_existent_conv_id_999",
+      {
+        token: applicantAToken,
+      },
+    );
     const res = await handleApiRequest(req);
     assert.ok(res);
     assert.equal(res.status, 404);
@@ -371,11 +398,14 @@ describe("PERSISTENT CONVERSATION & MESSAGING API TEST SUITE", () => {
   });
 
   it("15. Recruiter can also access and send messages in conversations they own", async () => {
-    const sendReq = createJsonRequest(`http://localhost:3000/api/conversations/${testConversation.id}/messages`, {
-      method: "POST",
-      token: recruiterRToken,
-      body: { text: "Looking forward to speaking with you!" },
-    });
+    const sendReq = createJsonRequest(
+      `http://localhost:3000/api/conversations/${testConversation.id}/messages`,
+      {
+        method: "POST",
+        token: recruiterRToken,
+        body: { text: "Looking forward to speaking with you!" },
+      },
+    );
     const sendRes = await handleApiRequest(sendReq);
     assert.ok(sendRes);
     assert.equal(sendRes.status, 201);
@@ -385,9 +415,12 @@ describe("PERSISTENT CONVERSATION & MESSAGING API TEST SUITE", () => {
   });
 
   it("16. Unrelated recruiter cannot access conversation (403 Forbidden)", async () => {
-    const req = createJsonRequest(`http://localhost:3000/api/conversations/${testConversation.id}/messages`, {
-      token: recruiterOtherToken,
-    });
+    const req = createJsonRequest(
+      `http://localhost:3000/api/conversations/${testConversation.id}/messages`,
+      {
+        token: recruiterOtherToken,
+      },
+    );
     const res = await handleApiRequest(req);
     assert.ok(res);
     assert.equal(res.status, 403);

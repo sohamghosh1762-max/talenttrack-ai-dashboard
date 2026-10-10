@@ -24,7 +24,10 @@ export const Route = createFileRoute("/hiring-manager/analytics")({
   head: () => ({
     meta: [
       { title: "Hiring Analytics — Hiring Manager" },
-      { name: "description", content: "Real-time hiring metrics and pipeline distribution for your assigned roles." },
+      {
+        name: "description",
+        content: "Real-time hiring metrics and pipeline distribution for your assigned roles.",
+      },
     ],
   }),
   component: HiringManagerAnalyticsPage,
@@ -60,7 +63,8 @@ function HiringManagerAnalyticsPage() {
               <span>Hiring Analytics & Pipeline Throughput</span>
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-              Real-time recruitment metrics calculated strictly across your assigned job requisitions.
+              Real-time recruitment metrics calculated strictly across your assigned job
+              requisitions.
             </p>
           </div>
 
@@ -99,7 +103,9 @@ function HiringManagerAnalyticsPage() {
             <div className="text-2xl font-black text-foreground">
               {isLoading ? <Skeleton className="h-8 w-12" /> : metrics.totalApplicants}
             </div>
-            <div className="text-[11px] text-muted-foreground">Across {metrics.openPositions} positions</div>
+            <div className="text-[11px] text-muted-foreground">
+              Across {metrics.openPositions} positions
+            </div>
           </div>
 
           {/* 2. Shortlisted Candidates */}
@@ -133,7 +139,9 @@ function HiringManagerAnalyticsPage() {
           {/* 4. Approved Decisions */}
           <div className="p-5 rounded-2xl border border-border bg-card shadow-xs space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">Approved Candidates</span>
+              <span className="text-xs font-semibold text-muted-foreground">
+                Approved Candidates
+              </span>
               <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600">
                 <TrendingUp className="size-4" />
               </div>
@@ -141,7 +149,9 @@ function HiringManagerAnalyticsPage() {
             <div className="text-2xl font-black text-foreground">
               {isLoading ? <Skeleton className="h-8 w-12" /> : metrics.approvedCandidates}
             </div>
-            <div className="text-[11px] text-muted-foreground">{metrics.rejectedCandidates} rejected</div>
+            <div className="text-[11px] text-muted-foreground">
+              {metrics.rejectedCandidates} rejected
+            </div>
           </div>
         </div>
 
@@ -242,7 +252,9 @@ function HiringManagerAnalyticsPage() {
                       </div>
                       <div>
                         <div className="text-[10px] text-muted-foreground">Pending</div>
-                        <div className="text-xs font-bold text-amber-600">{job.pendingDecision}</div>
+                        <div className="text-xs font-bold text-amber-600">
+                          {job.pendingDecision}
+                        </div>
                       </div>
                       <div>
                         <div className="text-[10px] text-muted-foreground">Approved</div>

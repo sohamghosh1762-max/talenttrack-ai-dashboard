@@ -91,15 +91,7 @@ const JobSchema = new Schema<IJobDocument>(
     },
     status: {
       type: String,
-      enum: [
-        "DRAFT",
-        "PUBLISHED",
-        "ARCHIVED",
-        "CLOSED",
-        "Active",
-        "Paused",
-        "Closed",
-      ],
+      enum: ["DRAFT", "PUBLISHED", "ARCHIVED", "CLOSED", "Active", "Paused", "Closed"],
       default: "PUBLISHED",
       index: true,
     },
@@ -117,12 +109,20 @@ const JobSchema = new Schema<IJobDocument>(
       virtuals: true,
       transform: (_doc, ret: Record<string, any>) => {
         ret["id"] = ret["_id"] ? ret["_id"].toString() : ret["id"];
-        if (ret["recruiterId"] && typeof ret["recruiterId"] === "object" && "_id" in ret["recruiterId"]) {
+        if (
+          ret["recruiterId"] &&
+          typeof ret["recruiterId"] === "object" &&
+          "_id" in ret["recruiterId"]
+        ) {
           ret["recruiterId"] = ret["recruiterId"]._id.toString();
         } else if (ret["recruiterId"]) {
           ret["recruiterId"] = ret["recruiterId"].toString();
         }
-        if (ret["hiringManagerId"] && typeof ret["hiringManagerId"] === "object" && "_id" in ret["hiringManagerId"]) {
+        if (
+          ret["hiringManagerId"] &&
+          typeof ret["hiringManagerId"] === "object" &&
+          "_id" in ret["hiringManagerId"]
+        ) {
           ret["hiringManagerId"] = ret["hiringManagerId"]._id.toString();
         } else if (ret["hiringManagerId"]) {
           ret["hiringManagerId"] = ret["hiringManagerId"].toString();
@@ -136,12 +136,20 @@ const JobSchema = new Schema<IJobDocument>(
       virtuals: true,
       transform: (_doc, ret: Record<string, any>) => {
         ret["id"] = ret["_id"] ? ret["_id"].toString() : ret["id"];
-        if (ret["recruiterId"] && typeof ret["recruiterId"] === "object" && "_id" in ret["recruiterId"]) {
+        if (
+          ret["recruiterId"] &&
+          typeof ret["recruiterId"] === "object" &&
+          "_id" in ret["recruiterId"]
+        ) {
           ret["recruiterId"] = ret["recruiterId"]._id.toString();
         } else if (ret["recruiterId"]) {
           ret["recruiterId"] = ret["recruiterId"].toString();
         }
-        if (ret["hiringManagerId"] && typeof ret["hiringManagerId"] === "object" && "_id" in ret["hiringManagerId"]) {
+        if (
+          ret["hiringManagerId"] &&
+          typeof ret["hiringManagerId"] === "object" &&
+          "_id" in ret["hiringManagerId"]
+        ) {
           ret["hiringManagerId"] = ret["hiringManagerId"]._id.toString();
         } else if (ret["hiringManagerId"]) {
           ret["hiringManagerId"] = ret["hiringManagerId"].toString();
@@ -161,5 +169,4 @@ JobSchema.index({ hiringManagerId: 1, status: 1 });
 JobSchema.index({ createdAt: -1 });
 
 export const Job: Model<IJobDocument> =
-  (mongoose.models["Job"] as Model<IJobDocument>) ||
-  mongoose.model<IJobDocument>("Job", JobSchema);
+  (mongoose.models["Job"] as Model<IJobDocument>) || mongoose.model<IJobDocument>("Job", JobSchema);

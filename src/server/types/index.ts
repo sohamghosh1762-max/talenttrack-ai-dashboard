@@ -6,4 +6,4 @@ export * from "./message-types.ts";
 export * from "./interview-types.ts";
 export * from "./notification-types.ts";
 export * from "./preference-types.ts";
-
+export * from "./screening-types.ts";

@@ -46,7 +46,9 @@ export function PostJobModal({ open, onOpenChange, jobToEdit, onJobCreated }: Po
       setDepartment(jobToEdit.department || "Engineering");
       setLocation(jobToEdit.location || "Remote");
       setType(
-        ("employmentType" in jobToEdit ? jobToEdit.employmentType : (jobToEdit as JobOpening).type) || "Full-Time",
+        ("employmentType" in jobToEdit
+          ? jobToEdit.employmentType
+          : (jobToEdit as JobOpening).type) || "Full-Time",
       );
       setExperience(
         ("experienceRequired" in jobToEdit
@@ -161,7 +163,11 @@ export function PostJobModal({ open, onOpenChange, jobToEdit, onJobCreated }: Po
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2 text-brand-blue">
-            {isEditing ? <Edit3 className="size-5 font-bold" /> : <Plus className="size-5 font-bold" />}
+            {isEditing ? (
+              <Edit3 className="size-5 font-bold" />
+            ) : (
+              <Plus className="size-5 font-bold" />
+            )}
             <DialogTitle className="text-lg font-bold">
               {isEditing ? "Edit Job Opening" : "Post a New Job Opening"}
             </DialogTitle>

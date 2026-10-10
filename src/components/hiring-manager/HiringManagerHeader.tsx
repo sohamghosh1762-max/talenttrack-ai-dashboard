@@ -2,15 +2,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  Bell,
-  ChevronDown,
-  Clock,
-  LogOut,
-  Menu,
-  Search,
-  User as UserIcon,
-} from "lucide-react";
+import { Bell, ChevronDown, Clock, LogOut, Menu, Search, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,7 +22,10 @@ interface HiringManagerHeaderProps {
   onSearchChange?: ((val: string) => void) | undefined;
 }
 
-export function HiringManagerHeader({ searchQuery = "", onSearchChange }: HiringManagerHeaderProps) {
+export function HiringManagerHeader({
+  searchQuery = "",
+  onSearchChange,
+}: HiringManagerHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [readIds, setReadIds] = useState<string[]>([]);
   const { user, logout } = useAuth();
@@ -42,7 +37,10 @@ export function HiringManagerHeader({ searchQuery = "", onSearchChange }: Hiring
     id: `notif-${cand.id}`,
     title: `Candidate for ${cand.jobTitle}`,
     description: `${cand.candidateName} (${cand.stage}) is waiting for review.`,
-    timeAgo: new Date(cand.appliedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    timeAgo: new Date(cand.appliedAt).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
     unread: !readIds.includes(`notif-${cand.id}`),
   }));
 
@@ -176,7 +174,9 @@ export function HiringManagerHeader({ searchQuery = "", onSearchChange }: Hiring
                   {user?.name || "Hiring Manager"}
                 </span>
                 <span className="block text-[10px] font-normal text-muted-foreground">
-                  {user?.recruiterProfile?.companyName || user?.recruiterProfile?.department || "Decision Maker"}
+                  {user?.recruiterProfile?.companyName ||
+                    user?.recruiterProfile?.department ||
+                    "Decision Maker"}
                 </span>
               </div>
               <ChevronDown className="size-3.5 text-muted-foreground" />

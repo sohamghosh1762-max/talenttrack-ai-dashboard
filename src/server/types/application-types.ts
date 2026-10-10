@@ -9,12 +9,7 @@ export type ApplicationStatus =
   | "Under Review";
 
 export type ApplicationStage =
-  | "APPLIED"
-  | "SCREENING"
-  | "INTERVIEW"
-  | "OFFERED"
-  | "REJECTED"
-  | "WITHDRAWN";
+  "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFERED" | "REJECTED" | "WITHDRAWN";
 
 export interface ApplicationJobInfo {
   id: string;
@@ -31,6 +26,7 @@ export interface ApplicationApplicantInfo {
   name: string;
   email: string;
   phone?: string | undefined;
+  headline?: string | undefined;
   location?: string | undefined;
   skills?: string[] | undefined;
   initials?: string | undefined;
@@ -88,6 +84,42 @@ export interface IApplication {
   resume?: ApplicationResumeInfo | undefined;
   hiringManagerFeedback?: HiringManagerFeedbackItem[] | undefined;
   hiringDecision?: HiringDecision | undefined;
+  notesList?: ApplicationNote[] | undefined;
+  stageHistory?: StageHistoryItem[] | undefined;
+  recruiterFeedback?: RecruiterFeedbackItem[] | undefined;
+}
+
+export interface ApplicationNote {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorRole?: string | undefined;
+  content: string;
+  text?: string | undefined;
+  createdAt: string;
+}
+
+export interface StageHistoryItem {
+  fromStage?: string | undefined;
+  toStage: string;
+  changedBy: string;
+  changedByName?: string | undefined;
+  changedAt: string;
+  reason?: string | undefined;
+}
+
+export interface RecruiterFeedbackItem {
+  id: string;
+  reviewerId: string;
+  reviewerName?: string | undefined;
+  rating?: number | undefined; // 1-5
+  technicalRating?: number | undefined;
+  communicationRating?: number | undefined;
+  strengths?: string[] | string | undefined;
+  weaknesses?: string[] | string | undefined;
+  recommendation: "Strong Hire" | "Hire" | "Hold" | "Reject" | string;
+  comments?: string | undefined;
+  createdAt: string;
 }
 
 export interface ApplicationQueryParams {
@@ -101,7 +133,11 @@ export interface ApplicationQueryParams {
   currentStage?: ApplicationStage | string | undefined;
   stage?: string | undefined;
   search?: string | undefined;
-  sortBy?: ("appliedAt" | "aiScore" | "status") | string | undefined;
+  minScore?: number | undefined;
+  maxScore?: number | undefined;
+  startDate?: string | undefined;
+  endDate?: string | undefined;
+  sortBy?: ("appliedAt" | "aiScore" | "status" | "applicantName" | "currentStage") | string | undefined;
   sortOrder?: ("asc" | "desc") | string | undefined;
 }
 
@@ -122,6 +158,8 @@ export interface CreateApplicationInput {
   resumeId?: string | undefined;
   coverLetter?: string | undefined;
   notes?: string | undefined;
+  currentStage?: ApplicationStage | undefined;
+  aiScore?: number | undefined;
 }
 
 export interface UpdateApplicationStatusInput {
@@ -129,4 +167,102 @@ export interface UpdateApplicationStatusInput {
   currentStage?: ApplicationStage | undefined;
   aiScore?: number | undefined;
   notes?: string | undefined;
+  notesList?: ApplicationNote[] | undefined;
+  stageHistory?: StageHistoryItem[] | undefined;
+  recruiterFeedback?: RecruiterFeedbackItem[] | undefined;
+}
+
+export interface BulkApplicationActionInput {
+  applicationIds: string[];
+  action: "STAGE_CHANGE" | "ADD_NOTE" | "ARCHIVE";
+  data?: {
+    stage?: ApplicationStage | string | undefined;
+    note?: string | undefined;
+    reason?: string | undefined;
+  } | undefined;
+}
+
+export interface BulkActionResultItem {
+  id: string;
+  success: boolean;
+  stage?: string | undefined;
+  error?: string | undefined;
+}
+
+export interface BulkApplicationActionResult {
+  total: number;
+  totalRequested?: number | undefined;
+  succeeded: number;
+  failed: number;
+  results: BulkActionResultItem[];
+}
+
+export interface RecruiterKpis {
+  totalCandidates: number;
+  activeJobs: number;
+  totalApplications: number;
+  newApplications: number;
+  shortlistedCandidates: number;
+  interviewsScheduled: number;
+  candidatesAwaitingReview: number;
+  offersExtended: number;
+  offersAccepted: number;
+}
+
+export interface StageFunnelItem {
+  stage: ApplicationStage;
+  label: string;
+  count: number;
+  conversionRate: number;
+}
+
+export interface ApplicationTrendPoint {
+  date: string;
+  applications: number;
+  shortlisted: number;
+  interviewed: number;
+  offered: number;
+}
+
+export interface TopSkillItem {
+  name: string;
+  count: number;
+  maxCount: number;
+  colorClass: string;
+}
+
+export interface RecruiterAIInsight {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  bgClass: string;
+  toneClass: string;
+}
+
+export interface RecruiterRecentActivity {
+  id: string;
+  type: "APPLICATION_SUBMITTED" | "STAGE_CHANGED" | "INTERVIEW_SCHEDULED" | "NOTE_ADDED";
+  title: string;
+  candidateName: string;
+  jobTitle?: string | undefined;
+  timestamp: string;
+  metadata?: Record<string, unknown> | undefined;
+}
+
+export interface RecruiterAIInsightSummary {
+  avgScore: number;
+  topMatchesCount: number;
+  items?: RecruiterAIInsight[] | undefined;
+  [key: string]: unknown;
+}
+
+export interface RecruiterAnalyticsResponse {
+  kpis: RecruiterKpis;
+  stageFunnel: StageFunnelItem[];
+  funnel?: StageFunnelItem[] | undefined;
+  applicationTrends: ApplicationTrendPoint[];
+  topSkills: TopSkillItem[];
+  aiInsights: RecruiterAIInsightSummary;
+  recentActivity: RecruiterRecentActivity[];
 }

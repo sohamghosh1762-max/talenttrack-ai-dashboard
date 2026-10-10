@@ -85,14 +85,7 @@ const UserSchema = new Schema<IUserDocument>(
     },
     status: {
       type: String,
-      enum: [
-        "ACTIVE",
-        "PENDING_VERIFICATION",
-        "SUSPENDED",
-        "LOCKED",
-        "DEACTIVATED",
-        "INACTIVE",
-      ],
+      enum: ["ACTIVE", "PENDING_VERIFICATION", "SUSPENDED", "LOCKED", "DEACTIVATED", "INACTIVE"],
       default: "ACTIVE",
       index: true,
     },

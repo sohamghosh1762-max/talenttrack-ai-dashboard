@@ -5,6 +5,7 @@ import { authenticate } from "../middleware/auth-middleware.ts";
 import { successResponse, errorResponse } from "../utils/response.ts";
 import { NotFoundError, ValidationError, ForbiddenError, ConflictError } from "../utils/errors.ts";
 import { isValidObjectId } from "../db/user-repository.ts";
+import { isDatabaseConnected } from "../db/mongodb.ts";
 import { notificationService } from "../services/notification-service.ts";
 import type {
   CreateApplicationInput,
@@ -54,7 +55,9 @@ export async function handleCreateApplication(req: Request): Promise<Response> {
 
   // Check application deadline
   if (job.deadline) {
-    const deadlineTime = new Date(job.deadline.includes("T") ? job.deadline : `${job.deadline}T23:59:59.999Z`).getTime();
+    const deadlineTime = new Date(
+      job.deadline.includes("T") ? job.deadline : `${job.deadline}T23:59:59.999Z`,
+    ).getTime();
     if (!isNaN(deadlineTime) && deadlineTime < Date.now()) {
       throw new ValidationError("The application deadline for this job opening has passed.");
     }
@@ -139,7 +142,10 @@ export async function handleGetMyApplications(req: Request): Promise<Response> {
     limit: 100,
   });
 
-  return successResponse(result.applications, "Applicant application history retrieved successfully.");
+  return successResponse(
+    result.applications,
+    "Applicant application history retrieved successfully.",
+  );
 }
 
 /**
@@ -167,7 +173,8 @@ export async function handleGetRecruiterApplications(req: Request): Promise<Resp
     limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!, 10) : 50,
     jobId: searchParams.get("jobId") || undefined,
     status: (searchParams.get("status") as any) || undefined,
-    currentStage: (searchParams.get("currentStage") || searchParams.get("stage") as any) || undefined,
+    currentStage:
+      searchParams.get("currentStage") || (searchParams.get("stage") as any) || undefined,
     search: searchParams.get("search") || undefined,
     sortBy: (searchParams.get("sortBy") as any) || "appliedAt",
     sortOrder: (searchParams.get("sortOrder") as any) || "desc",
@@ -195,7 +202,8 @@ export async function handleGetApplications(req: Request): Promise<Response> {
     limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!, 10) : 50,
     jobId: searchParams.get("jobId") || undefined,
     status: (searchParams.get("status") as any) || undefined,
-    currentStage: (searchParams.get("currentStage") || searchParams.get("stage") as any) || undefined,
+    currentStage:
+      searchParams.get("currentStage") || (searchParams.get("stage") as any) || undefined,
     search: searchParams.get("search") || undefined,
     sortBy: (searchParams.get("sortBy") as any) || "appliedAt",
     sortOrder: (searchParams.get("sortOrder") as any) || "desc",
@@ -225,7 +233,9 @@ export async function handleGetApplicationById(req: Request, appId: string): Pro
     throw new NotFoundError(`Application with ID ${appId} not found.`);
   }
 
-  const isRoleAdmin = String(user.role).toUpperCase() === "ADMIN" || String(user.role).toUpperCase() === "SUPER_ADMIN";
+  const isRoleAdmin =
+    String(user.role).toUpperCase() === "ADMIN" ||
+    String(user.role).toUpperCase() === "SUPER_ADMIN";
 
   if (user.role === "APPLICANT" && application.applicantId !== user.id) {
     throw new ForbiddenError("You are not authorized to view this application.");
@@ -250,10 +260,7 @@ export async function handleGetApplicationById(req: Request, appId: string): Pro
  * - Returns 400 for invalid stage or malformed ID
  * - Persists updated stage and status to MongoDB
  */
-export async function handleUpdateApplicationStage(
-  req: Request,
-  appId: string,
-): Promise<Response> {
+export async function handleUpdateApplicationStage(req: Request, appId: string): Promise<Response> {
   const user = await authenticate(req);
   const isRecruiterOrAdmin =
     user.role === "RECRUITER" ||
@@ -331,9 +338,16 @@ export async function handleUpdateApplicationStage(
     );
   }
 
-  const updated = await applicationRepository.updateStage(
+  const rawReason = (body as { reason?: unknown }).reason;
+  const reason = rawReason ? String(rawReason).trim() : undefined;
+
+  const updated = await applicationRepository.recordStageTransition(
     trimmedId,
     trimmedStage as any,
+    user.id,
+    user.name,
+    reason,
+    isRoleAdmin,
   );
 
   if (!updated) {
@@ -364,6 +378,7 @@ export async function handleUpdateApplicationStage(
       application: updated,
       stage: updated.currentStage,
       status: updated.status,
+      stageHistory: updated.stageHistory,
     },
     `Application stage updated to ${trimmedStage} successfully.`,
   );
@@ -436,6 +451,411 @@ export async function handleUpdateApplicationStatus(
 }
 
 /**
+ * Handle POST /api/applications/:id/notes
+ * Add internal recruiter note
+ */
+export async function handleAddApplicationNote(req: Request, appId: string): Promise<Response> {
+  const user = await authenticate(req);
+  const isStaff =
+    user.role === "RECRUITER" ||
+    user.role === "ADMIN" ||
+    user.role === "SUPER_ADMIN" ||
+    user.role === "HIRING_MANAGER";
+
+  if (!isStaff) {
+    throw new ForbiddenError("Only recruiters and staff are authorized to add internal candidate notes.");
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    throw new ValidationError("Invalid JSON payload");
+  }
+
+  const raw = body as { content?: unknown; text?: unknown };
+  const content = (typeof raw.content === "string" ? raw.content : typeof raw.text === "string" ? raw.text : "").trim();
+  if (!content) {
+    throw new ValidationError("Note content is required.");
+  }
+
+  if (content.length > 2000) {
+    throw new ValidationError("Note content must not exceed 2000 characters.");
+  }
+
+  const updated = await applicationRepository.addNote(appId, {
+    content,
+    authorId: user.id,
+    authorName: user.name,
+    authorRole: user.role,
+  });
+
+  if (!updated) {
+    throw new NotFoundError(`Application with ID ${appId} not found.`);
+  }
+
+  const newNote = updated.notesList ? updated.notesList[updated.notesList.length - 1] : null;
+
+  return successResponse(
+    {
+      application: updated,
+      note: newNote,
+      authorName: newNote?.authorName,
+      authorRole: newNote?.authorRole,
+      content: newNote?.content,
+      text: newNote?.content,
+      createdAt: newNote?.createdAt,
+      id: newNote?.id,
+    },
+    "Internal note recorded successfully.",
+    201,
+  );
+}
+
+/**
+ * Handle GET /api/applications/:id/notes
+ */
+export async function handleGetApplicationNotes(req: Request, appId: string): Promise<Response> {
+  const user = await authenticate(req);
+  const isStaff =
+    user.role === "RECRUITER" ||
+    user.role === "ADMIN" ||
+    user.role === "SUPER_ADMIN" ||
+    user.role === "HIRING_MANAGER";
+
+  if (!isStaff) {
+    throw new ForbiddenError("Only recruiters and staff are authorized to view internal notes.");
+  }
+
+  const application = await applicationRepository.findById(appId);
+  if (!application) {
+    throw new NotFoundError(`Application with ID ${appId} not found.`);
+  }
+
+  return successResponse(
+    { notes: application.notesList || [] },
+    "Application notes retrieved successfully.",
+  );
+}
+
+/**
+ * Handle POST /api/applications/:id/feedback
+ * Submit structured interview / recruiter feedback
+ */
+export async function handleAddApplicationFeedback(req: Request, appId: string): Promise<Response> {
+  const user = await authenticate(req);
+  const isStaff =
+    user.role === "RECRUITER" ||
+    user.role === "ADMIN" ||
+    user.role === "SUPER_ADMIN" ||
+    user.role === "HIRING_MANAGER";
+
+  if (!isStaff) {
+    throw new ForbiddenError("Only recruiters and hiring managers are authorized to record feedback.");
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    throw new ValidationError("Invalid JSON payload");
+  }
+
+  interface AddFeedbackPayload {
+    recommendation?: string;
+    overallRecommendation?: string;
+    comments?: string;
+    notes?: string;
+    rating?: number;
+    technicalRating?: number;
+    communicationRating?: number;
+    strengths?: string[] | string;
+    weaknesses?: string[] | string;
+    concerns?: string[] | string;
+  }
+
+  const raw = (body || {}) as AddFeedbackPayload;
+  const recommendation = (
+    typeof raw.recommendation === "string"
+      ? raw.recommendation
+      : typeof raw.overallRecommendation === "string"
+        ? raw.overallRecommendation
+        : ""
+  ).trim();
+
+  if (!recommendation) {
+    throw new ValidationError("Recommendation is required (e.g., 'Strong Hire', 'Hire', 'Hold', 'Reject').");
+  }
+
+  const comments = (
+    typeof raw.comments === "string"
+      ? raw.comments
+      : typeof raw.notes === "string"
+        ? raw.notes
+        : ""
+  ).trim();
+
+  const updated = await applicationRepository.addRecruiterFeedback(appId, {
+    reviewerId: user.id,
+    reviewerName: user.name,
+    rating: typeof raw.rating === "number" ? raw.rating : undefined,
+    technicalRating: typeof raw.technicalRating === "number" ? raw.technicalRating : undefined,
+    communicationRating: typeof raw.communicationRating === "number" ? raw.communicationRating : undefined,
+    strengths: raw.strengths,
+    weaknesses: raw.weaknesses || raw.concerns,
+    recommendation,
+    comments,
+  });
+
+  if (!updated) {
+    throw new NotFoundError(`Application with ID ${appId} not found.`);
+  }
+
+  const newFeedback = updated.recruiterFeedback ? updated.recruiterFeedback[updated.recruiterFeedback.length - 1] : null;
+
+  return successResponse(
+    {
+      application: updated,
+      feedback: newFeedback,
+      rating: newFeedback?.rating,
+      overallRecommendation: newFeedback?.recommendation,
+      recommendation: newFeedback?.recommendation,
+      reviewerName: newFeedback?.reviewerName,
+      createdAt: newFeedback?.createdAt,
+    },
+    "Recruiter feedback recorded successfully.",
+    201,
+  );
+}
+
+/**
+ * Handle GET /api/applications/:id/feedback
+ */
+export async function handleGetApplicationFeedback(req: Request, appId: string): Promise<Response> {
+  const user = await authenticate(req);
+  const isStaff =
+    user.role === "RECRUITER" ||
+    user.role === "ADMIN" ||
+    user.role === "SUPER_ADMIN" ||
+    user.role === "HIRING_MANAGER";
+
+  if (!isStaff) {
+    throw new ForbiddenError("Only staff are authorized to view feedback.");
+  }
+
+  const application = await applicationRepository.findById(appId);
+  if (!application) {
+    throw new NotFoundError(`Application with ID ${appId} not found.`);
+  }
+
+  return successResponse(
+    { feedback: application.recruiterFeedback || [] },
+    "Recruiter feedback retrieved successfully.",
+  );
+}
+
+/**
+ * Handle POST /api/recruiter/applications/bulk
+ * Perform bulk operations (STAGE_CHANGE, ADD_NOTE, ARCHIVE)
+ */
+export async function handleBulkApplicationsAction(req: Request): Promise<Response> {
+  const user = await authenticate(req);
+  const isStaff =
+    user.role === "RECRUITER" ||
+    user.role === "ADMIN" ||
+    user.role === "SUPER_ADMIN" ||
+    user.role === "HIRING_MANAGER";
+
+  if (!isStaff) {
+    throw new ForbiddenError("Only recruiters and staff can execute bulk actions.");
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    throw new ValidationError("Invalid JSON payload");
+  }
+
+  const raw = body as {
+    applicationIds?: unknown;
+    action?: unknown;
+    stage?: unknown;
+    note?: unknown;
+    reason?: unknown;
+    data?: { stage?: unknown; note?: unknown; reason?: unknown };
+  };
+
+  if (!Array.isArray(raw.applicationIds) || raw.applicationIds.length === 0) {
+    throw new ValidationError("Field 'applicationIds' must be a non-empty array of application IDs.");
+  }
+
+  if (raw.applicationIds.length > 100) {
+    throw new ValidationError("Batch size exceeds maximum limit of 100 applications.");
+  }
+
+  const appIds = raw.applicationIds.filter((id) => typeof id === "string" && id.trim()) as string[];
+  const actionStr = String(raw.action || "").toUpperCase();
+
+  if (actionStr === "STAGE_CHANGE" || actionStr === "UPDATE_STAGE") {
+    const stage = (raw.stage || raw.data?.stage) as string | undefined;
+    if (typeof stage !== "string" || !stage.trim()) {
+      throw new ValidationError("Target 'stage' is required for stage change action.");
+    }
+    const result = await applicationRepository.bulkUpdateStage(
+      appIds,
+      stage.trim().toUpperCase() as any,
+      user.id,
+      user.name,
+    );
+    return successResponse(
+      {
+        action: actionStr,
+        ...result,
+        successCount: result.succeeded,
+        failureCount: result.failed,
+      },
+      "Bulk stage change processed.",
+    );
+  }
+
+  if (actionStr === "ADD_NOTE") {
+    const note = (raw.note || raw.data?.note) as string | undefined;
+    if (typeof note !== "string" || !note.trim()) {
+      throw new ValidationError("Note content is required for ADD_NOTE action.");
+    }
+    const result = await applicationRepository.bulkAddNote(
+      appIds,
+      note.trim(),
+      user.id,
+      user.name,
+    );
+    return successResponse(
+      {
+        action: actionStr,
+        ...result,
+        successCount: result.succeeded,
+        failureCount: result.failed,
+      },
+      "Bulk note addition processed.",
+    );
+  }
+
+  throw new ValidationError(`Unsupported bulk action: ${raw.action}`);
+}
+
+/**
+ * Helper to escape CSV cells and protect against CSV formula injection
+ */
+function escapeCsvCell(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  let str = String(value);
+  // Mitigate CSV Formula Injection:
+  // If the cell starts with =, +, -, @, tab (\t), or carriage return (\r)
+  // prepend a single quote (') so spreadsheet engines treat it strictly as raw text.
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`;
+  }
+  if (str.includes(",") || str.includes('"') || str.includes("\n") || str.includes("\r")) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+/**
+ * Handle GET /api/recruiter/export/candidates
+ * Export candidate recruitment data to CSV with formula injection protection
+ */
+export async function handleExportCandidatesCsv(req: Request): Promise<Response> {
+  const user = await authenticate(req);
+  const isStaff =
+    user.role === "RECRUITER" ||
+    user.role === "ADMIN" ||
+    user.role === "SUPER_ADMIN" ||
+    user.role === "HIRING_MANAGER";
+
+  if (!isStaff) {
+    throw new ForbiddenError("Only recruiters and staff are authorized to export candidate data.");
+  }
+
+  const url = new URL(req.url);
+  const searchParams = url.searchParams;
+
+  const jobId = searchParams.get("jobId")?.trim();
+  const search = searchParams.get("search")?.trim();
+  const stage = searchParams.get("stage")?.trim();
+  const status = searchParams.get("status")?.trim();
+  const idsParam = searchParams.get("ids")?.trim();
+
+  const recruiterId =
+    user.role === "ADMIN" || user.role === "SUPER_ADMIN" ? undefined : user.id;
+
+  let applications: any[] = [];
+  if (idsParam) {
+    const ids = idsParam.split(",").map((s) => s.trim()).filter(Boolean);
+    const results = await Promise.all(ids.map((id) => applicationRepository.findById(id)));
+    applications = results.filter(Boolean) as any[];
+  } else {
+    const res = await applicationRepository.findAll({
+      limit: 1000,
+      recruiterId,
+      jobId: jobId || undefined,
+      search: search || undefined,
+      stage: stage || undefined,
+      status: status || undefined,
+    });
+    applications = res.applications;
+  }
+
+  // Build CSV content
+  const headers = [
+    "Application ID",
+    "Candidate Name",
+    "Candidate Email",
+    "Candidate Headline",
+    "Candidate Phone",
+    "Job Title",
+    "Recruitment Stage",
+    "Status",
+    "AI Match Score",
+    "Applied Date",
+  ];
+
+  const rows: string[] = [];
+  rows.push(headers.map(escapeCsvCell).join(","));
+
+  for (const app of applications) {
+    const row = [
+      app.id,
+      app.applicantName || app.applicant?.name || "Candidate",
+      app.applicantEmail || app.applicant?.email || "",
+      app.applicant?.headline || app.applicantHeadline || "",
+      app.applicant?.phone || "",
+      app.jobTitle || app.job?.title || "Position",
+      app.currentStage || "APPLIED",
+      app.status || "APPLIED",
+      app.aiScore !== undefined ? `${app.aiScore}%` : "N/A",
+      app.appliedAt ? new Date(app.appliedAt).toISOString().slice(0, 10) : "",
+    ];
+    rows.push(row.map(escapeCsvCell).join(","));
+  }
+
+  const csvOutput = rows.join("\r\n");
+  const filename = `talenttrack_candidates_${new Date().toISOString().slice(0, 10)}.csv`;
+
+  return new Response(csvOutput, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+    },
+  });
+}
+
+/**
  * Universal dispatcher for /api/applications/* and /api/recruiter/applications
  */
 export async function handleApplicationApiRequest(req: Request): Promise<Response | null> {
@@ -463,7 +883,39 @@ export async function handleApplicationApiRequest(req: Request): Promise<Respons
       return await handleCreateApplication(req);
     }
 
-    // 5. Match /api/recruiter/applications/:id/stage
+    // 5. Bulk actions: POST /api/recruiter/applications/bulk or POST /api/applications/bulk
+    if (
+      (pathname === "/api/recruiter/applications/bulk" || pathname === "/api/applications/bulk") &&
+      req.method === "POST"
+    ) {
+      return await handleBulkApplicationsAction(req);
+    }
+
+    // 6. CSV Export: GET /api/recruiter/export/candidates or /api/applications/export
+    if (
+      (pathname === "/api/recruiter/export/candidates" ||
+        pathname === "/api/applications/export" ||
+        pathname === "/api/export/candidates") &&
+      (req.method === "GET" || req.method === "POST")
+    ) {
+      return await handleExportCandidatesCsv(req);
+    }
+
+    // 7. Match /api/applications/:id/notes
+    const notesMatch = pathname.match(/^\/api\/applications\/([a-zA-Z0-9_-]+)\/notes$/);
+    if (notesMatch && notesMatch[1]) {
+      if (req.method === "POST") return await handleAddApplicationNote(req, notesMatch[1]);
+      if (req.method === "GET") return await handleGetApplicationNotes(req, notesMatch[1]);
+    }
+
+    // 8. Match /api/applications/:id/feedback
+    const feedbackMatch = pathname.match(/^\/api\/applications\/([a-zA-Z0-9_-]+)\/feedback$/);
+    if (feedbackMatch && feedbackMatch[1]) {
+      if (req.method === "POST") return await handleAddApplicationFeedback(req, feedbackMatch[1]);
+      if (req.method === "GET") return await handleGetApplicationFeedback(req, feedbackMatch[1]);
+    }
+
+    // 9. Match /api/recruiter/applications/:id/stage
     const recruiterStageMatch = pathname.match(
       /^\/api\/recruiter\/applications\/([a-zA-Z0-9_-]+)\/stage$/,
     );
@@ -473,20 +925,16 @@ export async function handleApplicationApiRequest(req: Request): Promise<Respons
       }
     }
 
-    // 6. Match /api/applications/:id/stage
-    const appStageMatch = pathname.match(
-      /^\/api\/applications\/([a-zA-Z0-9_-]+)\/stage$/,
-    );
+    // 10. Match /api/applications/:id/stage
+    const appStageMatch = pathname.match(/^\/api\/applications\/([a-zA-Z0-9_-]+)\/stage$/);
     if (appStageMatch && appStageMatch[1]) {
       if (req.method === "PATCH" || req.method === "PUT") {
         return await handleUpdateApplicationStage(req, appStageMatch[1]);
       }
     }
 
-    // 7. Match /api/recruiter/applications/:id
-    const recruiterAppMatch = pathname.match(
-      /^\/api\/recruiter\/applications\/([a-zA-Z0-9_-]+)$/,
-    );
+    // 11. Match /api/recruiter/applications/:id
+    const recruiterAppMatch = pathname.match(/^\/api\/recruiter\/applications\/([a-zA-Z0-9_-]+)$/);
     if (recruiterAppMatch && recruiterAppMatch[1]) {
       const appId = recruiterAppMatch[1];
       if (req.method === "GET") {
@@ -497,7 +945,7 @@ export async function handleApplicationApiRequest(req: Request): Promise<Respons
       }
     }
 
-    // 8. Match /api/applications/:id
+    // 12. Match /api/applications/:id
     const match = pathname.match(/^\/api\/applications\/([a-zA-Z0-9_-]+)$/);
     if (match && match[1]) {
       const appId = match[1];

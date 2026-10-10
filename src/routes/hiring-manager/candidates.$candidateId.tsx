@@ -38,7 +38,10 @@ export const Route = createFileRoute("/hiring-manager/candidates/$candidateId")(
   head: () => ({
     meta: [
       { title: "Candidate Evaluation — Hiring Manager" },
-      { name: "description", content: "Review candidate profile, resume ATS score, and submit feedback." },
+      {
+        name: "description",
+        content: "Review candidate profile, resume ATS score, and submit feedback.",
+      },
     ],
   }),
   component: HiringManagerCandidateDetailPage,
@@ -84,7 +87,9 @@ function HiringManagerCandidateDetailPage() {
           </Link>
           <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-6 text-center space-y-2">
             <AlertCircle className="size-8 text-destructive mx-auto" />
-            <h2 className="text-base font-bold text-destructive">Candidate Not Found or Access Denied</h2>
+            <h2 className="text-base font-bold text-destructive">
+              Candidate Not Found or Access Denied
+            </h2>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
               This candidate may not belong to one of your assigned job openings, or does not exist.
             </p>
@@ -171,13 +176,15 @@ function HiringManagerCandidateDetailPage() {
                     Stage: {application.stage}
                   </span>
 
-                  {(application.hiringDecision?.status === "APPROVED" || (application.hiringDecision as any) === "APPROVED") && (
+                  {(application.hiringDecision?.status === "APPROVED" ||
+                    (application.hiringDecision as any) === "APPROVED") && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                       <CheckCircle2 className="size-3.5" /> Manager Approved
                     </span>
                   )}
 
-                  {(application.hiringDecision?.status === "REJECTED" || (application.hiringDecision as any) === "REJECTED") && (
+                  {(application.hiringDecision?.status === "REJECTED" ||
+                    (application.hiringDecision as any) === "REJECTED") && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
                       <XCircle className="size-3.5" /> Manager Rejected
                     </span>
@@ -185,7 +192,8 @@ function HiringManagerCandidateDetailPage() {
                 </div>
 
                 <p className="text-xs text-muted-foreground font-medium">
-                  Applying for <strong className="text-foreground">{job.title}</strong> • {job.department}
+                  Applying for <strong className="text-foreground">{job.title}</strong> •{" "}
+                  {job.department}
                 </p>
 
                 <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap pt-1">
@@ -245,7 +253,9 @@ function HiringManagerCandidateDetailPage() {
                 {atsAnalysis.scoreBreakdown && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="p-3 rounded-xl bg-muted/40 border border-border text-center">
-                      <div className="text-xs font-semibold text-muted-foreground">Skills Match</div>
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        Skills Match
+                      </div>
                       <div className="text-lg font-black text-foreground mt-0.5">
                         {atsAnalysis.scoreBreakdown.skillsMatch || 0}%
                       </div>
@@ -263,7 +273,9 @@ function HiringManagerCandidateDetailPage() {
                       </div>
                     </div>
                     <div className="p-3 rounded-xl bg-muted/40 border border-border text-center">
-                      <div className="text-xs font-semibold text-muted-foreground">Completeness</div>
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        Completeness
+                      </div>
                       <div className="text-lg font-black text-foreground mt-0.5">
                         {atsAnalysis.scoreBreakdown.formattingAndCompleteness || 0}%
                       </div>
@@ -273,7 +285,9 @@ function HiringManagerCandidateDetailPage() {
 
                 {atsAnalysis.semanticInsights && (
                   <div className="p-4 rounded-xl bg-surface-blue/50 border border-brand-blue/20 text-xs text-foreground space-y-1">
-                    <span className="font-bold text-brand-blue block">Gemini AI Semantic Evaluation:</span>
+                    <span className="font-bold text-brand-blue block">
+                      Gemini AI Semantic Evaluation:
+                    </span>
                     <p className="leading-relaxed">{atsAnalysis.semanticInsights}</p>
                   </div>
                 )}
@@ -319,7 +333,8 @@ function HiringManagerCandidateDetailPage() {
               </h2>
 
               {/* Skills */}
-              {(candidate.skills?.length > 0 || (parsedProfile?.skills && parsedProfile.skills.length > 0)) && (
+              {(candidate.skills?.length > 0 ||
+                (parsedProfile?.skills && parsedProfile.skills.length > 0)) && (
                 <div className="space-y-2">
                   <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
                     Core Technical Skills
@@ -345,7 +360,10 @@ function HiringManagerCandidateDetailPage() {
                   </h3>
                   <div className="space-y-3">
                     {parsedProfile.workHistory.map((work, idx) => (
-                      <div key={idx} className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
+                      <div
+                        key={idx}
+                        className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1"
+                      >
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <h4 className="text-xs font-bold text-foreground">{work.title}</h4>
                           <span className="text-[11px] text-muted-foreground">{work.duration}</span>
@@ -370,12 +388,17 @@ function HiringManagerCandidateDetailPage() {
                   </h3>
                   <div className="space-y-2">
                     {parsedProfile.education.map((edu, idx) => (
-                      <div key={idx} className="p-3 rounded-xl border border-border bg-muted/20 flex items-center justify-between">
+                      <div
+                        key={idx}
+                        className="p-3 rounded-xl border border-border bg-muted/20 flex items-center justify-between"
+                      >
                         <div>
                           <div className="text-xs font-bold text-foreground">{edu.degree}</div>
                           <div className="text-xs text-muted-foreground">{edu.institution}</div>
                         </div>
-                        {edu.year && <span className="text-xs text-muted-foreground">{edu.year}</span>}
+                        {edu.year && (
+                          <span className="text-xs text-muted-foreground">{edu.year}</span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -390,7 +413,10 @@ function HiringManagerCandidateDetailPage() {
                   </h3>
                   <div className="space-y-2">
                     {parsedProfile.projects.map((proj, idx) => (
-                      <div key={idx} className="p-3 rounded-xl border border-border bg-muted/20 space-y-1">
+                      <div
+                        key={idx}
+                        className="p-3 rounded-xl border border-border bg-muted/20 space-y-1"
+                      >
                         <div className="text-xs font-bold text-foreground">{proj.name}</div>
                         {proj.description && (
                           <p className="text-xs text-muted-foreground leading-relaxed">
@@ -434,7 +460,10 @@ function HiringManagerCandidateDetailPage() {
               ) : (
                 <div className="space-y-3">
                   {feedbackList.map((fb, idx) => (
-                    <div key={idx} className="p-4 rounded-xl border border-border bg-muted/20 space-y-2.5">
+                    <div
+                      key={idx}
+                      className="p-4 rounded-xl border border-border bg-muted/20 space-y-2.5"
+                    >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-foreground">
                           {fb.hiringManagerName || (fb as any).managerName || "Hiring Manager"}
@@ -458,14 +487,18 @@ function HiringManagerCandidateDetailPage() {
                         </span>
                       </div>
 
-                      <p className="text-xs text-foreground leading-relaxed">{fb.overallFeedback}</p>
+                      <p className="text-xs text-foreground leading-relaxed">
+                        {fb.overallFeedback}
+                      </p>
 
                       {/* Ratings */}
                       <div className="grid grid-cols-2 gap-2 pt-1 text-[11px] text-muted-foreground border-t border-border/50">
                         {fb.technicalSkillsRating && <div>Tech: {fb.technicalSkillsRating}/5</div>}
                         {fb.communicationRating && <div>Comm: {fb.communicationRating}/5</div>}
                         {(fb.experienceRating || (fb as any).experienceRelevanceRating) && (
-                          <div>Exp: {fb.experienceRating || (fb as any).experienceRelevanceRating}/5</div>
+                          <div>
+                            Exp: {fb.experienceRating || (fb as any).experienceRelevanceRating}/5
+                          </div>
                         )}
                         {fb.roleFitRating && <div>Fit: {fb.roleFitRating}/5</div>}
                       </div>
@@ -484,17 +517,20 @@ function HiringManagerCandidateDetailPage() {
                 </h2>
                 <div className="space-y-2.5">
                   {interviews.map((iv) => (
-                    <div key={iv.id} className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1">
+                    <div
+                      key={iv.id}
+                      className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-1"
+                    >
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-foreground">{iv.title}</span>
-                        <span className="text-[10px] font-semibold text-brand-blue">{iv.status}</span>
+                        <span className="text-[10px] font-semibold text-brand-blue">
+                          {iv.status}
+                        </span>
                       </div>
                       <div className="text-[11px] text-muted-foreground">
                         Interviewer: {iv.interviewer} • {new Date(iv.date).toLocaleDateString()}
                       </div>
-                      {iv.feedback && (
-                        <p className="text-xs text-foreground pt-1">{iv.feedback}</p>
-                      )}
+                      {iv.feedback && <p className="text-xs text-foreground pt-1">{iv.feedback}</p>}
                     </div>
                   ))}
                 </div>

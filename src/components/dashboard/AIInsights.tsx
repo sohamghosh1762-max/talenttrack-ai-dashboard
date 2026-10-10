@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Sparkles, ArrowRight } from "lucide-react";
+import { Bot, Sparkles, ArrowRight, Lightbulb, CheckCircle2, FileSearch } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
   Dialog,
@@ -11,10 +11,56 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { aiInsightsData, type AIInsightItem } from "@/data/mockData";
+import { useRecruiterAnalytics } from "@/hooks/api/useAnalytics";
+
+interface DynamicInsightItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: typeof Sparkles;
+  bgClass: string;
+  toneClass: string;
+}
 
 export function AIInsights() {
-  const [selectedInsight, setSelectedInsight] = useState<AIInsightItem | null>(null);
+  const { data: analytics, isLoading } = useRecruiterAnalytics();
+  const [selectedInsight, setSelectedInsight] = useState<DynamicInsightItem | null>(null);
+
+  const aiData = analytics?.aiInsights;
+  const kpis = analytics?.kpis;
+
+  const dynamicInsights: DynamicInsightItem[] = [
+    {
+      id: "insight-match-score",
+      title: "Candidate Match Health",
+      description: aiData?.avgScore
+        ? `Candidates in your pipeline average an AI match score of ${aiData.avgScore}%, indicating a high-quality applicant pool.`
+        : "Initial ATS resume scoring active across submitted candidate applications.",
+      icon: Sparkles,
+      bgClass: "bg-surface-blue",
+      toneClass: "text-brand-blue",
+    },
+    {
+      id: "insight-top-matches",
+      title: "Strong Fits Ready for Review",
+      description: aiData?.topMatchesCount
+        ? `${aiData.topMatchesCount} candidates scored 80%+ match rate for their respective job descriptions and are ready for screening.`
+        : "AI resume analysis is evaluating incoming candidate profiles against active job criteria.",
+      icon: CheckCircle2,
+      bgClass: "bg-surface-green",
+      toneClass: "text-brand-green",
+    },
+    {
+      id: "insight-funnel-action",
+      title: "Pipeline Velocity",
+      description: kpis?.candidatesAwaitingReview
+        ? `${kpis.candidatesAwaitingReview} candidates are currently awaiting initial screening review. Consider advancing or scheduling interviews.`
+        : "Recruitment funnel is operating smoothly with stage transitions synchronized.",
+      icon: Lightbulb,
+      bgClass: "bg-surface-purple",
+      toneClass: "text-brand-purple",
+    },
+  ];
 
   return (
     <>
@@ -33,27 +79,33 @@ export function AIInsights() {
         </div>
 
         <div className="flex-1 divide-y divide-border/60 px-3 overflow-y-auto">
-          {aiInsightsData.map((item) => {
-            const { id, icon: InsightIcon, description, toneClass, bgClass } = item;
+          {isLoading ? (
+            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
+              Analyzing recruitment patterns...
+            </div>
+          ) : (
+            dynamicInsights.map((item) => {
+              const { id, icon: InsightIcon, description, toneClass, bgClass } = item;
 
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setSelectedInsight(item)}
-                className="group grid w-full grid-cols-[34px_minmax(0,1fr)] items-start gap-3 py-3 text-left transition-colors hover:bg-muted/40 rounded-lg px-1.5 focus:outline-none focus:ring-1 focus:ring-brand-blue/30"
-              >
-                <span
-                  className={`grid size-8 place-items-center rounded-lg shadow-2xs shrink-0 ${bgClass} ${toneClass}`}
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setSelectedInsight(item)}
+                  className="group grid w-full grid-cols-[34px_minmax(0,1fr)] items-start gap-3 py-3 text-left transition-colors hover:bg-muted/40 rounded-lg px-1.5 focus:outline-none focus:ring-1 focus:ring-brand-blue/30"
                 >
-                  <InsightIcon className="size-4.5" />
-                </span>
-                <span className="text-[11.5px] leading-relaxed text-foreground/90 font-medium group-hover:text-foreground">
-                  {description}
-                </span>
-              </button>
-            );
-          })}
+                  <span
+                    className={`grid size-8 place-items-center rounded-lg shadow-2xs shrink-0 ${bgClass} ${toneClass}`}
+                  >
+                    <InsightIcon className="size-4.5" />
+                  </span>
+                  <span className="text-[11.5px] leading-relaxed text-foreground/90 font-medium group-hover:text-foreground">
+                    {description}
+                  </span>
+                </button>
+              );
+            })
+          )}
         </div>
       </section>
 

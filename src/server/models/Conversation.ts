@@ -61,7 +61,11 @@ const ConversationSchema = new Schema<IConversationDocument>(
             typeof p === "object" && p && "_id" in p ? p._id.toString() : p.toString(),
           );
         }
-        if (ret["applicationId"] && typeof ret["applicationId"] === "object" && "_id" in ret["applicationId"]) {
+        if (
+          ret["applicationId"] &&
+          typeof ret["applicationId"] === "object" &&
+          "_id" in ret["applicationId"]
+        ) {
           ret["applicationId"] = ret["applicationId"]._id.toString();
         } else if (ret["applicationId"]) {
           ret["applicationId"] = ret["applicationId"].toString();
@@ -91,7 +95,11 @@ const ConversationSchema = new Schema<IConversationDocument>(
             typeof p === "object" && p && "_id" in p ? p._id.toString() : p.toString(),
           );
         }
-        if (ret["applicationId"] && typeof ret["applicationId"] === "object" && "_id" in ret["applicationId"]) {
+        if (
+          ret["applicationId"] &&
+          typeof ret["applicationId"] === "object" &&
+          "_id" in ret["applicationId"]
+        ) {
           ret["applicationId"] = ret["applicationId"]._id.toString();
         } else if (ret["applicationId"]) {
           ret["applicationId"] = ret["applicationId"].toString();

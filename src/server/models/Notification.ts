@@ -80,7 +80,11 @@ const NotificationSchema = new Schema<INotificationDocument>(
         } else if (ret["userId"]) {
           ret["userId"] = ret["userId"].toString();
         }
-        if (ret["applicationId"] && typeof ret["applicationId"] === "object" && "_id" in ret["applicationId"]) {
+        if (
+          ret["applicationId"] &&
+          typeof ret["applicationId"] === "object" &&
+          "_id" in ret["applicationId"]
+        ) {
           ret["applicationId"] = ret["applicationId"]._id.toString();
         } else if (ret["applicationId"]) {
           ret["applicationId"] = ret["applicationId"].toString();
@@ -90,12 +94,20 @@ const NotificationSchema = new Schema<INotificationDocument>(
         } else if (ret["jobId"]) {
           ret["jobId"] = ret["jobId"].toString();
         }
-        if (ret["interviewId"] && typeof ret["interviewId"] === "object" && "_id" in ret["interviewId"]) {
+        if (
+          ret["interviewId"] &&
+          typeof ret["interviewId"] === "object" &&
+          "_id" in ret["interviewId"]
+        ) {
           ret["interviewId"] = ret["interviewId"]._id.toString();
         } else if (ret["interviewId"]) {
           ret["interviewId"] = ret["interviewId"].toString();
         }
-        if (ret["conversationId"] && typeof ret["conversationId"] === "object" && "_id" in ret["conversationId"]) {
+        if (
+          ret["conversationId"] &&
+          typeof ret["conversationId"] === "object" &&
+          "_id" in ret["conversationId"]
+        ) {
           ret["conversationId"] = ret["conversationId"]._id.toString();
         } else if (ret["conversationId"]) {
           ret["conversationId"] = ret["conversationId"].toString();

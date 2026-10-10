@@ -20,6 +20,14 @@ interface DashboardViewProps {
 
 export function DashboardView({ searchQuery = "" }: DashboardViewProps) {
   const [postJobOpen, setPostJobOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<string>("30d");
+
+  const todayStr = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
   return (
     <div className="space-y-4">
@@ -34,16 +42,27 @@ export function DashboardView({ searchQuery = "" }: DashboardViewProps) {
             <Hand className="size-6 shrink-0 rotate-[-18deg] text-brand-orange animate-bounce" />
           </h1>
           <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            Here's what's happening with your hiring process today.
+            Here's what's happening with your recruitment pipeline today.
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="hidden text-xs font-medium text-muted-foreground md:inline-block">
-            Monday, 15 Sep 2025
+        <div className="flex items-center gap-3 flex-wrap">
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            className="h-9 rounded-md border border-input bg-card px-2.5 text-xs text-foreground outline-none focus:border-brand-blue cursor-pointer"
+            aria-label="Select Analytics Date Range"
+          >
+            <option value="7d">Last 7 Days</option>
+            <option value="30d">Last 30 Days</option>
+            <option value="90d">Last 90 Days</option>
+            <option value="all">All Time</option>
+          </select>
+          <span className="hidden text-xs font-medium text-muted-foreground lg:inline-block">
+            {todayStr}
           </span>
           <Button
-            className="h-10 px-4 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground font-semibold text-xs gap-1.5 shadow-sm transition-transform active:scale-[0.98]"
+            className="h-9 px-4 bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground font-semibold text-xs gap-1.5 shadow-sm transition-transform active:scale-[0.98]"
             onClick={() => setPostJobOpen(true)}
           >
             <Plus className="size-4 font-bold" />
@@ -53,11 +72,11 @@ export function DashboardView({ searchQuery = "" }: DashboardViewProps) {
       </section>
 
       {/* 2. KPI Cards Row */}
-      <KPIStats />
+      <KPIStats dateRange={dateRange} />
 
       {/* 3. Analytics Row */}
       <div className="grid gap-3.5 xl:grid-cols-[1.56fr_1.12fr_.98fr]">
-        <ApplicationOverview />
+        <ApplicationOverview dateRange={dateRange} />
         <TopSkills />
         <AIInsights />
       </div>
@@ -70,7 +89,7 @@ export function DashboardView({ searchQuery = "" }: DashboardViewProps) {
 
       {/* 5. Hiring Pipeline & Quick Actions */}
       <div className="grid gap-3.5 xl:grid-cols-[1.36fr_1fr]">
-        <HiringPipeline />
+        <HiringPipeline dateRange={dateRange} />
         <QuickActions onPostJobClick={() => setPostJobOpen(true)} />
       </div>
 

@@ -1,12 +1,52 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../../lib/api/index.ts";
 
+export interface CandidateItem {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  headline: string;
+  location: string;
+  phone?: string;
+  skills: string[];
+  experience: string;
+  initials: string;
+  score: number;
+  job: string;
+  jobId?: string;
+  status: string;
+  currentStage: string;
+  appliedDate: string;
+  resumeId?: string;
+  createdAt: string;
+}
+
+export interface CandidatesResponse {
+  candidates: CandidateItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
 export interface CandidateQueryFilters {
-  search?: string;
-  status?: string;
-  stage?: string;
-  page?: number;
-  limit?: number;
+  search?: string | undefined;
+  skill?: string | undefined;
+  location?: string | undefined;
+  status?: string | undefined;
+  stage?: string | undefined;
+  jobId?: string | undefined;
+  minScore?: number | undefined;
+  maxScore?: number | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
+  sortBy?: string | undefined;
+  sortOrder?: "asc" | "desc" | undefined;
 }
 
 export const candidateKeys = {
@@ -18,19 +58,39 @@ export const candidateKeys = {
 };
 
 /**
- * Standard TanStack Query pattern for Candidates API (Phase 4 Foundation)
+ * TanStack Query hook for Candidates API
  */
 export function useCandidates(
   filters: CandidateQueryFilters = {},
   options: { enabled?: boolean } = {},
 ) {
-  return useQuery({
+  return useQuery<CandidatesResponse>({
     queryKey: candidateKeys.list(filters),
-    queryFn: () =>
-      apiClient.get<unknown>("/api/candidates", {
+    queryFn: async () => {
+      const res = await apiClient.get<CandidatesResponse>("/api/candidates", {
         params: filters as Record<string, string | number>,
-      }),
-    enabled: options.enabled ?? false,
-    staleTime: 60_000,
+      });
+      return res;
+    },
+    enabled: options.enabled ?? true,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * TanStack Query hook for Single Candidate Details API
+ */
+export function useCandidate(
+  id: string | null | undefined,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery<any>({
+    queryKey: candidateKeys.detail(id || ""),
+    queryFn: async () => {
+      if (!id) throw new Error("Candidate ID is required");
+      return apiClient.get<any>(`/api/candidates/${id}`);
+    },
+    enabled: Boolean(id) && (options.enabled ?? true),
+    staleTime: 30_000,
   });
 }

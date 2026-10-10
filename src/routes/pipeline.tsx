@@ -38,7 +38,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CandidateDetailModal, type CandidateModalData } from "@/components/dashboard/CandidateDetailModal";
+import {
+  CandidateDetailModal,
+  type CandidateModalData,
+} from "@/components/dashboard/CandidateDetailModal";
 import { useRecruiterApplications, useUpdateApplicationStage } from "@/hooks/api/useApplications";
 import type { IApplication } from "@/server/types/application-types";
 import { toast } from "sonner";
@@ -47,7 +50,10 @@ export const Route = createFileRoute("/pipeline")({
   head: () => ({
     meta: [
       { title: "Hiring Pipeline — TalentTrack AI" },
-      { name: "description", content: "Track and manage candidates through your hiring pipeline stages." },
+      {
+        name: "description",
+        content: "Track and manage candidates through your hiring pipeline stages.",
+      },
     ],
   }),
   component: PipelinePage,
@@ -210,9 +216,7 @@ function PipelinePage() {
   }, [filteredApplications]);
 
   const displayedStages = useMemo(() => {
-    return showTerminalStages
-      ? PIPELINE_STAGES
-      : PIPELINE_STAGES.filter((s) => !s.isTerminal);
+    return showTerminalStages ? PIPELINE_STAGES : PIPELINE_STAGES.filter((s) => !s.isTerminal);
   }, [showTerminalStages]);
 
   const handleMoveStage = async (applicationId: string, targetStage: string) => {
@@ -371,7 +375,9 @@ function PipelinePage() {
         {isLoading && (
           <div className="dashboard-card p-16 text-center space-y-3">
             <Loader2 className="size-8 animate-spin text-brand-blue mx-auto" />
-            <p className="text-xs text-muted-foreground font-medium">Loading live pipeline records...</p>
+            <p className="text-xs text-muted-foreground font-medium">
+              Loading live pipeline records...
+            </p>
           </div>
         )}
 
@@ -446,7 +452,8 @@ function PipelinePage() {
                   <div className="p-2.5 space-y-2.5 min-h-[350px] bg-muted/15">
                     {stageApps.map((app) => {
                       const candidateName = app.applicant?.name || app.applicantName || "Candidate";
-                      const candidateEmail = app.applicant?.email || app.applicantEmail || "applicant@example.com";
+                      const candidateEmail =
+                        app.applicant?.email || app.applicantEmail || "applicant@example.com";
                       const jobTitle = app.job?.title || app.jobTitle || "Job Position";
                       const score = getCandidateScore(app);
                       const isCurrentlyDragged = draggedAppId === app.id;
@@ -464,7 +471,9 @@ function PipelinePage() {
                             setDragOverStage(null);
                           }}
                           className={`group relative rounded-lg border border-border bg-card p-3 shadow-2xs transition-all duration-200 cursor-grab active:cursor-grabbing hover:shadow-sm hover:border-brand-blue/40 ${
-                            isCurrentlyDragged ? "opacity-40 scale-95 border-dashed border-brand-blue" : ""
+                            isCurrentlyDragged
+                              ? "opacity-40 scale-95 border-dashed border-brand-blue"
+                              : ""
                           }`}
                         >
                           {/* Drag Handle & Header */}

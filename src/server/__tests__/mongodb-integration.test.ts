@@ -43,7 +43,9 @@ describe("PHASE 3: MongoDB Production Integration & Persistence Suite", () => {
 
     it("returns safe database status without exposing credentials", () => {
       const status = getDatabaseStatus();
-      assert.ok(["connected", "connecting", "disconnected", "disconnecting"].includes(status.status));
+      assert.ok(
+        ["connected", "connecting", "disconnected", "disconnecting"].includes(status.status),
+      );
       assert.strictEqual(typeof status.readyState, "number");
     });
 
@@ -91,7 +93,11 @@ describe("PHASE 3: MongoDB Production Integration & Persistence Suite", () => {
       assert.strictEqual(userDoc.emailVerified, false);
 
       const safe = userDoc.toSafeUser();
-      assert.strictEqual((safe as any).passwordHash, undefined, "Password hash must be stripped from safe projection");
+      assert.strictEqual(
+        (safe as any).passwordHash,
+        undefined,
+        "Password hash must be stripped from safe projection",
+      );
       assert.strictEqual(safe.name, "Test Engineer");
       assert.strictEqual(safe.id, "65f1a2b3c4d5e6f7a8b9c999");
     });

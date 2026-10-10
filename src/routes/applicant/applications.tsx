@@ -55,7 +55,12 @@ function ApplicantApplicationsPage() {
     const statusUpper = app.status?.toUpperCase();
     const filterUpper = filter.toUpperCase();
     if (filterUpper === "INTERVIEW") return statusUpper === "INTERVIEW";
-    if (filterUpper === "UNDER REVIEW") return statusUpper === "SCREENING" || statusUpper === "UNDER REVIEW" || statusUpper === "SHORTLISTED";
+    if (filterUpper === "UNDER REVIEW")
+      return (
+        statusUpper === "SCREENING" ||
+        statusUpper === "UNDER REVIEW" ||
+        statusUpper === "SHORTLISTED"
+      );
     if (filterUpper === "APPLIED") return statusUpper === "APPLIED";
     return statusUpper === filterUpper;
   });
@@ -136,13 +141,19 @@ function ApplicantApplicationsPage() {
               <Briefcase className="size-6" />
             </div>
             <h3 className="text-sm font-bold text-foreground">
-              {filter === "All" ? "No applications submitted yet" : `No applications in "${filter}" status`}
+              {filter === "All"
+                ? "No applications submitted yet"
+                : `No applications in "${filter}" status`}
             </h3>
             <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-              Explore open positions on the job board and submit your profile for instant AI matching.
+              Explore open positions on the job board and submit your profile for instant AI
+              matching.
             </p>
             <Link to="/applicant/jobs">
-              <Button size="sm" className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs">
+              <Button
+                size="sm"
+                className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs"
+              >
                 Browse Open Jobs
               </Button>
             </Link>
@@ -201,7 +212,9 @@ function ApplicantApplicationsPage() {
                           {app.aiScore}% Match
                         </span>
                       )}
-                      <span className={`rounded px-2.5 py-0.5 text-xs font-bold border ${getStatusBg(app.status)}`}>
+                      <span
+                        className={`rounded px-2.5 py-0.5 text-xs font-bold border ${getStatusBg(app.status)}`}
+                      >
                         {app.status}
                       </span>
                     </div>

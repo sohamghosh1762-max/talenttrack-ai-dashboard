@@ -20,10 +20,7 @@ import {
 import { ApplicantLayout } from "@/components/applicant/ApplicantLayout";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthProvider";
-import {
-  useApplicantProfile,
-  useUpdateApplicantProfile,
-} from "@/hooks/api/useApplicantProfile";
+import { useApplicantProfile, useUpdateApplicantProfile } from "@/hooks/api/useApplicantProfile";
 import { calculateProfileCompletion } from "@/lib/applicant-utils";
 import type {
   ApplicantExperienceItem,
@@ -47,22 +44,11 @@ export const Route = createFileRoute("/applicant/profile")({
 });
 
 type ProfileTab =
-  | "personal"
-  | "experience"
-  | "education"
-  | "skills"
-  | "certifications"
-  | "projects";
+  "personal" | "experience" | "education" | "skills" | "certifications" | "projects";
 
 export function ApplicantProfilePage() {
   const { user: authUser } = useAuth();
-  const {
-    data: profileData,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useApplicantProfile();
+  const { data: profileData, isLoading, isError, error, refetch } = useApplicantProfile();
   const updateProfileMutation = useUpdateApplicantProfile();
 
   const [activeTab, setActiveTab] = useState<ProfileTab>("personal");
@@ -103,7 +89,10 @@ export function ApplicantProfilePage() {
 
       if (Array.isArray(appProfile.experiences) && appProfile.experiences.length > 0) {
         setExperiences(appProfile.experiences);
-      } else if (Array.isArray((appProfile as any).experience) && (appProfile as any).experience.length > 0) {
+      } else if (
+        Array.isArray((appProfile as any).experience) &&
+        (appProfile as any).experience.length > 0
+      ) {
         setExperiences(
           (appProfile as any).experience.map((exp: any, i: number) => ({
             id: exp.id || `exp-${i}`,
@@ -225,7 +214,9 @@ export function ApplicantProfilePage() {
           </div>
           <h2 className="text-lg font-bold text-foreground">Unable to load your profile</h2>
           <p className="text-xs text-muted-foreground">
-            {error instanceof Error ? error.message : "A connection error occurred while loading your profile."}
+            {error instanceof Error
+              ? error.message
+              : "A connection error occurred while loading your profile."}
           </p>
           <Button
             onClick={() => refetch()}
@@ -251,9 +242,7 @@ export function ApplicantProfilePage() {
               <span className="grid size-8 place-items-center rounded-lg bg-surface-green text-brand-green">
                 <User className="size-5" />
               </span>
-              <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">
-                My Profile
-              </h1>
+              <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">My Profile</h1>
             </div>
             <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
               Keep your profile updated for accurate semantic AI scoring and recruiter discovery.
@@ -314,15 +303,15 @@ export function ApplicantProfilePage() {
                     completion.percentage >= 80
                       ? "bg-surface-green text-brand-green"
                       : completion.percentage >= 50
-                      ? "bg-surface-amber text-brand-amber"
-                      : "bg-surface-peach text-brand-red"
+                        ? "bg-surface-amber text-brand-amber"
+                        : "bg-surface-peach text-brand-red"
                   }`}
                 >
                   {completion.percentage >= 80
                     ? "High Profile Strength"
                     : completion.percentage >= 50
-                    ? "Moderate Profile Strength"
-                    : "Incomplete Profile"}
+                      ? "Moderate Profile Strength"
+                      : "Incomplete Profile"}
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -469,7 +458,8 @@ export function ApplicantProfilePage() {
 
               {experiences.length === 0 ? (
                 <div className="py-8 text-center text-xs text-muted-foreground">
-                  No work experience added yet. Click &quot;Add Position&quot; to add your career history.
+                  No work experience added yet. Click &quot;Add Position&quot; to add your career
+                  history.
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -477,11 +467,15 @@ export function ApplicantProfilePage() {
                     <div key={exp.id} className="rounded-lg border border-border p-4 space-y-2">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h3 className="text-sm font-bold text-foreground">{exp.title || "Untitled Role"}</h3>
+                          <h3 className="text-sm font-bold text-foreground">
+                            {exp.title || "Untitled Role"}
+                          </h3>
                           <p className="text-xs font-semibold text-brand-blue">
                             {exp.company || "Company"} {exp.location ? `• ${exp.location}` : ""}
                           </p>
-                          <span className="text-[11px] text-muted-foreground">{exp.period || "Period"}</span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {exp.period || "Period"}
+                          </span>
                         </div>
                         <button
                           type="button"
@@ -531,7 +525,8 @@ export function ApplicantProfilePage() {
 
               {education.length === 0 ? (
                 <div className="py-8 text-center text-xs text-muted-foreground">
-                  No education history added yet. Click &quot;Add Education&quot; to list your degrees.
+                  No education history added yet. Click &quot;Add Education&quot; to list your
+                  degrees.
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -541,8 +536,12 @@ export function ApplicantProfilePage() {
                       className="rounded-lg border border-border p-4 flex items-start justify-between"
                     >
                       <div>
-                        <h3 className="text-sm font-bold text-foreground">{edu.degree || "Degree"}</h3>
-                        <p className="text-xs text-brand-blue font-semibold">{edu.institution || "Institution"}</p>
+                        <h3 className="text-sm font-bold text-foreground">
+                          {edu.degree || "Degree"}
+                        </h3>
+                        <p className="text-xs text-brand-blue font-semibold">
+                          {edu.institution || "Institution"}
+                        </p>
                         <span className="text-[11px] text-muted-foreground">
                           {edu.period} {edu.grade ? `• ${edu.grade}` : ""}
                         </span>

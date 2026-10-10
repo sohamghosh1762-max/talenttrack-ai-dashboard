@@ -29,7 +29,7 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
   const startTime = performance.now();
 
   try {
-    // 1. Health check endpoint: GET /api/health
+    // 1. Health & Readiness check endpoints
     if (pathname === "/api/health" && req.method === "GET") {
       const dbStatus = getDatabaseStatus();
       const response = successResponse(
@@ -48,6 +48,25 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
         "API service is healthy",
       );
       requestLogger(req, startTime, 200);
+      return response;
+    }
+
+    if (pathname === "/api/ready" && req.method === "GET") {
+      const dbStatus = getDatabaseStatus();
+      const isReady = dbStatus.status === "connected";
+      const statusCode = isReady ? 200 : 503;
+      const response = successResponse(
+        {
+          ready: isReady,
+          status: isReady ? "ready" : "not_ready",
+          database: dbStatus.status,
+          readyState: dbStatus.readyState,
+          timestamp: new Date().toISOString(),
+        },
+        isReady ? "Service is ready to handle traffic" : "Database dependency not ready",
+        statusCode,
+      );
+      requestLogger(req, startTime, statusCode);
       return response;
     }
 
@@ -90,6 +109,16 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
     // 6. Application routes: /api/applications/* and /api/recruiter/*
     if (pathname.startsWith("/api/applications") || pathname.startsWith("/api/recruiter")) {
       const response = await handleApplicationApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 7. Candidate routes: /api/candidates/*
+    if (pathname.startsWith("/api/candidates")) {
+      const { handleCandidateApiRequest } = await import("./candidate-routes.ts");
+      const response = await handleCandidateApiRequest(req);
       if (response) {
         requestLogger(req, startTime, response.status);
         return response;
@@ -152,7 +181,27 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
       }
     }
 
-    // 13. Fallthrough for unhandled /api/* route
+    // 13. Analytics routes: /api/analytics/* or /api/recruiter/analytics
+    if (pathname.startsWith("/api/analytics") || pathname === "/api/recruiter/analytics") {
+      const { handleAnalyticsApiRequest } = await import("./analytics-routes.ts");
+      const response = await handleAnalyticsApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 14. Screening routes: /api/screening/*
+    if (pathname.startsWith("/api/screening")) {
+      const { handleScreeningApiRequest } = await import("./screening-routes.ts");
+      const response = await handleScreeningApiRequest(req);
+      if (response) {
+        requestLogger(req, startTime, response.status);
+        return response;
+      }
+    }
+
+    // 14. Fallthrough for unhandled /api/* route
     const notFoundErr = new NotFoundError(`API endpoint not found: ${req.method} ${pathname}`);
     const response = errorResponse(notFoundErr, 404);
     requestLogger(req, startTime, 404, notFoundErr.message);
@@ -181,5 +230,5 @@ export * from "./conversation-routes.ts";
 export * from "./notification-routes.ts";
 export * from "./interview-routes.ts";
 export * from "./hiring-manager-routes.ts";
-
-
+export * from "./candidate-routes.ts";
+export * from "./analytics-routes.ts";

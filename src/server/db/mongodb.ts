@@ -85,10 +85,10 @@ export async function connectToDatabase(
 
   const rawUri = normalizeMongoUri(
     customUri ||
-    (typeof process !== "undefined" && process.env?.["MONGODB_URI"]) ||
-    (typeof process !== "undefined" && process.env?.["DATABASE_URL"]) ||
-    env.MONGODB_URI ||
-    "mongodb://127.0.0.1:27017/talenttrack",
+      (typeof process !== "undefined" && process.env?.["MONGODB_URI"]) ||
+      (typeof process !== "undefined" && process.env?.["DATABASE_URL"]) ||
+      env.MONGODB_URI ||
+      "mongodb://127.0.0.1:27017/talenttrack",
   );
 
   const sanitized = sanitizeMongoUri(rawUri);
@@ -105,7 +105,9 @@ export async function connectToDatabase(
     try {
       console.log(`[MongoDB] Connecting to database: ${sanitized}`);
       await mongoose.connect(rawUri, defaultOptions);
-      console.log(`[MongoDB] Successfully connected to MongoDB database: ${mongoose.connection.name || "talenttrack"}`);
+      console.log(
+        `[MongoDB] Successfully connected to MongoDB database: ${mongoose.connection.name || "talenttrack"}`,
+      );
       registerGracefulShutdown();
       return mongoose;
     } catch (error) {

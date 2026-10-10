@@ -11,7 +11,15 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useSubmitHiringManagerFeedback } from "@/hooks/api/useHiringManager";
-import { AlertCircle, CheckCircle2, MessageSquare, Star, ThumbsDown, ThumbsUp, HelpCircle } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  MessageSquare,
+  Star,
+  ThumbsDown,
+  ThumbsUp,
+  HelpCircle,
+} from "lucide-react";
 
 interface FeedbackModalProps {
   open: boolean;
@@ -113,8 +121,8 @@ export function FeedbackModal({
             <span>Provide Candidate Feedback</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Structured evaluation for <strong className="text-foreground">{candidateName}</strong> applying for{" "}
-            <strong className="text-foreground">{jobTitle}</strong>.
+            Structured evaluation for <strong className="text-foreground">{candidateName}</strong>{" "}
+            applying for <strong className="text-foreground">{jobTitle}</strong>.
           </DialogDescription>
         </DialogHeader>
 
@@ -206,7 +214,10 @@ export function FeedbackModal({
 
           {/* Overall Feedback Notes */}
           <div>
-            <label htmlFor="overallFeedback" className="block text-xs font-semibold text-foreground mb-1">
+            <label
+              htmlFor="overallFeedback"
+              className="block text-xs font-semibold text-foreground mb-1"
+            >
               Overall Assessment & Notes <span className="text-destructive">*</span>
             </label>
             <textarea
@@ -223,7 +234,10 @@ export function FeedbackModal({
           {/* Strengths and Concerns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="strengths" className="block text-xs font-semibold text-foreground mb-1">
+              <label
+                htmlFor="strengths"
+                className="block text-xs font-semibold text-foreground mb-1"
+              >
                 Key Strengths (one per line)
               </label>
               <textarea
@@ -237,7 +251,10 @@ export function FeedbackModal({
             </div>
 
             <div>
-              <label htmlFor="concerns" className="block text-xs font-semibold text-foreground mb-1">
+              <label
+                htmlFor="concerns"
+                className="block text-xs font-semibold text-foreground mb-1"
+              >
                 Areas of Concern (one per line)
               </label>
               <textarea

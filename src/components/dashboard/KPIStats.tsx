@@ -1,15 +1,79 @@
-"use client";
+"useClient";
 
-import { kpiStatsData, type KPICardData } from "@/data/mockData";
+import { useRecruiterAnalytics } from "@/hooks/api/useAnalytics";
+import { KPICardData } from "@/data/mockData";
+import { BriefcaseBusiness, Users, CircleUserRound, CalendarDays } from "lucide-react";
 
 interface KPIStatsProps {
   onCardClick?: (card: KPICardData) => void;
+  dateRange?: string;
+  jobId?: string;
 }
 
-export function KPIStats({ onCardClick }: KPIStatsProps) {
+export function KPIStats({ onCardClick, dateRange = "30d", jobId }: KPIStatsProps) {
+  const { data: analytics, isLoading, isError, refetch } = useRecruiterAnalytics({
+    range: dateRange,
+    jobId,
+  });
+
+  const kpis = analytics?.kpis;
+
+  const cards: KPICardData[] = [
+    {
+      id: "kpi-active-jobs",
+      value: isLoading ? "..." : String(kpis?.activeJobs ?? 0),
+      title: "Active Job Openings",
+      change: "Live published openings",
+      icon: BriefcaseBusiness,
+      bgClass: "bg-surface-blue",
+      iconToneClass: "text-brand-blue",
+    },
+    {
+      id: "kpi-total-apps",
+      value: isLoading ? "..." : String(kpis?.totalApplications ?? 0),
+      title: "Total Applications",
+      change: kpis?.newApplications ? `${kpis.newApplications} recent` : "From candidates",
+      icon: Users,
+      bgClass: "bg-surface-green",
+      iconToneClass: "text-brand-green",
+    },
+    {
+      id: "kpi-shortlisted",
+      value: isLoading ? "..." : String(kpis?.shortlistedCandidates ?? 0),
+      title: "Screened / Shortlisted",
+      change: "Qualified candidates",
+      icon: CircleUserRound,
+      bgClass: "bg-surface-purple",
+      iconToneClass: "text-brand-purple",
+    },
+    {
+      id: "kpi-interviews",
+      value: isLoading ? "..." : String(kpis?.interviewsScheduled ?? 0),
+      title: "Interviews Scheduled",
+      change: "Upcoming rounds",
+      icon: CalendarDays,
+      bgClass: "bg-surface-peach",
+      iconToneClass: "text-brand-red",
+    },
+  ];
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-between p-4 rounded-xl border border-destructive/30 bg-destructive/5 text-sm text-destructive">
+        <span>Failed to load live metrics from server.</span>
+        <button
+          onClick={() => void refetch()}
+          className="text-xs font-semibold underline hover:no-underline"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-      {kpiStatsData.map((card) => {
+      {cards.map((card) => {
         const { id, value, title, change, icon: CardIcon, bgClass, iconToneClass } = card;
 
         return (
@@ -42,3 +106,4 @@ export function KPIStats({ onCardClick }: KPIStatsProps) {
     </div>
   );
 }
+

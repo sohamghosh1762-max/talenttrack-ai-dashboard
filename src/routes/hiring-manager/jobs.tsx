@@ -22,7 +22,10 @@ export const Route = createFileRoute("/hiring-manager/jobs")({
   head: () => ({
     meta: [
       { title: "My Assigned Positions — Hiring Manager" },
-      { name: "description", content: "View all positions and requisitions assigned to your manager profile." },
+      {
+        name: "description",
+        content: "View all positions and requisitions assigned to your manager profile.",
+      },
     ],
   }),
   component: HiringManagerJobsPage,
@@ -133,7 +136,8 @@ function HiringManagerJobsPage() {
             </div>
             <h3 className="text-sm font-bold text-foreground">No assigned jobs found</h3>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              You currently do not have any job requisitions assigned. When recruiters assign you to a position, it will appear here.
+              You currently do not have any job requisitions assigned. When recruiters assign you to
+              a position, it will appear here.
             </p>
           </div>
         ) : (

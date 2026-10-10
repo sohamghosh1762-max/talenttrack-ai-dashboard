@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { recentApplicantsData, type Applicant } from "@/data/mockData";
 import { CandidateDetailModal } from "@/components/dashboard/CandidateDetailModal";
 import { useJob } from "@/hooks/api/useJobs";
+import { useRecruiterApplications } from "@/hooks/api/useApplications";
 
 export const Route = createFileRoute("/jobs/$jobId")({
   head: () => ({
@@ -45,8 +46,24 @@ function RecruiterJobDetailPage() {
   const [selectedCandidate, setSelectedCandidate] = useState<Applicant | null>(null);
 
   const { data: job, isLoading, error } = useJob(jobId);
+  const { data: jobApplicationsData } = useRecruiterApplications({ jobId });
 
-  const jobApplicants = recentApplicantsData;
+  const jobApplicants: Applicant[] =
+    jobApplicationsData && jobApplicationsData.length > 0
+      ? jobApplicationsData.map((app) => ({
+          id: app.id,
+          name: app.applicantName || app.applicant?.name || "Applicant",
+          email: app.applicantEmail || app.applicant?.email || "applicant@example.com",
+          job: app.jobTitle || job?.title || "Job Opening",
+          score: app.aiScore || 85,
+          status: (app.status as any) || "Applied",
+          initials: app.applicant?.initials || (app.applicantName?.[0] ?? "A"),
+          appliedOn: app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recent",
+          ...(app.applicant?.phone ? { phone: app.applicant.phone } : {}),
+          ...(app.applicant?.location ? { location: app.applicant.location } : {}),
+          skills: app.applicant?.skills || [],
+        }))
+      : recentApplicantsData;
 
   if (isLoading) {
     return (
@@ -68,7 +85,9 @@ function RecruiterJobDetailPage() {
           </div>
           <h2 className="text-base font-bold text-foreground">Job Not Found</h2>
           <p className="text-xs text-muted-foreground">
-            {error ? (error as Error).message : "The requested job opening does not exist or has been removed."}
+            {error
+              ? (error as Error).message
+              : "The requested job opening does not exist or has been removed."}
           </p>
           <Link to="/jobs">
             <Button size="sm" className="bg-brand-blue text-primary-foreground text-xs">
@@ -142,8 +161,7 @@ function RecruiterJobDetailPage() {
                   <>
                     <span>•</span>
                     <span className="flex items-center gap-1 text-brand-green font-semibold">
-                      <DollarSign className="size-3" />
-                      ${job.salaryRange.min?.toLocaleString()}
+                      <DollarSign className="size-3" />${job.salaryRange.min?.toLocaleString()}
                       {job.salaryRange.max ? ` - $${job.salaryRange.max?.toLocaleString()}` : "+"}
                     </span>
                   </>
@@ -166,7 +184,12 @@ function RecruiterJobDetailPage() {
           {/* Navigation Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pt-1">
             {[
-              { key: "applicants", label: "Applicants", icon: Users, count: `${job.applicationsCount || 0}` },
+              {
+                key: "applicants",
+                label: "Applicants",
+                icon: Users,
+                count: `${job.applicationsCount || 0}`,
+              },
               { key: "pipeline", label: "Pipeline Funnel", icon: SlidersHorizontal },
               { key: "ai-screening", label: "AI Screening", icon: Sparkles },
               { key: "analytics", label: "Analytics", icon: BarChart3 },
@@ -281,11 +304,31 @@ function RecruiterJobDetailPage() {
             <h2 className="text-sm font-bold text-foreground">Job Hiring Pipeline Funnel</h2>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
-                { stage: "Applied", count: job.applicationsCount || 0, color: "bg-blue-500 text-blue-600" },
-                { stage: "Screening", count: Math.floor((job.applicationsCount || 0) * 0.4), color: "bg-purple-500 text-purple-600" },
-                { stage: "Interview", count: Math.floor((job.applicationsCount || 0) * 0.15), color: "bg-amber-500 text-amber-600" },
-                { stage: "Offer", count: Math.floor((job.applicationsCount || 0) * 0.05), color: "bg-emerald-500 text-emerald-600" },
-                { stage: "Hired", count: Math.floor((job.applicationsCount || 0) * 0.02), color: "bg-teal-500 text-teal-600" },
+                {
+                  stage: "Applied",
+                  count: job.applicationsCount || 0,
+                  color: "bg-blue-500 text-blue-600",
+                },
+                {
+                  stage: "Screening",
+                  count: Math.floor((job.applicationsCount || 0) * 0.4),
+                  color: "bg-purple-500 text-purple-600",
+                },
+                {
+                  stage: "Interview",
+                  count: Math.floor((job.applicationsCount || 0) * 0.15),
+                  color: "bg-amber-500 text-amber-600",
+                },
+                {
+                  stage: "Offer",
+                  count: Math.floor((job.applicationsCount || 0) * 0.05),
+                  color: "bg-emerald-500 text-emerald-600",
+                },
+                {
+                  stage: "Hired",
+                  count: Math.floor((job.applicationsCount || 0) * 0.02),
+                  color: "bg-teal-500 text-teal-600",
+                },
               ].map(({ stage, count }) => (
                 <div
                   key={stage}
@@ -311,7 +354,8 @@ function RecruiterJobDetailPage() {
               skill graph for {job.title}.
             </p>
             <div className="rounded-lg bg-surface-green/40 border border-brand-green/20 p-3 text-xs text-brand-green">
-              Top Candidates are automatically ranked by skill alignment across {job.skills?.join(", ") || "required criteria"}.
+              Top Candidates are automatically ranked by skill alignment across{" "}
+              {job.skills?.join(", ") || "required criteria"}.
             </div>
           </div>
         )}
@@ -345,7 +389,9 @@ function RecruiterJobDetailPage() {
             <h2 className="text-sm font-bold text-foreground border-b border-border/60 pb-3">
               Job Description & Responsibilities
             </h2>
-            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{job.description}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
+              {job.description}
+            </p>
             {job.skills && job.skills.length > 0 && (
               <div className="pt-2">
                 <h3 className="text-xs font-bold text-foreground mb-2">Required Skills</h3>

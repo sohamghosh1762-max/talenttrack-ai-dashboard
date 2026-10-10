@@ -52,7 +52,11 @@ function JobsPage() {
   const [selectedJob, setSelectedJob] = useState<IJob | null>(null);
   const [jobToEdit, setJobToEdit] = useState<IJob | null>(null);
 
-  const { data: jobsResponse, isLoading, error } = useJobs({
+  const {
+    data: jobsResponse,
+    isLoading,
+    error,
+  } = useJobs({
     search: search.trim() || undefined,
     department: filterDept === "All" ? undefined : filterDept,
     status: filterStatus === "All" ? undefined : (filterStatus as any),
@@ -149,7 +153,13 @@ function JobsPage() {
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {status === "PUBLISHED" ? "Published" : status === "DRAFT" ? "Draft" : status === "ARCHIVED" ? "Archived" : "All"}
+                  {status === "PUBLISHED"
+                    ? "Published"
+                    : status === "DRAFT"
+                      ? "Draft"
+                      : status === "ARCHIVED"
+                        ? "Archived"
+                        : "All"}
                 </button>
               ))}
             </div>

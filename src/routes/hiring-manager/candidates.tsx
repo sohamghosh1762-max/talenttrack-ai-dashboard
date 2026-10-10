@@ -29,7 +29,10 @@ export const Route = createFileRoute("/hiring-manager/candidates")({
   head: () => ({
     meta: [
       { title: "Candidates Review — Hiring Manager" },
-      { name: "description", content: "Review and evaluate candidates assigned to your job positions." },
+      {
+        name: "description",
+        content: "Review and evaluate candidates assigned to your job positions.",
+      },
     ],
   }),
   validateSearch: (
@@ -86,8 +89,10 @@ function HiringManagerCandidatesPage() {
       selectedDecision === "ALL" ||
       (selectedDecision === "DECIDED" && !!cand.decision) ||
       (selectedDecision === "PENDING" && !cand.decision) ||
-      (selectedDecision === "APPROVED" && (cand.decision?.status === "APPROVED" || (cand.decision as any) === "APPROVED")) ||
-      (selectedDecision === "REJECTED" && (cand.decision?.status === "REJECTED" || (cand.decision as any) === "REJECTED"));
+      (selectedDecision === "APPROVED" &&
+        (cand.decision?.status === "APPROVED" || (cand.decision as any) === "APPROVED")) ||
+      (selectedDecision === "REJECTED" &&
+        (cand.decision?.status === "REJECTED" || (cand.decision as any) === "REJECTED"));
 
     return matchesSearch && matchesDecision;
   });
@@ -113,7 +118,8 @@ function HiringManagerCandidatesPage() {
               Candidate Evaluation & Review
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-              Review applicant resumes, ATS breakdowns, and record hiring decisions for your open roles.
+              Review applicant resumes, ATS breakdowns, and record hiring decisions for your open
+              roles.
             </p>
           </div>
 
@@ -220,13 +226,15 @@ function HiringManagerCandidatesPage() {
                         {cand.stage}
                       </span>
 
-                      {(cand.decision?.status === "APPROVED" || (cand.decision as any) === "APPROVED") && (
+                      {(cand.decision?.status === "APPROVED" ||
+                        (cand.decision as any) === "APPROVED") && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                           <ThumbsUp className="size-3" /> Approved
                         </span>
                       )}
 
-                      {(cand.decision?.status === "REJECTED" || (cand.decision as any) === "REJECTED") && (
+                      {(cand.decision?.status === "REJECTED" ||
+                        (cand.decision as any) === "REJECTED") && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
                           <ThumbsDown className="size-3" /> Rejected
                         </span>

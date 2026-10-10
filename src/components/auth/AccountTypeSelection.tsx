@@ -403,7 +403,8 @@ export function AccountTypeSelection({
                   id="hiring-manager-card-desc"
                   className="mt-1 text-xs text-muted-foreground leading-relaxed font-normal"
                 >
-                  Review candidates, collaborate with recruiters, and make hiring decisions for your team.
+                  Review candidates, collaborate with recruiters, and make hiring decisions for your
+                  team.
                 </p>
               </div>
 
@@ -416,7 +417,9 @@ export function AccountTypeSelection({
                       : "border-muted-foreground/40 group-hover:border-brand-blue"
                   }`}
                 >
-                  {selectedRole === "hiring_manager" && <div className="size-2 rounded-full bg-white" />}
+                  {selectedRole === "hiring_manager" && (
+                    <div className="size-2 rounded-full bg-white" />
+                  )}
                 </div>
               </div>
             </div>

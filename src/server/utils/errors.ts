@@ -60,6 +60,18 @@ export class InternalServerError extends AppError {
   }
 }
 
+export class RateLimitError extends AppError {
+  constructor(message: string = "Too many requests. Please try again later.", details?: unknown) {
+    super(message, 429, "RATE_LIMIT_EXCEEDED", details);
+  }
+}
+
+export class DatabaseConnectionError extends AppError {
+  constructor(message: string = "Database service is temporarily unavailable.", details?: unknown) {
+    super(message, 503, "DATABASE_UNAVAILABLE", details);
+  }
+}
+
 export class AIServiceError extends AppError {
   constructor(
     message: string = "AI service temporarily unavailable",

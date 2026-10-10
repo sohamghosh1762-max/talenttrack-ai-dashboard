@@ -17,10 +17,7 @@ import {
 } from "lucide-react";
 import { ApplicantLayout } from "@/components/applicant/ApplicantLayout";
 import { Button } from "@/components/ui/button";
-import {
-  useApplicantSettings,
-  useUpdateApplicantSettings,
-} from "@/hooks/api/useApplicantSettings";
+import { useApplicantSettings, useUpdateApplicantSettings } from "@/hooks/api/useApplicantSettings";
 
 export const Route = createFileRoute("/applicant/settings")({
   head: () => ({
@@ -36,12 +33,7 @@ export const Route = createFileRoute("/applicant/settings")({
 });
 
 function ApplicantSettingsPage() {
-  const {
-    data: settings,
-    isLoading,
-    isError,
-    refetch,
-  } = useApplicantSettings();
+  const { data: settings, isLoading, isError, refetch } = useApplicantSettings();
 
   const updateSettingsMutation = useUpdateApplicantSettings();
 
@@ -138,10 +130,10 @@ function ApplicantSettingsPage() {
               {updateSettingsMutation.isPending
                 ? "Saving..."
                 : saveSuccess
-                ? "Saved Preferences"
-                : isDirty
-                ? "Save Preferences"
-                : "Saved"}
+                  ? "Saved Preferences"
+                  : isDirty
+                    ? "Save Preferences"
+                    : "Saved"}
             </Button>
           </div>
         </section>
@@ -153,7 +145,10 @@ function ApplicantSettingsPage() {
               <div className="h-4 w-48 bg-muted rounded" />
               <div className="space-y-3">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-muted/40">
+                  <div
+                    key={i}
+                    className="flex justify-between items-center p-2 rounded-lg bg-muted/40"
+                  >
                     <div className="space-y-1.5">
                       <div className="h-3 w-40 bg-muted rounded" />
                       <div className="h-2.5 w-64 bg-muted rounded" />
@@ -169,7 +164,9 @@ function ApplicantSettingsPage() {
         {/* Error State */}
         {!isLoading && isError && (
           <div className="dashboard-card p-6 text-center space-y-3 border-destructive/30">
-            <p className="text-xs text-destructive font-semibold">Unable to load your preferences.</p>
+            <p className="text-xs text-destructive font-semibold">
+              Unable to load your preferences.
+            </p>
             <p className="text-[11px] text-muted-foreground">
               Please check your connection and retry.
             </p>
@@ -216,7 +213,8 @@ function ApplicantSettingsPage() {
                       Job Application Status Updates
                     </strong>
                     <span className="text-[11px] text-muted-foreground leading-snug block">
-                      Receive instant in-app alerts when recruiters advance or change your application stage.
+                      Receive instant in-app alerts when recruiters advance or change your
+                      application stage.
                     </span>
                   </div>
                   <input
@@ -235,7 +233,8 @@ function ApplicantSettingsPage() {
                       Interview Alerts & Updates
                     </strong>
                     <span className="text-[11px] text-muted-foreground leading-snug block">
-                      Receive notifications when interviews are scheduled, rescheduled, or cancelled.
+                      Receive notifications when interviews are scheduled, rescheduled, or
+                      cancelled.
                     </span>
                   </div>
                   <input
@@ -292,7 +291,8 @@ function ApplicantSettingsPage() {
                       Email Digests & Critical Alerts
                     </strong>
                     <span className="text-[11px] text-muted-foreground leading-snug block">
-                      Receive email notifications for critical interview schedules and formal offer letters.
+                      Receive email notifications for critical interview schedules and formal offer
+                      letters.
                     </span>
                   </div>
                   <input
@@ -311,7 +311,9 @@ function ApplicantSettingsPage() {
                 Privacy & Data Control
               </h2>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Your resume and personal details are only shared with organizations you explicitly apply to. You can update your candidate profile, manage uploaded documents, or adjust communication preferences at any time.
+                Your resume and personal details are only shared with organizations you explicitly
+                apply to. You can update your candidate profile, manage uploaded documents, or
+                adjust communication preferences at any time.
               </p>
             </div>
           </form>

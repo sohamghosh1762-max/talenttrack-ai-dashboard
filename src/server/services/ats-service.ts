@@ -162,7 +162,9 @@ export class AtsService {
       strengths.completeness.push("Professional links and portfolio profiles included");
       evidence.completeness.push("Professional web presence links detected.");
     } else {
-      improvements.completeness.push("Add LinkedIn or portfolio links to improve contact completeness");
+      improvements.completeness.push(
+        "Add LinkedIn or portfolio links to improve contact completeness",
+      );
     }
     if (profile.summary && profile.summary.trim().length > 30) {
       completenessScore += 10;
@@ -184,7 +186,9 @@ export class AtsService {
     let skillsScore = 40;
     if (skillsCount >= 10) {
       skillsScore = 95;
-      strengths.skills.push(`Robust skill profile with ${skillsCount} identified core competencies`);
+      strengths.skills.push(
+        `Robust skill profile with ${skillsCount} identified core competencies`,
+      );
       evidence.skills.push(`${skillsCount} technical skills extracted.`);
     } else if (skillsCount >= 6) {
       skillsScore = 84;
@@ -192,21 +196,29 @@ export class AtsService {
       evidence.skills.push(`${skillsCount} technical skills extracted.`);
     } else if (skillsCount >= 3) {
       skillsScore = 68;
-      improvements.skills.push("Expand skills section with additional domain-specific tools and frameworks");
+      improvements.skills.push(
+        "Expand skills section with additional domain-specific tools and frameworks",
+      );
       evidence.skills.push(`Only ${skillsCount} core skills identified.`);
     } else {
       skillsScore = 45;
-      improvements.skills.push("Add more core technical skills and tools to pass automated ATS filters");
+      improvements.skills.push(
+        "Add more core technical skills and tools to pass automated ATS filters",
+      );
       evidence.skills.push("Minimal skills listed.");
     }
 
     // Job matching if context provided
     if (jobContext?.requiredSkills && jobContext.requiredSkills.length > 0) {
       const lowerProfileSkills = new Set((profile.skills || []).map((s) => s.toLowerCase()));
-      const matched = jobContext.requiredSkills.filter((req) => lowerProfileSkills.has(req.toLowerCase()));
+      const matched = jobContext.requiredSkills.filter((req) =>
+        lowerProfileSkills.has(req.toLowerCase()),
+      );
       const matchRatio = matched.length / jobContext.requiredSkills.length;
       skillsScore = Math.round(skillsScore * 0.6 + matchRatio * 100 * 0.4);
-      evidence.skills.push(`Matched ${matched.length}/${jobContext.requiredSkills.length} job-specific required skills.`);
+      evidence.skills.push(
+        `Matched ${matched.length}/${jobContext.requiredSkills.length} job-specific required skills.`,
+      );
     }
 
     // 3. Experience evaluation (0-100)
@@ -235,10 +247,16 @@ export class AtsService {
 
       if (hasQuantifiableMetrics) {
         experienceScore += 18;
-        strengths.experience.push("Measurable achievements and quantifiable metrics in work experience");
-        evidence.experience.push("Experience contains quantifiable outcome metrics (e.g. percentages, scale).");
+        strengths.experience.push(
+          "Measurable achievements and quantifiable metrics in work experience",
+        );
+        evidence.experience.push(
+          "Experience contains quantifiable outcome metrics (e.g. percentages, scale).",
+        );
       } else {
-        improvements.experience.push("Incorporate quantifiable metrics and percentage outcomes in recent job roles");
+        improvements.experience.push(
+          "Incorporate quantifiable metrics and percentage outcomes in recent job roles",
+        );
         evidence.experience.push("Experience lacks measurable numbers and impact metrics.");
       }
 
@@ -249,7 +267,9 @@ export class AtsService {
       }
     } else {
       experienceScore = 35;
-      improvements.experience.push("Detail your practical work history or substantial project experience");
+      improvements.experience.push(
+        "Detail your practical work history or substantial project experience",
+      );
       evidence.experience.push("No employment history records detected.");
     }
     experienceScore = Math.min(100, Math.max(30, experienceScore));
@@ -267,7 +287,9 @@ export class AtsService {
 
     if (allKeywords.size >= 12) {
       keywordScore = 94;
-      strengths.keywords.push(`Strong ATS keyword density with ${allKeywords.size} distinct technical keywords`);
+      strengths.keywords.push(
+        `Strong ATS keyword density with ${allKeywords.size} distinct technical keywords`,
+      );
       evidence.keywords.push(`${allKeywords.size} distinct technical keywords found.`);
     } else if (allKeywords.size >= 6) {
       keywordScore = 78;
@@ -275,7 +297,9 @@ export class AtsService {
       evidence.keywords.push(`${allKeywords.size} distinct technical keywords found.`);
     } else {
       keywordScore = 52;
-      improvements.keywords.push("Incorporate high-value industry terminology and technical keywords");
+      improvements.keywords.push(
+        "Incorporate high-value industry terminology and technical keywords",
+      );
       evidence.keywords.push("Limited industry keyword density detected.");
     }
 
@@ -295,10 +319,14 @@ export class AtsService {
 
     if (certCount > 0) {
       educationScore += 20;
-      strengths.education.push(`Industry certifications included (${certCount} credential${certCount > 1 ? "s" : ""})`);
+      strengths.education.push(
+        `Industry certifications included (${certCount} credential${certCount > 1 ? "s" : ""})`,
+      );
       evidence.education.push(`${certCount} professional certification(s) listed.`);
     } else {
-      improvements.education.push("Consider listing professional certifications or relevant accredited training");
+      improvements.education.push(
+        "Consider listing professional certifications or relevant accredited training",
+      );
     }
     educationScore = Math.min(100, Math.max(35, educationScore));
 
@@ -310,7 +338,9 @@ export class AtsService {
       (profile.experience?.length || profile.education?.length)
     ) {
       structureScore += 18;
-      strengths.structure.push("Well-structured document sections suitable for automated parser extraction");
+      strengths.structure.push(
+        "Well-structured document sections suitable for automated parser extraction",
+      );
       evidence.structure.push("Standard chronological layout with key section headers.");
     }
     if (profile.projects && profile.projects.length > 0) {
@@ -457,7 +487,10 @@ Achievements: ${(profile.achievements || []).join(", ") || "None"}`;
    */
   public async analyzeResume(
     resume: IResume,
-    options: { forceFresh?: boolean; jobContext?: { requiredSkills?: string[]; title?: string; description?: string } } = {},
+    options: {
+      forceFresh?: boolean;
+      jobContext?: { requiredSkills?: string[]; title?: string; description?: string };
+    } = {},
   ): Promise<AtsAnalysisResult> {
     const profile = resume.parsedProfile;
     if (!profile) {
@@ -486,10 +519,7 @@ Achievements: ${(profile.achievements || []).join(", ") || "None"}`;
     // 2. Idempotency Check: Return cached analysis if context is identical and not forced fresh
     if (!options.forceFresh && resume.atsAnalysis) {
       const existing = resume.atsAnalysis;
-      if (
-        existing.analysisKey === analysisKey ||
-        existing.resumeHash === resumeHash
-      ) {
+      if (existing.analysisKey === analysisKey || existing.resumeHash === resumeHash) {
         console.log(
           JSON.stringify({
             stage: "[ATS-DEBUG] cached-analysis-hit",
@@ -591,7 +621,8 @@ Achievements: ${(profile.achievements || []).join(", ") || "None"}`;
       finalCategoryScores[key] = fusedScore;
 
       // Extract evidence / feedback
-      let feedback = deterministic[key].strengths[0] || `${weightInfo.label} evaluated against ATS standards.`;
+      let feedback =
+        deterministic[key].strengths[0] || `${weightInfo.label} evaluated against ATS standards.`;
       const evidenceList = [...deterministic[key].evidence];
 
       if (aiOutput) {
@@ -673,7 +704,9 @@ Achievements: ${(profile.achievements || []).join(", ") || "None"}`;
     const matchedKeywords =
       profile.skills && profile.skills.length > 0
         ? profile.skills.slice(0, 8)
-        : Array.from(allKeywords).slice(0, 8).map((k) => k.charAt(0).toUpperCase() + k.slice(1));
+        : Array.from(allKeywords)
+            .slice(0, 8)
+            .map((k) => k.charAt(0).toUpperCase() + k.slice(1));
 
     const standardTechKeywords = [
       "Docker",
@@ -746,11 +779,15 @@ Achievements: ${(profile.achievements || []).join(", ") || "None"}`;
       weaknesses:
         finalWeaknesses.length > 0
           ? finalWeaknesses
-          : ["Add more quantifiable results in recent experience roles", "Ensure all relevant technology keywords are present"],
+          : [
+              "Add more quantifiable results in recent experience roles",
+              "Ensure all relevant technology keywords are present",
+            ],
       improvements: finalWeaknesses,
       keywords: {
         matched: matchedKeywords.length > 0 ? matchedKeywords : ["General Industry Terminology"],
-        potentialMissing: potentialMissing.length > 0 ? potentialMissing : ["Cloud Services", "CI/CD Pipelines"],
+        potentialMissing:
+          potentialMissing.length > 0 ? potentialMissing : ["Cloud Services", "CI/CD Pipelines"],
       },
       keywordInsights:
         aiOutput?.keywordInsights && aiOutput.keywordInsights.length > 0
@@ -780,4 +817,3 @@ Achievements: ${(profile.achievements || []).join(", ") || "None"}`;
 }
 
 export const atsService = new AtsService();
-

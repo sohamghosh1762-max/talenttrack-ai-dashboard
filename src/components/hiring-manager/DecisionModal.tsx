@@ -69,12 +69,12 @@ export function DecisionModal({
             ) : (
               <XCircle className="size-5 text-rose-500" />
             )}
-            <span>
-              {isApprove ? "Approve Candidate for Next Step" : "Reject Candidate"}
-            </span>
+            <span>{isApprove ? "Approve Candidate for Next Step" : "Reject Candidate"}</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Confirm your official hiring manager decision for <strong className="text-foreground">{candidateName}</strong> applying to <strong className="text-foreground">{jobTitle}</strong>.
+            Confirm your official hiring manager decision for{" "}
+            <strong className="text-foreground">{candidateName}</strong> applying to{" "}
+            <strong className="text-foreground">{jobTitle}</strong>.
           </DialogDescription>
         </DialogHeader>
 
@@ -87,7 +87,10 @@ export function DecisionModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div>
-            <label htmlFor="decisionNotes" className="block text-xs font-semibold text-foreground mb-1">
+            <label
+              htmlFor="decisionNotes"
+              className="block text-xs font-semibold text-foreground mb-1"
+            >
               Decision Notes & Next Step Recommendation (optional)
             </label>
             <textarea
@@ -129,9 +132,7 @@ export function DecisionModal({
               type="submit"
               disabled={submitDecisionMutation.isPending}
               className={`text-xs font-semibold text-white ${
-                isApprove
-                  ? "bg-emerald-600 hover:bg-emerald-700"
-                  : "bg-rose-600 hover:bg-rose-700"
+                isApprove ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
               }`}
             >
               {submitDecisionMutation.isPending

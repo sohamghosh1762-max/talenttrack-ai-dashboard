@@ -64,9 +64,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   const normalizedRole = rawRole.toUpperCase() as UserRole;
 
   const recruiterProfile =
-    normalizedRole === "RECRUITER" ||
-    normalizedRole === "HIRING_MANAGER" ||
-    validated.companyName
+    normalizedRole === "RECRUITER" || normalizedRole === "HIRING_MANAGER" || validated.companyName
       ? {
           companyName: validated.companyName || "TalentTrack Hiring",
           jobTitle:

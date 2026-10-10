@@ -77,10 +77,14 @@ function ApplicantSavedJobsPage() {
             </div>
             <h3 className="text-sm font-bold text-foreground">No saved jobs yet</h3>
             <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-              Save jobs you're interested in and find them here anytime to compare requirements and apply.
+              Save jobs you're interested in and find them here anytime to compare requirements and
+              apply.
             </p>
             <Link to="/applicant/jobs">
-              <Button size="sm" className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs">
+              <Button
+                size="sm"
+                className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs"
+              >
                 Find Jobs
               </Button>
             </Link>
@@ -133,7 +137,8 @@ function ApplicantSavedJobsPage() {
                       <div className="flex items-center gap-1.5">
                         <Building className="size-3 text-muted-foreground" />
                         <span>
-                          {job.employmentType || "Full-time"} • {job.experienceRequired || "Mid-Senior"}
+                          {job.employmentType || "Full-time"} •{" "}
+                          {job.experienceRequired || "Mid-Senior"}
                         </span>
                       </div>
                     </div>

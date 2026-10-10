@@ -1,12 +1,7 @@
 export type InterviewType = "VIDEO" | "PHONE" | "ONSITE";
 
 export type InterviewStatus =
-  | "SCHEDULED"
-  | "CONFIRMED"
-  | "RESCHEDULED"
-  | "COMPLETED"
-  | "CANCELLED"
-  | "NO_SHOW";
+  "SCHEDULED" | "CONFIRMED" | "RESCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
 
 export interface IInterviewInterviewer {
   id: string;
@@ -49,11 +44,13 @@ export interface IInterview {
   updatedAt: string;
   // Enriched presentation fields
   job?: IInterviewJobSummary | undefined;
-  applicant?: {
-    id: string;
-    name: string;
-    email: string;
-  } | undefined;
+  applicant?:
+    | {
+        id: string;
+        name: string;
+        email: string;
+      }
+    | undefined;
   interviewer?: IInterviewInterviewer | undefined;
   interviewers?: IInterviewInterviewer[] | undefined;
 }

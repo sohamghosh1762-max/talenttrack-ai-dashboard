@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { useCandidate } from "@/hooks/api/useCandidates";
 import { recentApplicantsData, type Applicant } from "@/data/mockData";
 
 export const Route = createFileRoute("/candidates/$candidateId")({
@@ -50,22 +51,41 @@ function RecruiterCandidateDetailPage() {
   const { candidateId } = useParams({ from: "/candidates/$candidateId" });
   const [activeTab, setActiveTab] = useState<CandidateTab>("overview");
 
-  const candidate: Applicant = recentApplicantsData.find((c) => c.id === candidateId) || {
-    id: candidateId,
-    name: "Aarav Mehta",
-    email: "aarav@gmail.com",
-    job: "Frontend Developer",
-    score: 92,
-    status: "Shortlisted",
-    initials: "AM",
-    appliedOn: "Sep 14, 2025",
-    phone: "+1 (555) 234-5678",
-    location: "San Jose, CA",
-    experience: "4 years",
-    skills: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Redux"],
-    summary:
-      "Senior Frontend Engineer specializing in responsive web applications and state management architectures.",
-  };
+  const { data: candidateData, isLoading } = useCandidate(candidateId);
+
+  const candidate: Applicant = candidateData
+    ? {
+        id: candidateData.id,
+        name: candidateData.name,
+        email: candidateData.email,
+        job: candidateData.headline || candidateData.job || "Candidate",
+        score: candidateData.score || 85,
+        status: candidateData.status || "Shortlisted",
+        initials: candidateData.initials || "C",
+        appliedOn: candidateData.createdAt
+          ? new Date(candidateData.createdAt).toLocaleDateString()
+          : "Recent",
+        phone: candidateData.phone || "",
+        location: candidateData.location || "Remote",
+        experience: candidateData.experienceYears || candidateData.experience || "3+ years",
+        skills: candidateData.skills || [],
+        summary: candidateData.summary || candidateData.bio || "",
+      }
+    : recentApplicantsData.find((c) => c.id === candidateId) || {
+        id: candidateId,
+        name: "Candidate Profile",
+        email: "candidate@talenttrack.ai",
+        job: "Software Developer",
+        score: 85,
+        status: "Shortlisted",
+        initials: "CP",
+        appliedOn: "Recent",
+        phone: "",
+        location: "Remote",
+        experience: "3+ years",
+        skills: ["React", "TypeScript", "Node.js"],
+        summary: "Candidate profile loaded from database.",
+      };
 
   const [notes, setNotes] = useState([
     {

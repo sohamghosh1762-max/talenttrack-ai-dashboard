@@ -114,8 +114,20 @@ describe("ATS RESUME SCORE & COMPATIBILITY SUITE", () => {
       github: "https://github.com/janecandidate",
       portfolio: "https://janecandidate.dev",
     },
-    summary: "Senior Full Stack Engineer with 6+ years of experience in React, TypeScript, Node.js, and cloud systems.",
-    skills: ["React", "TypeScript", "Node.js", "Express", "MongoDB", "PostgreSQL", "Docker", "AWS", "GraphQL", "Tailwind CSS"],
+    summary:
+      "Senior Full Stack Engineer with 6+ years of experience in React, TypeScript, Node.js, and cloud systems.",
+    skills: [
+      "React",
+      "TypeScript",
+      "Node.js",
+      "Express",
+      "MongoDB",
+      "PostgreSQL",
+      "Docker",
+      "AWS",
+      "GraphQL",
+      "Tailwind CSS",
+    ],
     education: [
       {
         degree: "B.S. in Computer Science",
@@ -237,7 +249,9 @@ describe("ATS RESUME SCORE & COMPATIBILITY SUITE", () => {
       assert.ok(typeof analysis.overallScore === "number");
       assert.ok(analysis.overallScore >= 0 && analysis.overallScore <= 100);
       assert.ok(analysis.overallScore >= 75, "Rich resume should receive high ATS compatibility");
-      assert.ok(analysis.compatibilityTier === "EXCELLENT" || analysis.compatibilityTier === "GOOD");
+      assert.ok(
+        analysis.compatibilityTier === "EXCELLENT" || analysis.compatibilityTier === "GOOD",
+      );
       assert.ok(analysis.compatibilityLabel.includes("ATS Compatibility"));
     });
 
@@ -273,7 +287,9 @@ describe("ATS RESUME SCORE & COMPATIBILITY SUITE", () => {
       const analysis = await atsService.analyzeResume(mockResume);
       const cats = analysis.categories;
 
-      assert.ok(cats.completeness && cats.completeness.score >= 0 && cats.completeness.score <= 100);
+      assert.ok(
+        cats.completeness && cats.completeness.score >= 0 && cats.completeness.score <= 100,
+      );
       assert.ok(cats.skills && cats.skills.score >= 0 && cats.skills.score <= 100);
       assert.ok(cats.experience && cats.experience.score >= 0 && cats.experience.score <= 100);
       assert.ok(cats.keywords && cats.keywords.score >= 0 && cats.keywords.score <= 100);
@@ -288,7 +304,10 @@ describe("ATS RESUME SCORE & COMPATIBILITY SUITE", () => {
         cats.education.weight +
         cats.structure.weight;
 
-      assert.ok(Math.abs(totalWeight - 1.0) < 0.001, "Total category weights must equal 100% (1.0)");
+      assert.ok(
+        Math.abs(totalWeight - 1.0) < 0.001,
+        "Total category weights must equal 100% (1.0)",
+      );
     });
 
     it("handles sparse/missing profile fields safely without NaN or crash", async () => {
@@ -620,7 +639,10 @@ describe("ATS RESUME SCORE & COMPATIBILITY SUITE", () => {
 
       const uploadJson = await uploadRes.json();
       assert.equal(uploadJson.success, false);
-      assert.ok(uploadJson.error.message.includes("Invalid file type") || uploadJson.error.message.includes("PDF"));
+      assert.ok(
+        uploadJson.error.message.includes("Invalid file type") ||
+          uploadJson.error.message.includes("PDF"),
+      );
     });
 
     it("replaces existing resume and invalidates previous ATS score", async () => {
@@ -664,7 +686,19 @@ describe("ATS RESUME SCORE & COMPATIBILITY SUITE", () => {
       // Update resume 2 parsed status
       const updatedProfile: IParsedResumeProfile = {
         ...validParsedProfile,
-        skills: ["React", "TypeScript", "Next.js", "Docker", "AWS", "Kubernetes", "GraphQL", "Node.js", "Python", "Redis", "PostgreSQL"],
+        skills: [
+          "React",
+          "TypeScript",
+          "Next.js",
+          "Docker",
+          "AWS",
+          "Kubernetes",
+          "GraphQL",
+          "Node.js",
+          "Python",
+          "Redis",
+          "PostgreSQL",
+        ],
       };
       await resumeRepository.updateParsingStatus(resume2Id, {
         parsingStatus: "COMPLETED",

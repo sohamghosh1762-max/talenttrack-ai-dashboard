@@ -135,7 +135,6 @@ export interface IUser {
 
 export type SafeUser = Omit<IUser, "passwordHash">;
 
-
 export interface UserQueryParams {
   page?: number | undefined;
   limit?: number | undefined;

@@ -22,7 +22,8 @@ const DEFAULT_SEED_CONVERSATIONS: IConversation[] = [
     applicationId: "65f1a2b3c4d5e6f7a8b9c201",
     jobId: "65f1a2b3c4d5e6f7a8b9c101",
     lastMessageId: "65f1a2b3c4d5e6f7a8b9c502",
-    lastMessageText: "Thanks for the update! I am available on Thursday afternoon for the technical round.",
+    lastMessageText:
+      "Thanks for the update! I am available on Thursday afternoon for the technical round.",
     lastMessageAt: "2025-09-15T10:45:00.000Z",
     lastMessageSenderId: "65f1a2b3c4d5e6f7a8b9c008",
     createdAt: "2025-09-15T10:20:00.000Z",
@@ -221,8 +222,12 @@ class ConversationRepository {
     );
 
     all.sort((a, b) => {
-      const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : new Date(a.createdAt).getTime();
-      const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : new Date(b.createdAt).getTime();
+      const timeA = a.lastMessageAt
+        ? new Date(a.lastMessageAt).getTime()
+        : new Date(a.createdAt).getTime();
+      const timeB = b.lastMessageAt
+        ? new Date(b.lastMessageAt).getTime()
+        : new Date(b.createdAt).getTime();
       return timeB - timeA;
     });
 
@@ -282,10 +287,7 @@ class ConversationRepository {
     if (isDatabaseConnected() && isValidObjectId(applicationId)) {
       // Find existing conversation matching this applicationId or participants + job
       let doc = await Conversation.findOne({
-        $or: [
-          { applicationId },
-          { participantIds: { $all: participants }, jobId },
-        ],
+        $or: [{ applicationId }, { participantIds: { $all: participants }, jobId }],
       }).lean<any>();
 
       if (!doc) {
@@ -369,8 +371,12 @@ class ConversationRepository {
           text: doc.text,
           attachments: doc.attachments || [],
           readAt: doc.readAt ? new Date(doc.readAt).toISOString() : null,
-          createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
-          updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
+          createdAt: doc.createdAt
+            ? new Date(doc.createdAt).toISOString()
+            : new Date().toISOString(),
+          updatedAt: doc.updatedAt
+            ? new Date(doc.updatedAt).toISOString()
+            : new Date().toISOString(),
           sender: sender
             ? {
                 id: sender.id,
@@ -410,8 +416,7 @@ class ConversationRepository {
 
   public async createMessage(
     conversationIdOrInput:
-      | string
-      | { conversationId: string; senderId: string; recipientId: string; text: string },
+      string | { conversationId: string; senderId: string; recipientId: string; text: string },
     senderIdArg?: string,
     recipientIdArg?: string,
     textArg?: string,

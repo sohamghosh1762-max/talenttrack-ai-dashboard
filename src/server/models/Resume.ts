@@ -90,12 +90,20 @@ const ResumeSchema = new Schema<IResumeDocument>(
       virtuals: true,
       transform: (_doc, ret: Record<string, any>) => {
         ret["id"] = ret["_id"] ? ret["_id"].toString() : ret["id"];
-        if (ret["applicantId"] && typeof ret["applicantId"] === "object" && "_id" in ret["applicantId"]) {
+        if (
+          ret["applicantId"] &&
+          typeof ret["applicantId"] === "object" &&
+          "_id" in ret["applicantId"]
+        ) {
           ret["applicantId"] = ret["applicantId"]._id.toString();
         } else if (ret["applicantId"]) {
           ret["applicantId"] = ret["applicantId"].toString();
         }
-        if (ret["applicationId"] && typeof ret["applicationId"] === "object" && "_id" in ret["applicationId"]) {
+        if (
+          ret["applicationId"] &&
+          typeof ret["applicationId"] === "object" &&
+          "_id" in ret["applicationId"]
+        ) {
           ret["applicationId"] = ret["applicationId"]._id.toString();
         } else if (ret["applicationId"]) {
           ret["applicationId"] = ret["applicationId"].toString();

@@ -18,7 +18,10 @@ export interface UpdateApplicantPreferencesInput {
   emailNotifications?: boolean | undefined;
 }
 
-export const DEFAULT_APPLICANT_PREFERENCES: Omit<IApplicantPreferences, "id" | "userId" | "createdAt" | "updatedAt"> = {
+export const DEFAULT_APPLICANT_PREFERENCES: Omit<
+  IApplicantPreferences,
+  "id" | "userId" | "createdAt" | "updatedAt"
+> = {
   applicationStatusUpdates: true,
   interviewReminders: true,
   jobRecommendationAlerts: true,

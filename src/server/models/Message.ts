@@ -53,7 +53,11 @@ const MessageSchema = new Schema<IMessageDocument>(
       virtuals: true,
       transform: (_doc, ret: Record<string, any>) => {
         ret["id"] = ret["_id"] ? ret["_id"].toString() : ret["id"];
-        if (ret["conversationId"] && typeof ret["conversationId"] === "object" && "_id" in ret["conversationId"]) {
+        if (
+          ret["conversationId"] &&
+          typeof ret["conversationId"] === "object" &&
+          "_id" in ret["conversationId"]
+        ) {
           ret["conversationId"] = ret["conversationId"]._id.toString();
         } else if (ret["conversationId"]) {
           ret["conversationId"] = ret["conversationId"].toString();
@@ -63,7 +67,11 @@ const MessageSchema = new Schema<IMessageDocument>(
         } else if (ret["senderId"]) {
           ret["senderId"] = ret["senderId"].toString();
         }
-        if (ret["recipientId"] && typeof ret["recipientId"] === "object" && "_id" in ret["recipientId"]) {
+        if (
+          ret["recipientId"] &&
+          typeof ret["recipientId"] === "object" &&
+          "_id" in ret["recipientId"]
+        ) {
           ret["recipientId"] = ret["recipientId"]._id.toString();
         } else if (ret["recipientId"]) {
           ret["recipientId"] = ret["recipientId"].toString();
@@ -77,7 +85,11 @@ const MessageSchema = new Schema<IMessageDocument>(
       virtuals: true,
       transform: (_doc, ret: Record<string, any>) => {
         ret["id"] = ret["_id"] ? ret["_id"].toString() : ret["id"];
-        if (ret["conversationId"] && typeof ret["conversationId"] === "object" && "_id" in ret["conversationId"]) {
+        if (
+          ret["conversationId"] &&
+          typeof ret["conversationId"] === "object" &&
+          "_id" in ret["conversationId"]
+        ) {
           ret["conversationId"] = ret["conversationId"]._id.toString();
         } else if (ret["conversationId"]) {
           ret["conversationId"] = ret["conversationId"].toString();
@@ -87,7 +99,11 @@ const MessageSchema = new Schema<IMessageDocument>(
         } else if (ret["senderId"]) {
           ret["senderId"] = ret["senderId"].toString();
         }
-        if (ret["recipientId"] && typeof ret["recipientId"] === "object" && "_id" in ret["recipientId"]) {
+        if (
+          ret["recipientId"] &&
+          typeof ret["recipientId"] === "object" &&
+          "_id" in ret["recipientId"]
+        ) {
           ret["recipientId"] = ret["recipientId"]._id.toString();
         } else if (ret["recipientId"]) {
           ret["recipientId"] = ret["recipientId"].toString();

@@ -5,7 +5,6 @@ import { BadRequestError } from "../utils/errors.ts";
 const require = createRequire(import.meta.url);
 const pdfParse = require("pdf-parse");
 
-
 export const MAX_RESUME_TEXT_CHARS = 50_000;
 
 export interface ExtractedResumeText {
@@ -50,7 +49,9 @@ export class ResumeTextExtractor {
     // 5. Enforce safe size limit
     const isTruncated = clean.length > MAX_RESUME_TEXT_CHARS;
     if (isTruncated) {
-      clean = clean.substring(0, MAX_RESUME_TEXT_CHARS) + "\n\n... [Resume text truncated for processing]";
+      clean =
+        clean.substring(0, MAX_RESUME_TEXT_CHARS) +
+        "\n\n... [Resume text truncated for processing]";
     }
 
     return {
@@ -118,7 +119,6 @@ export class ResumeTextExtractor {
       throw new BadRequestError("Unable to extract readable text from this resume.");
     }
   }
-
 
   /**
    * Universal text extractor dispatcher based on mimeType and/or file signatures

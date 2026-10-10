@@ -1,6 +1,7 @@
 import express, { type Request as ExpressReq, type Response as ExpressRes } from "express";
-import { connectToDatabase, getDatabaseStatus } from "./db/mongodb.ts";
+import { connectToDatabase, disconnectDatabase, getDatabaseStatus } from "./db/mongodb.ts";
 import { handleApiRequest } from "./routes/index.ts";
+import { resumeBackgroundWorker } from "./workers/resume-worker.ts";
 
 /**
  * Express Application Adapter for TalentTrack AI API
@@ -11,7 +12,7 @@ export function createExpressApp() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Database startup & health check middleware
+  // Liveness health check endpoint
   app.get("/api/health", async (_req: ExpressReq, res: ExpressRes) => {
     const dbStatus = getDatabaseStatus();
     res.status(200).json({
@@ -21,6 +22,23 @@ export function createExpressApp() {
         database: dbStatus.status,
         timestamp: new Date().toISOString(),
         service: "talenttrack-ai-api",
+      },
+    });
+  });
+
+  // Readiness dependency probe
+  app.get("/api/ready", async (_req: ExpressReq, res: ExpressRes) => {
+    const dbStatus = getDatabaseStatus();
+    const isReady = dbStatus.status === "connected";
+    const statusCode = isReady ? 200 : 503;
+    res.status(statusCode).json({
+      success: isReady,
+      data: {
+        ready: isReady,
+        status: isReady ? "ready" : "not_ready",
+        database: dbStatus.status,
+        readyState: dbStatus.readyState,
+        timestamp: new Date().toISOString(),
       },
     });
   });
@@ -35,9 +53,7 @@ export function createExpressApp() {
         else if (Array.isArray(value)) headers.set(key, value.join(", "));
       }
 
-      const body = ["GET", "HEAD"].includes(req.method)
-        ? undefined
-        : JSON.stringify(req.body);
+      const body = ["GET", "HEAD"].includes(req.method) ? undefined : JSON.stringify(req.body);
 
       const reqInit: RequestInit = {
         method: req.method,
@@ -72,21 +88,40 @@ export function createExpressApp() {
 }
 
 /**
- * Start Express Server with MongoDB Startup Verification
+ * Start Express Server with MongoDB Startup Verification & Background Workers
  */
 export async function startServer(port: number = 3000) {
   console.log("Starting TalentTrack AI Express Server...");
-  console.log("  [1/3] Validating environment configuration...");
+  console.log("  [1/4] Validating environment configuration...");
 
   try {
-    console.log("  [2/3] Connecting to MongoDB persistence layer...");
+    console.log("  [2/4] Connecting to MongoDB persistence layer...");
     await connectToDatabase();
-    console.log("  [3/3] MongoDB connection verified successfully.");
+    console.log("  [3/4] MongoDB connection verified successfully.");
+
+    console.log("  [4/4] Starting background resume workers...");
+    await resumeBackgroundWorker.start(2000);
 
     const app = createExpressApp();
     const server = app.listen(port, () => {
       console.log(`🚀 TalentTrack AI Express server listening on http://localhost:${port}`);
     });
+
+    // Graceful shutdown handling
+    const shutdown = async (signal: string) => {
+      console.log(`\n[Server] Received ${signal}. Initiating graceful shutdown...`);
+      resumeBackgroundWorker.stop();
+
+      server.close(async () => {
+        console.log("[Server] HTTP server closed.");
+        await disconnectDatabase();
+        console.log("[Server] Graceful shutdown completed.");
+        process.exit(0);
+      });
+    };
+
+    process.on("SIGINT", () => shutdown("SIGINT"));
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
 
     return server;
   } catch (error) {

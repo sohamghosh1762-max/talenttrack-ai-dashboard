@@ -317,7 +317,7 @@ describe("Firebase Applicant Authentication Test Suite", () => {
       assert.strictEqual(json.success, false);
       assert.ok(
         json.error?.message?.includes("recruiter/admin account") ||
-        json.message?.includes("recruiter/admin account"),
+          json.message?.includes("recruiter/admin account"),
       );
     });
 
@@ -351,4 +351,3 @@ describe("Firebase Applicant Authentication Test Suite", () => {
     });
   });
 });
-

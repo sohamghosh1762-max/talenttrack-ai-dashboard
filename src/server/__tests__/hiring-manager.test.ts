@@ -176,7 +176,8 @@ describe("HIRING MANAGER ROLE — END-TO-END ENTERPRISE ATS INTEGRATION", () => 
           formattingAndCompleteness: 95,
         },
         strengths: ["Strong backend architecture", "Deep Go experience"],
-        semanticInsights: "Candidate aligns exceptionally well with senior architecture requirements.",
+        semanticInsights:
+          "Candidate aligns exceptionally well with senior architecture requirements.",
       },
     } as any);
 
@@ -198,7 +199,8 @@ describe("HIRING MANAGER ROLE — END-TO-END ENTERPRISE ATS INTEGRATION", () => 
           formattingAndCompleteness: 95,
         },
         strengths: ["Strong backend architecture", "Deep Go experience"],
-        semanticInsights: "Candidate aligns exceptionally well with senior architecture requirements.",
+        semanticInsights:
+          "Candidate aligns exceptionally well with senior architecture requirements.",
       },
     } as any);
 
@@ -227,9 +229,18 @@ describe("HIRING MANAGER ROLE — END-TO-END ENTERPRISE ATS INTEGRATION", () => 
     it("HIRING_MANAGER is authorized for /hiring-manager and subroutes", () => {
       assert.strictEqual(isUserAuthorizedForRoute("HIRING_MANAGER", "/hiring-manager"), true);
       assert.strictEqual(isUserAuthorizedForRoute("HIRING_MANAGER", "/hiring-manager/jobs"), true);
-      assert.strictEqual(isUserAuthorizedForRoute("HIRING_MANAGER", "/hiring-manager/candidates"), true);
-      assert.strictEqual(isUserAuthorizedForRoute("HIRING_MANAGER", "/hiring-manager/shortlisted"), true);
-      assert.strictEqual(isUserAuthorizedForRoute("HIRING_MANAGER", "/hiring-manager/analytics"), true);
+      assert.strictEqual(
+        isUserAuthorizedForRoute("HIRING_MANAGER", "/hiring-manager/candidates"),
+        true,
+      );
+      assert.strictEqual(
+        isUserAuthorizedForRoute("HIRING_MANAGER", "/hiring-manager/shortlisted"),
+        true,
+      );
+      assert.strictEqual(
+        isUserAuthorizedForRoute("HIRING_MANAGER", "/hiring-manager/analytics"),
+        true,
+      );
     });
 
     it("HIRING_MANAGER is blocked from /admin and /applicant", () => {
@@ -241,7 +252,10 @@ describe("HIRING MANAGER ROLE — END-TO-END ENTERPRISE ATS INTEGRATION", () => 
 
     it("APPLICANT is blocked from /hiring-manager", () => {
       assert.strictEqual(isUserAuthorizedForRoute("APPLICANT", "/hiring-manager"), false);
-      assert.strictEqual(isUserAuthorizedForRoute("APPLICANT", "/hiring-manager/candidates"), false);
+      assert.strictEqual(
+        isUserAuthorizedForRoute("APPLICANT", "/hiring-manager/candidates"),
+        false,
+      );
     });
 
     it("RECRUITER is blocked from /hiring-manager unless Admin", () => {
@@ -277,9 +291,7 @@ describe("HIRING MANAGER ROLE — END-TO-END ENTERPRISE ATS INTEGRATION", () => 
       assert.strictEqual(res.status, 403);
       const json = await res.json();
       assert.strictEqual(json.success, false);
-      assert.ok(
-        json.error?.code === "AUTHORIZATION_ERROR" || json.error?.code === "FORBIDDEN",
-      );
+      assert.ok(json.error?.code === "AUTHORIZATION_ERROR" || json.error?.code === "FORBIDDEN");
     });
 
     it("Rejects RECRUITER role from /api/hiring-manager/* with 403 Forbidden", async () => {
@@ -382,17 +394,18 @@ describe("HIRING MANAGER ROLE — END-TO-END ENTERPRISE ATS INTEGRATION", () => 
       assert.strictEqual(res.status, 403);
       const json = await res.json();
       assert.strictEqual(json.success, false);
+      assert.ok(json.error?.code === "AUTHORIZATION_ERROR" || json.error?.code === "FORBIDDEN");
       assert.ok(
-        json.error?.code === "AUTHORIZATION_ERROR" || json.error?.code === "FORBIDDEN",
+        json.error?.message?.includes("authorized") || json.error?.message?.includes("assigned"),
       );
-      assert.ok(json.error?.message?.includes("authorized") || json.error?.message?.includes("assigned"));
     });
   });
 
   describe("5. Structured Feedback System", () => {
     it("Allows Hiring Manager to submit structured evaluation with ratings and recommendations", async () => {
       const feedbackPayload = {
-        overallFeedback: "Exceptional architecture expertise and clear communication during evaluation.",
+        overallFeedback:
+          "Exceptional architecture expertise and clear communication during evaluation.",
         technicalSkillsRating: 5,
         communicationRating: 4,
         experienceRating: 5,

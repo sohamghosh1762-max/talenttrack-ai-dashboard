@@ -740,9 +740,11 @@ class UserRepository {
     user.updatedAt = new Date().toISOString();
 
     if (isDatabaseConnected() && isValidObjectId(id)) {
-      User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch((err) => {
-        console.error(`[MongoDB] Error updating status for user ${id}:`, err);
-      });
+      User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch(
+        (err) => {
+          console.error(`[MongoDB] Error updating status for user ${id}:`, err);
+        },
+      );
     }
 
     return {
@@ -804,7 +806,9 @@ class UserRepository {
           updatedCount++;
 
           if (isDatabaseConnected() && isValidObjectId(id)) {
-            User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch(console.error);
+            User.findByIdAndUpdate(id, {
+              $set: { status: newStatus, updatedAt: new Date() },
+            }).catch(console.error);
           }
 
           auditService.recordStatusChange({
@@ -843,7 +847,9 @@ class UserRepository {
       updatedCount++;
 
       if (isDatabaseConnected() && isValidObjectId(id)) {
-        User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch(console.error);
+        User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch(
+          console.error,
+        );
       }
 
       auditService.recordStatusChange({
@@ -1194,7 +1200,8 @@ class UserRepository {
       if (data.skills !== undefined) applicantDocFields["skills"] = data.skills;
       if (data.experiences !== undefined) applicantDocFields["experience"] = data.experiences;
       if (data.education !== undefined) applicantDocFields["education"] = data.education;
-      if (data.certifications !== undefined) applicantDocFields["certifications"] = data.certifications;
+      if (data.certifications !== undefined)
+        applicantDocFields["certifications"] = data.certifications;
       if (data.projects !== undefined) applicantDocFields["projects"] = data.projects;
 
       await Applicant.findOneAndUpdate(
@@ -1227,7 +1234,9 @@ class UserRepository {
       company: exp.company || "Company",
       location: exp.location || "",
       period: `${exp.startDate || ""} - ${exp.endDate || "Present"}`.trim(),
-      description: Array.isArray(exp.description) ? exp.description.join(". ") : String(exp.description || ""),
+      description: Array.isArray(exp.description)
+        ? exp.description.join(". ")
+        : String(exp.description || ""),
     }));
 
     const mappedEducation = (profile.education || []).map((edu, i) => ({
@@ -1265,7 +1274,8 @@ class UserRepository {
       skills: mergedSkills,
       experiences: mappedExperiences.length > 0 ? mappedExperiences : currentProfile.experiences,
       education: mappedEducation.length > 0 ? mappedEducation : currentProfile.education,
-      certifications: mappedCertifications.length > 0 ? mappedCertifications : currentProfile.certifications,
+      certifications:
+        mappedCertifications.length > 0 ? mappedCertifications : currentProfile.certifications,
       projects: mappedProjects.length > 0 ? mappedProjects : currentProfile.projects,
       resumeFileName: resumeFileName || currentProfile.resumeFileName,
       resumeId: resumeId || currentProfile.resumeId,

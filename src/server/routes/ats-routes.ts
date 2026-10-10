@@ -49,7 +49,11 @@ export async function handleGetApplicantJobMatch(req: Request, jobId: string): P
     return successResponse(unauthResponse, "Candidate sign-in required for job matching.", 200);
   }
 
-  if (authUser.role !== "APPLICANT" && authUser.role !== "ADMIN" && authUser.role !== "SUPER_ADMIN") {
+  if (
+    authUser.role !== "APPLICANT" &&
+    authUser.role !== "ADMIN" &&
+    authUser.role !== "SUPER_ADMIN"
+  ) {
     const nonApplicantResponse: ApplicantJobMatchResponse = {
       jobId: job.id,
       hasResume: false,
@@ -68,7 +72,8 @@ export async function handleGetApplicantJobMatch(req: Request, jobId: string): P
   const applicantProfile = fullUser?.applicantProfile || {};
   const resumes = await resumeRepository.findByApplicantId(authUser.id);
 
-  let latestResume = resumes.find((r) => r.parsingStatus === "COMPLETED" && r.parsedProfile) || resumes[0];
+  let latestResume =
+    resumes.find((r) => r.parsingStatus === "COMPLETED" && r.parsedProfile) || resumes[0];
 
   // Auto-parse if needed
   if (latestResume && (latestResume.parsingStatus !== "COMPLETED" || !latestResume.parsedProfile)) {
@@ -82,10 +87,14 @@ export async function handleGetApplicantJobMatch(req: Request, jobId: string): P
     }
   }
 
-  const hasResume = Boolean(latestResume && latestResume.parsingStatus === "COMPLETED" && latestResume.parsedProfile);
+  const hasResume = Boolean(
+    latestResume && latestResume.parsingStatus === "COMPLETED" && latestResume.parsedProfile,
+  );
   const resumeSkills = latestResume?.parsedProfile?.skills || [];
   const profileSkills = applicantProfile.skills || [];
-  const allCandidateSkills = Array.from(new Set([...resumeSkills, ...profileSkills])).filter(Boolean);
+  const allCandidateSkills = Array.from(new Set([...resumeSkills, ...profileSkills])).filter(
+    Boolean,
+  );
 
   const matchedSkills: string[] = [];
   const missingSkills: string[] = [];
@@ -143,8 +152,8 @@ export async function handleGetApplicantJobMatch(req: Request, jobId: string): P
           skillsScore * 0.35 +
             expScore * 0.25 +
             kwScore * 0.15 +
-            eduScore * 0.10 +
-            compScore * 0.10 +
+            eduScore * 0.1 +
+            compScore * 0.1 +
             structScore * 0.05,
         ),
       ),
@@ -159,13 +168,17 @@ export async function handleGetApplicantJobMatch(req: Request, jobId: string): P
 
   let summary = "";
   if (calculatedScore >= 85) {
-    summary = "Your profile has strong skill alignment with the required technical qualifications and seniority criteria for this position.";
+    summary =
+      "Your profile has strong skill alignment with the required technical qualifications and seniority criteria for this position.";
   } else if (calculatedScore >= 70) {
-    summary = "Solid qualification match across key requirements with strong alignment to core responsibilities.";
+    summary =
+      "Solid qualification match across key requirements with strong alignment to core responsibilities.";
   } else if (calculatedScore >= 55) {
-    summary = "Moderate alignment with some core requirements met. Consider highlighting relevant projects or skills.";
+    summary =
+      "Moderate alignment with some core requirements met. Consider highlighting relevant projects or skills.";
   } else {
-    summary = "Foundational profile match with notable qualification gaps for this specific position.";
+    summary =
+      "Foundational profile match with notable qualification gaps for this specific position.";
   }
 
   const tier = atsService.getCompatibilityTier(calculatedScore).label;
@@ -199,7 +212,9 @@ export async function handleGetApplicantAtsScore(req: Request): Promise<Response
   const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 
   if (!isApplicant && !isAdmin) {
-    throw new ForbiddenError("Only candidate applicant accounts can access personal ATS resume analysis.");
+    throw new ForbiddenError(
+      "Only candidate applicant accounts can access personal ATS resume analysis.",
+    );
   }
 
   // Load applicant resumes strictly scoped to the authenticated user ID
@@ -214,10 +229,14 @@ export async function handleGetApplicantAtsScore(req: Request): Promise<Response
   }
 
   // Find most recent completed parsed resume or latest uploaded
-  let completedResume = resumes.find((r) => r.parsingStatus === "COMPLETED" && r.parsedProfile) || resumes[0];
+  let completedResume =
+    resumes.find((r) => r.parsingStatus === "COMPLETED" && r.parsedProfile) || resumes[0];
 
   // Auto-parse latest resume if it has not been parsed yet
-  if (completedResume && (completedResume.parsingStatus !== "COMPLETED" || !completedResume.parsedProfile)) {
+  if (
+    completedResume &&
+    (completedResume.parsingStatus !== "COMPLETED" || !completedResume.parsedProfile)
+  ) {
     try {
       const parsed = await resumeParserService.parseResume(completedResume.id);
       if (parsed && parsed.parsingStatus === "COMPLETED" && parsed.parsedProfile) {
@@ -228,7 +247,11 @@ export async function handleGetApplicantAtsScore(req: Request): Promise<Response
     }
   }
 
-  if (!completedResume || completedResume.parsingStatus !== "COMPLETED" || !completedResume.parsedProfile) {
+  if (
+    !completedResume ||
+    completedResume.parsingStatus !== "COMPLETED" ||
+    !completedResume.parsedProfile
+  ) {
     const pendingResponse: AtsScoreResponse = {
       hasResume: true,
       resumeId: completedResume?.id,
@@ -311,7 +334,9 @@ export async function handleAnalyzeApplicantAtsScore(req: Request): Promise<Resp
   }
 
   if (!completedResume || !completedResume.parsedProfile) {
-    throw new NotFoundError("No completed parsed resume found. Please upload and parse your resume first.");
+    throw new NotFoundError(
+      "No completed parsed resume found. Please upload and parse your resume first.",
+    );
   }
 
   let forceFresh = false;
@@ -358,7 +383,8 @@ export async function handleAtsApiRequest(req: Request): Promise<Response | null
   try {
     // 1. POST /api/applicant/ats-score/analyze or POST /api/applicant/ats-score
     if (
-      (pathname === "/api/applicant/ats-score/analyze" || pathname === "/api/applicant/ats-score") &&
+      (pathname === "/api/applicant/ats-score/analyze" ||
+        pathname === "/api/applicant/ats-score") &&
       req.method === "POST"
     ) {
       return await handleAnalyzeApplicantAtsScore(req);

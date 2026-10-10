@@ -140,7 +140,9 @@ export function HiringManagerSidebar({ onNavClick }: HiringManagerSidebarProps) 
                 {user?.name || "Hiring Manager"}
               </span>
               <span className="block truncate text-[10px] text-sidebar-foreground/70">
-                {user?.recruiterProfile?.companyName || user?.recruiterProfile?.department || "Decision Maker"}
+                {user?.recruiterProfile?.companyName ||
+                  user?.recruiterProfile?.department ||
+                  "Decision Maker"}
               </span>
             </div>
           </div>

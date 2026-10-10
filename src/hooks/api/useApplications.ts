@@ -168,15 +168,15 @@ export function useUpdateApplicationStage() {
   return useMutation<
     IApplication,
     Error,
-    { applicationId?: string; id?: string; stage: string }
+    { applicationId?: string; id?: string; stage: string; reason?: string }
   >({
-    mutationFn: async ({ applicationId, id, stage }) => {
+    mutationFn: async ({ applicationId, id, stage, reason }) => {
       const targetId = applicationId || id;
       if (!targetId) throw new Error("Application ID is required");
 
       const res = await apiClient.patch<
         { application: IApplication; stage: string; status: string } | IApplication
-      >(`/api/recruiter/applications/${targetId}/stage`, { stage });
+      >(`/api/recruiter/applications/${targetId}/stage`, { stage, reason });
 
       if (res && "application" in res) {
         return res.application;
@@ -186,9 +186,152 @@ export function useUpdateApplicationStage() {
     onSuccess: (data, variables) => {
       const targetId = variables.applicationId || variables.id || data?.id;
       queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
       if (targetId) {
         queryClient.invalidateQueries({ queryKey: applicationKeys.detail(targetId) });
       }
     },
   });
 }
+
+/**
+ * TanStack Mutation hook to add a persistent internal recruiter note to an application
+ */
+export function useAddApplicationNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    any,
+    Error,
+    { applicationId: string; text: string; isInternal?: boolean }
+  >({
+    mutationFn: async ({ applicationId, text, isInternal = true }) => {
+      return await apiClient.post(`/api/applications/${applicationId}/notes`, {
+        text,
+        isInternal,
+      });
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+      queryClient.invalidateQueries({ queryKey: applicationKeys.detail(variables.applicationId) });
+    },
+  });
+}
+
+/**
+ * TanStack Mutation hook to add structured recruiter/interview feedback to an application
+ */
+export function useAddApplicationFeedback() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    any,
+    Error,
+    {
+      applicationId: string;
+      stage?: string;
+      overallRecommendation: "STRONG_YES" | "YES" | "NEUTRAL" | "NO" | "STRONG_NO";
+      rating: number;
+      strengths?: string[];
+      concerns?: string[];
+      notes: string;
+    }
+  >({
+    mutationFn: async ({ applicationId, ...payload }) => {
+      return await apiClient.post(`/api/applications/${applicationId}/feedback`, payload);
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+      queryClient.invalidateQueries({ queryKey: applicationKeys.detail(variables.applicationId) });
+    },
+  });
+}
+
+/**
+ * TanStack Mutation hook for batch operations on applications (bulk stage change, notes, export)
+ */
+export function useBulkApplicationAction() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { action: string; totalRequested: number; successCount: number; failureCount: number; results: any[] },
+    Error,
+    {
+      action: "UPDATE_STAGE" | "ADD_NOTE" | "ARCHIVE";
+      applicationIds: string[];
+      stage?: string;
+      note?: string;
+      reason?: string;
+    }
+  >({
+    mutationFn: async (payload) => {
+      return await apiClient.post<{
+        action: string;
+        totalRequested: number;
+        successCount: number;
+        failureCount: number;
+        results: any[];
+      }>("/api/recruiter/applications/bulk", payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+  });
+}
+
+/**
+ * Utility to trigger CSV download of candidates / applications with formula-injection protection
+ */
+export async function downloadCandidatesCsv(params: Record<string, string | number | undefined> = {}) {
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") {
+      query.set(k, String(v));
+    }
+  }
+
+  // Retrieve auth token for download
+  let token = "";
+  if (typeof window !== "undefined") {
+    try {
+      const raw =
+        localStorage.getItem("talenttrack_applicant_auth_session_v1") ||
+        sessionStorage.getItem("talenttrack_applicant_auth_session_v1") ||
+        localStorage.getItem("talenttrack_legacy_auth_session_v1") ||
+        sessionStorage.getItem("talenttrack_legacy_auth_session_v1") ||
+        localStorage.getItem("talenttrack_auth_session_v1") ||
+        sessionStorage.getItem("talenttrack_auth_session_v1") ||
+        localStorage.getItem("talenttrack_auth");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.token) token = parsed.token;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const url = `/api/recruiter/export/candidates?${query.toString()}`;
+  const response = await fetch(url, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to export CSV: ${response.statusText}`);
+  }
+
+  const blob = await response.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = downloadUrl;
+  a.download = `talenttrack-candidates-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(downloadUrl);
+}
+

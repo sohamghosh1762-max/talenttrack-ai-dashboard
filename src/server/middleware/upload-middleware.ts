@@ -68,32 +68,17 @@ export function validateMagicBytes(buffer: Buffer, extension: string): boolean {
 
   // PDF Magic Bytes: %PDF- (0x25 0x50 0x44 0x46)
   if (extension === ".pdf") {
-    return (
-      buffer[0] === 0x25 &&
-      buffer[1] === 0x50 &&
-      buffer[2] === 0x44 &&
-      buffer[3] === 0x46
-    );
+    return buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
   }
 
   // DOCX / OpenXML is a ZIP archive container: PK\x03\x04 (0x50 0x4B 0x03 0x04)
   if (extension === ".docx") {
-    return (
-      buffer[0] === 0x50 &&
-      buffer[1] === 0x4b &&
-      buffer[2] === 0x03 &&
-      buffer[3] === 0x04
-    );
+    return buffer[0] === 0x50 && buffer[1] === 0x4b && buffer[2] === 0x03 && buffer[3] === 0x04;
   }
 
   // DOC (legacy binary format) starts with 0xD0 0xCF 0x11 0xE0 (Composite Document File)
   if (extension === ".doc") {
-    return (
-      buffer[0] === 0xd0 &&
-      buffer[1] === 0xcf &&
-      buffer[2] === 0x11 &&
-      buffer[3] === 0xe0
-    );
+    return buffer[0] === 0xd0 && buffer[1] === 0xcf && buffer[2] === 0x11 && buffer[3] === 0xe0;
   }
 
   return false;
@@ -102,11 +87,7 @@ export function validateMagicBytes(buffer: Buffer, extension: string): boolean {
 /**
  * Validates a resume file buffer, name, and mime type
  */
-export function validateResumeFile(
-  fileName: string,
-  mimeType: string,
-  buffer: Buffer,
-): void {
+export function validateResumeFile(fileName: string, mimeType: string, buffer: Buffer): void {
   if (!fileName || typeof fileName !== "string") {
     throw new ValidationError("Invalid file: Filename is required.");
   }
@@ -117,10 +98,10 @@ export function validateResumeFile(
 
   if (buffer.length > MAX_FILE_SIZE_BYTES) {
     const sizeMb = (buffer.length / (1024 * 1024)).toFixed(2);
-    throw new ValidationError(
-      `File size (${sizeMb} MB) exceeds maximum allowed limit of 10 MB.`,
-      { size: buffer.length, limit: MAX_FILE_SIZE_BYTES },
-    );
+    throw new ValidationError(`File size (${sizeMb} MB) exceeds maximum allowed limit of 10 MB.`, {
+      size: buffer.length,
+      limit: MAX_FILE_SIZE_BYTES,
+    });
   }
 
   const { valid, extension } = validateFileExtension(fileName);
@@ -131,7 +112,11 @@ export function validateResumeFile(
   }
 
   const normalizedMime = mimeType ? mimeType.toLowerCase().trim() : "";
-  if (!ALLOWED_MIME_TYPES.has(normalizedMime) && !normalizedMime.includes("pdf") && !normalizedMime.includes("word")) {
+  if (
+    !ALLOWED_MIME_TYPES.has(normalizedMime) &&
+    !normalizedMime.includes("pdf") &&
+    !normalizedMime.includes("word")
+  ) {
     throw new ValidationError(
       `Unsupported MIME type (${normalizedMime}). Please upload a valid PDF or DOCX file.`,
     );
@@ -182,7 +167,9 @@ export async function parseResumeFormData(
   try {
     formData = await req.formData();
   } catch (err: any) {
-    throw new ValidationError(`Failed to parse multipart form data: ${err.message || "Invalid payload"}`);
+    throw new ValidationError(
+      `Failed to parse multipart form data: ${err.message || "Invalid payload"}`,
+    );
   }
 
   // Check 'resume', 'file', or fallback to first file entry in FormData
@@ -199,7 +186,9 @@ export async function parseResumeFormData(
   }
 
   if (!fileEntry || typeof fileEntry === "string" || !("arrayBuffer" in fileEntry)) {
-    throw new ValidationError("No resume file found in upload payload. Field 'resume' is required.");
+    throw new ValidationError(
+      "No resume file found in upload payload. Field 'resume' is required.",
+    );
   }
 
   const file = fileEntry as File;

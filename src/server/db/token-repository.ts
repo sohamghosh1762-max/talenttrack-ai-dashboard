@@ -1,5 +1,9 @@
 import crypto from "node:crypto";
 import { hashToken } from "./session-repository.ts";
+import { AuthToken } from "../models/AuthToken.ts";
+import { isDatabaseConnected } from "./mongodb.ts";
+import { isValidObjectId } from "./user-repository.ts";
+import mongoose from "mongoose";
 
 export interface IAuthToken {
   id: string;
@@ -24,20 +28,39 @@ class TokenRepository {
     const rawToken = crypto.randomBytes(32).toString("hex");
     const tokenHash = hashToken(rawToken);
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + ttlMinutes * 60 * 1000).toISOString();
+    const expiresAt = new Date(now.getTime() + ttlMinutes * 60 * 1000);
+    const tokenId = `tok_${now.getTime().toString(36)}_${crypto.randomBytes(6).toString("hex")}`;
 
     const record: IAuthToken = {
-      id: `tok_${now.getTime().toString(36)}_${crypto.randomBytes(6).toString("hex")}`,
+      id: tokenId,
       userId,
       tokenHash,
       type: "PASSWORD_RESET",
-      expiresAt,
+      expiresAt: expiresAt.toISOString(),
       usedAt: null,
       createdAt: now.toISOString(),
     };
 
     this.tokens.set(tokenHash, record);
-    return { token: rawToken, expiresAt };
+
+    if (isDatabaseConnected()) {
+      const mongoUserId = isValidObjectId(userId)
+        ? new mongoose.Types.ObjectId(userId)
+        : new mongoose.Types.ObjectId();
+
+      AuthToken.create({
+        tokenId,
+        userId: mongoUserId,
+        tokenHash,
+        type: "PASSWORD_RESET",
+        expiresAt,
+        usedAt: null,
+      }).catch((err) => {
+        console.warn("[TokenRepository] MongoDB token write warning:", err.message);
+      });
+    }
+
+    return { token: rawToken, expiresAt: expiresAt.toISOString() };
   }
 
   /**
@@ -74,7 +97,11 @@ class TokenRepository {
     const tokenHash = hashToken(rawToken);
     const record = this.tokens.get(tokenHash);
     if (record && !record.usedAt) {
-      record.usedAt = new Date().toISOString();
+      const now = new Date();
+      record.usedAt = now.toISOString();
+      if (isDatabaseConnected()) {
+        AuthToken.updateOne({ tokenHash }, { usedAt: now }).catch(() => {});
+      }
       return true;
     }
     return false;
@@ -90,20 +117,39 @@ class TokenRepository {
     const rawToken = crypto.randomBytes(32).toString("hex");
     const tokenHash = hashToken(rawToken);
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + ttlHours * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(now.getTime() + ttlHours * 60 * 60 * 1000);
+    const tokenId = `tok_${now.getTime().toString(36)}_${crypto.randomBytes(6).toString("hex")}`;
 
     const record: IAuthToken = {
-      id: `tok_${now.getTime().toString(36)}_${crypto.randomBytes(6).toString("hex")}`,
+      id: tokenId,
       userId,
       tokenHash,
       type: "EMAIL_VERIFICATION",
-      expiresAt,
+      expiresAt: expiresAt.toISOString(),
       usedAt: null,
       createdAt: now.toISOString(),
     };
 
     this.tokens.set(tokenHash, record);
-    return { token: rawToken, expiresAt };
+
+    if (isDatabaseConnected()) {
+      const mongoUserId = isValidObjectId(userId)
+        ? new mongoose.Types.ObjectId(userId)
+        : new mongoose.Types.ObjectId();
+
+      AuthToken.create({
+        tokenId,
+        userId: mongoUserId,
+        tokenHash,
+        type: "EMAIL_VERIFICATION",
+        expiresAt,
+        usedAt: null,
+      }).catch((err) => {
+        console.warn("[TokenRepository] MongoDB verification token write warning:", err.message);
+      });
+    }
+
+    return { token: rawToken, expiresAt: expiresAt.toISOString() };
   }
 
   /**
@@ -119,15 +165,15 @@ class TokenRepository {
     const record = this.tokens.get(tokenHash);
 
     if (!record || record.type !== "EMAIL_VERIFICATION") {
-      return { valid: false, error: "Invalid email verification token." };
+      return { valid: false, error: "Invalid verification token." };
     }
 
     if (record.usedAt) {
-      return { valid: false, error: "Email verification token has already been used." };
+      return { valid: false, error: "Verification token has already been used." };
     }
 
     if (Date.now() > new Date(record.expiresAt).getTime()) {
-      return { valid: false, error: "Email verification token has expired." };
+      return { valid: false, error: "Verification token has expired." };
     }
 
     return { valid: true, userId: record.userId };
@@ -140,14 +186,37 @@ class TokenRepository {
     const tokenHash = hashToken(rawToken);
     const record = this.tokens.get(tokenHash);
     if (record && !record.usedAt) {
-      record.usedAt = new Date().toISOString();
+      const now = new Date();
+      record.usedAt = now.toISOString();
+      if (isDatabaseConnected()) {
+        AuthToken.updateOne({ tokenHash }, { usedAt: now }).catch(() => {});
+      }
       return true;
     }
     return false;
   }
 
   /**
-   * Clear all tokens
+   * Invalidate existing tokens of a given type for a user
+   */
+  public invalidateUserTokens(userId: string, type: "PASSWORD_RESET" | "EMAIL_VERIFICATION"): void {
+    const now = new Date();
+    for (const record of this.tokens.values()) {
+      if (record.userId === userId && record.type === type && !record.usedAt) {
+        record.usedAt = now.toISOString();
+      }
+    }
+
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      AuthToken.updateMany(
+        { userId: new mongoose.Types.ObjectId(userId), type, usedAt: null },
+        { usedAt: now },
+      ).catch(() => {});
+    }
+  }
+
+  /**
+   * Clear all tokens (used for test isolation)
    */
   public clearAll(): void {
     this.tokens.clear();
