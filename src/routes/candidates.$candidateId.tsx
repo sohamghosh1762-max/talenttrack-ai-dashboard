@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import {
   Activity,
+  AlertCircle,
   ArrowLeft,
   Award,
   Briefcase,
@@ -15,6 +16,7 @@ import {
   Eye,
   FileCheck,
   FileText,
+  Loader2,
   Mail,
   MapPin,
   MessageSquare,
@@ -28,7 +30,7 @@ import {
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { useCandidate } from "@/hooks/api/useCandidates";
-import { recentApplicantsData, type Applicant } from "@/data/mockData";
+import type { Applicant } from "@/data/mockData";
 
 export const Route = createFileRoute("/candidates/$candidateId")({
   head: () => ({
@@ -53,39 +55,55 @@ function RecruiterCandidateDetailPage() {
 
   const { data: candidateData, isLoading } = useCandidate(candidateId);
 
-  const candidate: Applicant = candidateData
-    ? {
-        id: candidateData.id,
-        name: candidateData.name,
-        email: candidateData.email,
-        job: candidateData.headline || candidateData.job || "Candidate",
-        score: candidateData.score || 85,
-        status: candidateData.status || "Shortlisted",
-        initials: candidateData.initials || "C",
-        appliedOn: candidateData.createdAt
-          ? new Date(candidateData.createdAt).toLocaleDateString()
-          : "Recent",
-        phone: candidateData.phone || "",
-        location: candidateData.location || "Remote",
-        experience: candidateData.experienceYears || candidateData.experience || "3+ years",
-        skills: candidateData.skills || [],
-        summary: candidateData.summary || candidateData.bio || "",
-      }
-    : recentApplicantsData.find((c) => c.id === candidateId) || {
-        id: candidateId,
-        name: "Candidate Profile",
-        email: "candidate@talenttrack.ai",
-        job: "Software Developer",
-        score: 85,
-        status: "Shortlisted",
-        initials: "CP",
-        appliedOn: "Recent",
-        phone: "",
-        location: "Remote",
-        experience: "3+ years",
-        skills: ["React", "TypeScript", "Node.js"],
-        summary: "Candidate profile loaded from database.",
-      };
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground text-xs gap-2">
+          <Loader2 className="size-8 animate-spin text-brand-blue" />
+          <span>Loading candidate profile...</span>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!candidateData) {
+    return (
+      <DashboardLayout>
+        <div className="dashboard-card p-12 text-center space-y-4 max-w-lg mx-auto my-8">
+          <div className="grid size-12 place-items-center rounded-full bg-destructive/10 text-destructive mx-auto">
+            <AlertCircle className="size-6" />
+          </div>
+          <h2 className="text-base font-bold text-foreground">Candidate Not Found</h2>
+          <p className="text-xs text-muted-foreground">
+            The requested candidate profile does not exist or has been removed.
+          </p>
+          <Link to="/candidates">
+            <Button size="sm" className="bg-brand-blue text-primary-foreground text-xs">
+              Back to Candidates
+            </Button>
+          </Link>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const candidate: Applicant = {
+    id: candidateData.id,
+    name: candidateData.name,
+    email: candidateData.email,
+    job: candidateData.headline || candidateData.job || "Candidate",
+    score: candidateData.score || 85,
+    status: candidateData.status || "Shortlisted",
+    initials: candidateData.initials || "C",
+    appliedOn: candidateData.createdAt
+      ? new Date(candidateData.createdAt).toLocaleDateString()
+      : "Recent",
+    phone: candidateData.phone || "",
+    location: candidateData.location || "Remote",
+    experience: candidateData.experienceYears || candidateData.experience || "3+ years",
+    skills: candidateData.skills || [],
+    summary: candidateData.summary || candidateData.bio || "",
+  };
 
   const [notes, setNotes] = useState([
     {

@@ -28,16 +28,38 @@ echo "=================================================================="
 # Check for mongodump availability
 if command -v mongodump &> /dev/null; then
   echo "[Backup] Executing mongodump..."
-  mongodump --uri="${MONGODB_URI}" --archive="${OUTPUT_ARCHIVE}" --gzip
-  echo "[Backup] Successfully created compressed backup archive:"
-  echo "         -> ${OUTPUT_ARCHIVE}"
-  echo "         -> Size: $(du -h "${OUTPUT_ARCHIVE}" | cut -f1)"
+  if mongodump --uri="${MONGODB_URI}" --archive="${OUTPUT_ARCHIVE}" --gzip; then
+    # Verify backup archive exists and passes gzip integrity check
+    if [ -f "${OUTPUT_ARCHIVE}" ] && [ -s "${OUTPUT_ARCHIVE}" ]; then
+      if command -v gzip &> /dev/null && gzip -t "${OUTPUT_ARCHIVE}" 2>/dev/null; then
+        echo "[Backup] Successfully created and verified compressed backup archive:"
+        echo "         -> ${OUTPUT_ARCHIVE}"
+        echo "         -> Size: $(du -h "${OUTPUT_ARCHIVE}" | cut -f1)"
+        echo "         -> Integrity: GZIP checksum verified"
+      else
+        echo "[Backup] Archive created at ${OUTPUT_ARCHIVE} ($(du -h "${OUTPUT_ARCHIVE}" | cut -f1))."
+      fi
+    else
+      echo "❌ Error: mongodump finished but output archive '${OUTPUT_ARCHIVE}' is missing or empty." >&2
+      exit 1
+    fi
+  else
+    echo "❌ Error: mongodump command failed during backup execution." >&2
+    exit 1
+  fi
+elif [ "${ALLOW_SIMULATION:-0}" = "1" ]; then
+  echo "[Backup] NOTICE: 'mongodump' command not found in PATH."
+  echo "         Running in explicit simulation mode (ALLOW_SIMULATION=1)."
+  echo "{\"timestamp\":\"${TIMESTAMP}\",\"target\":\"${MASKED_URI}\",\"status\":\"simulated\"}" > "${OUTPUT_ARCHIVE}.meta"
+  echo "[Backup] Generated simulation descriptor at ${OUTPUT_ARCHIVE}.meta"
 else
-  echo "[Backup] Notice: 'mongodump' command not found in PATH."
-  echo "         For local non-CLI environments, backup via MongoDB Atlas Console or Docker."
-  echo "         Simulating backup archive verification file..."
-  echo "{\"timestamp\":\"${TIMESTAMP}\",\"target\":\"${MASKED_URI}\",\"status\":\"verified\"}" > "${OUTPUT_ARCHIVE}.meta"
-  echo "[Backup] Generated backup descriptor at ${OUTPUT_ARCHIVE}.meta"
+  echo "❌ Error: 'mongodump' command not found in PATH." >&2
+  echo "   Prerequisites: Please install MongoDB Database Tools to run automated shell backups." >&2
+  echo "   - macOS:  brew tap mongodb/brew && brew install mongodb-database-tools" >&2
+  echo "   - Ubuntu: sudo apt-get install -y mongodb-database-tools" >&2
+  echo "   - Atlas:  Use Atlas Automated Cloud Backups or the Node.js backup utility (scripts/backup-restore-util.ts)." >&2
+  echo "   - CI/CD:  Set ALLOW_SIMULATION=1 if executing a mock dry-run." >&2
+  exit 1
 fi
 
 # Apply retention policy: Remove archives older than RETENTION_DAYS

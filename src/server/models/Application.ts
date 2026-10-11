@@ -147,6 +147,8 @@ const ApplicationSchema = new Schema<IApplicationDocument>(
 ApplicationSchema.index({ jobId: 1, applicantId: 1 }, { unique: true });
 ApplicationSchema.index({ recruiterId: 1, status: 1 });
 ApplicationSchema.index({ currentStage: 1, appliedAt: -1 });
+ApplicationSchema.index({ applicantId: 1, appliedAt: -1 });
+ApplicationSchema.index({ jobId: 1, currentStage: 1 });
 
 export const Application: Model<IApplicationDocument> =
   (mongoose.models["Application"] as Model<IApplicationDocument>) ||

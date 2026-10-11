@@ -1,5 +1,11 @@
 import express, { type Request as ExpressReq, type Response as ExpressRes } from "express";
-import { connectToDatabase, disconnectDatabase, getDatabaseStatus } from "./db/mongodb.ts";
+import {
+  connectToDatabase,
+  disconnectDatabase,
+  getDatabaseStatus,
+  pingDatabase,
+  ensureDatabaseIndexes,
+} from "./db/mongodb.ts";
 import { handleApiRequest } from "./routes/index.ts";
 import { resumeBackgroundWorker } from "./workers/resume-worker.ts";
 
@@ -29,7 +35,9 @@ export function createExpressApp() {
   // Readiness dependency probe
   app.get("/api/ready", async (_req: ExpressReq, res: ExpressRes) => {
     const dbStatus = getDatabaseStatus();
-    const isReady = dbStatus.status === "connected";
+    const isConnected = dbStatus.status === "connected";
+    const isAlive = isConnected ? await pingDatabase().catch(() => false) : false;
+    const isReady = isConnected && isAlive;
     const statusCode = isReady ? 200 : 503;
     res.status(statusCode).json({
       success: isReady,
@@ -37,6 +45,7 @@ export function createExpressApp() {
         ready: isReady,
         status: isReady ? "ready" : "not_ready",
         database: dbStatus.status,
+        databaseAlive: isAlive,
         readyState: dbStatus.readyState,
         timestamp: new Date().toISOString(),
       },
@@ -97,7 +106,8 @@ export async function startServer(port: number = 3000) {
   try {
     console.log("  [2/4] Connecting to MongoDB persistence layer...");
     await connectToDatabase();
-    console.log("  [3/4] MongoDB connection verified successfully.");
+    console.log("  [3/4] MongoDB connection verified successfully. Synchronizing indexes...");
+    await ensureDatabaseIndexes();
 
     console.log("  [4/4] Starting background resume workers...");
     await resumeBackgroundWorker.start(2000);

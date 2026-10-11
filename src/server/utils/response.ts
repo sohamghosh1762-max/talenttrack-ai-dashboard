@@ -26,6 +26,13 @@ function generateRequestId(): string {
   return `req_${Date.now().toString(36)}_${crypto.randomBytes(4).toString("hex")}`;
 }
 
+export function sanitizeErrorMessage(msg: string): string {
+  if (!msg || typeof msg !== "string") return msg;
+  return msg
+    .replace(/(mongodb(?:\+srv)?:\/\/[^:]+:)([^@]+)@/gi, "$1*****@")
+    .replace(/(:\/\/)([^:]+):([^@]+)@/g, "$1$2:*****@");
+}
+
 export function successResponse<T>(
   data: T,
   message?: string,
@@ -154,14 +161,16 @@ export function errorResponse(
     message = error;
   }
 
+  const safeMessage = sanitizeErrorMessage(message);
+
   const body: ApiErrorResponse & { message?: string } = {
     success: false,
-    message,
+    message: safeMessage,
     error: {
       code,
-      message,
+      message: safeMessage,
       ...(details !== undefined ? { details } : {}),
-      ...(stack ? { stack } : {}),
+      ...(stack ? { stack: sanitizeErrorMessage(stack) } : {}),
     },
     requestId: reqId,
   };

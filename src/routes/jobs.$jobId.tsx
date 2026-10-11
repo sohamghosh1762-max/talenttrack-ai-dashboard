@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { recentApplicantsData, type Applicant } from "@/data/mockData";
+import type { Applicant } from "@/data/mockData";
 import { CandidateDetailModal } from "@/components/dashboard/CandidateDetailModal";
 import { useJob } from "@/hooks/api/useJobs";
 import { useRecruiterApplications } from "@/hooks/api/useApplications";
@@ -63,7 +63,7 @@ function RecruiterJobDetailPage() {
           ...(app.applicant?.location ? { location: app.applicant.location } : {}),
           skills: app.applicant?.skills || [],
         }))
-      : recentApplicantsData;
+      : [];
 
   if (isLoading) {
     return (
@@ -239,60 +239,68 @@ function RecruiterJobDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
-                  {jobApplicants.map((applicant) => (
-                    <tr key={applicant.id} className="transition-colors hover:bg-muted/30">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="grid size-8 place-items-center rounded-full bg-surface-blue text-xs font-bold text-brand-blue">
-                            {applicant.initials}
-                          </div>
-                          <div>
-                            <strong className="block text-xs font-semibold text-foreground">
-                              {applicant.name}
-                            </strong>
-                            <span className="text-[11px] text-muted-foreground">
-                              {applicant.email}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-3 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10.5px] font-bold ${
-                            applicant.score >= 90
-                              ? "bg-surface-green text-brand-green"
-                              : "bg-surface-purple text-brand-purple"
-                          }`}
-                        >
-                          <Sparkles className="size-2.5" />
-                          {applicant.score}%
-                        </span>
-                      </td>
-
-                      <td className="px-3 py-3">
-                        <span className="rounded bg-muted px-2 py-0.5 text-[10.5px] font-medium text-foreground">
-                          {applicant.status}
-                        </span>
-                      </td>
-
-                      <td className="px-3 py-3 text-muted-foreground text-[11px]">
-                        {applicant.appliedOn}
-                      </td>
-
-                      <td className="px-4 py-3 text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs font-semibold text-brand-blue hover:bg-surface-blue gap-1"
-                          onClick={() => setSelectedCandidate(applicant)}
-                        >
-                          <Eye className="size-3" />
-                          Review Profile
-                        </Button>
+                  {jobApplicants.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-xs text-muted-foreground">
+                        No candidate applications received for this job opening yet.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    jobApplicants.map((applicant) => (
+                      <tr key={applicant.id} className="transition-colors hover:bg-muted/30">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="grid size-8 place-items-center rounded-full bg-surface-blue text-xs font-bold text-brand-blue">
+                              {applicant.initials}
+                            </div>
+                            <div>
+                              <strong className="block text-xs font-semibold text-foreground">
+                                {applicant.name}
+                              </strong>
+                              <span className="text-[11px] text-muted-foreground">
+                                {applicant.email}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-3 py-3">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10.5px] font-bold ${
+                              applicant.score >= 90
+                                ? "bg-surface-green text-brand-green"
+                                : "bg-surface-purple text-brand-purple"
+                            }`}
+                          >
+                            <Sparkles className="size-2.5" />
+                            {applicant.score}%
+                          </span>
+                        </td>
+
+                        <td className="px-3 py-3">
+                          <span className="rounded bg-muted px-2 py-0.5 text-[10.5px] font-medium text-foreground">
+                            {applicant.status}
+                          </span>
+                        </td>
+
+                        <td className="px-3 py-3 text-muted-foreground text-[11px]">
+                          {applicant.appliedOn}
+                        </td>
+
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs font-semibold text-brand-blue hover:bg-surface-blue gap-1"
+                            onClick={() => setSelectedCandidate(applicant)}
+                          >
+                            <Eye className="size-3" />
+                            Review Profile
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

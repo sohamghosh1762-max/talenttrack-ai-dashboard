@@ -20,17 +20,20 @@ const JobSchema = new Schema<IJobDocument>(
   {
     title: {
       type: String,
-      required: true,
+      required: [true, "Job title is required"],
+      minlength: [2, "Job title must be at least 2 characters"],
+      maxlength: [200, "Job title cannot exceed 200 characters"],
       trim: true,
       index: true,
     },
     description: {
       type: String,
-      required: true,
+      required: [true, "Job description is required"],
+      minlength: [10, "Job description must be at least 10 characters"],
     },
     department: {
       type: String,
-      required: true,
+      required: [true, "Department is required"],
       trim: true,
       index: true,
     },
@@ -166,6 +169,7 @@ const JobSchema = new Schema<IJobDocument>(
 JobSchema.index({ status: 1, department: 1 });
 JobSchema.index({ recruiterId: 1, status: 1 });
 JobSchema.index({ hiringManagerId: 1, status: 1 });
+JobSchema.index({ status: 1, createdAt: -1 });
 JobSchema.index({ createdAt: -1 });
 
 export const Job: Model<IJobDocument> =

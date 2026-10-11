@@ -1,6 +1,7 @@
 import { authenticate } from "../middleware/auth-middleware.ts";
 import { jobRepository } from "../repositories/job.repository.ts";
 import { applicationRepository } from "../repositories/application.repository.ts";
+import { interviewRepository } from "../repositories/interview.repository.ts";
 import { resumeRepository } from "../repositories/resume.repository.ts";
 import { atsService } from "../services/ats-service.ts";
 import { successResponse, errorResponse } from "../utils/response.ts";
@@ -477,23 +478,27 @@ export async function handleGetHiringManagerInterviews(req: Request): Promise<Re
   const user = await requireHiringManagerUser(req);
   const assignedJobIds = await getAssignedJobIds(user.id, user.role);
 
-  const applicationsRes = await applicationRepository.findAll({
-    jobIds: assignedJobIds,
-    stage: "INTERVIEW",
-    limit: 100,
+  if (assignedJobIds.length === 0) {
+    return successResponse([], "No assigned jobs found for hiring manager.");
+  }
+
+  // Retrieve actual interviews scheduled for the hiring manager's assigned applications/jobs
+  const dbInterviews = await interviewRepository.findAll({
+    hiringManagerId: user.id,
   });
 
-  const interviews = applicationsRes.applications.map((app) => ({
-    id: `int-${app.id}`,
-    applicationId: app.id,
-    candidateName: app.applicantName || app.applicant?.name || "Candidate",
-    candidateEmail: app.applicantEmail || app.applicant?.email || "",
-    jobTitle: app.jobTitle || app.job?.title || "Position",
-    stage: app.currentStage,
-    aiScore: app.aiScore,
-    appliedAt: app.appliedAt,
-    interviewDate: new Date(Date.now() + 86400000 * 2).toISOString(), // Mock upcoming schedule
-    status: "SCHEDULED",
+  const interviews = dbInterviews.map((iv) => ({
+    id: iv.id,
+    applicationId: iv.applicationId,
+    candidateName: iv.applicant?.name || "Candidate",
+    candidateEmail: iv.applicant?.email || "",
+    jobTitle: iv.job?.title || "Position",
+    stage: "INTERVIEW",
+    interviewDate: iv.scheduledAt,
+    type: iv.type,
+    durationMinutes: iv.durationMinutes,
+    meetingUrl: iv.meetingUrl,
+    status: iv.status,
   }));
 
   return successResponse(interviews, "Assigned interviews retrieved successfully.");

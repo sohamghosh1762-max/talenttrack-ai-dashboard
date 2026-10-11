@@ -3,6 +3,7 @@ import { sessionRepository } from "../db/session-repository.ts";
 import { tokenRepository } from "../db/token-repository.ts";
 import {
   createUserSession,
+  createUserSessionAsync,
   createClearCookieHeader,
   extractTokenFromRequest,
 } from "../auth/session-service.ts";
@@ -47,7 +48,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   }
 
   // Check duplicate user
-  const existing = userRepository.findByEmail(normalizedEmail);
+  const existing = await userRepository.findByEmailAsync(normalizedEmail);
   if (existing) {
     return errorResponse(
       new AppError(
@@ -84,7 +85,7 @@ export async function handleRegister(req: Request): Promise<Response> {
       : undefined;
 
   // Create user
-  const newUser = userRepository.createUser({
+  const newUser = await userRepository.createUserAsync({
     name: validated.name,
     email: normalizedEmail,
     passwordHash,
@@ -104,7 +105,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   });
 
   // Create session and set cookie
-  const sessionRes = createUserSession(newUser.id, req, { persistent: true });
+  const sessionRes = await createUserSessionAsync(newUser.id, req, { persistent: true });
 
   // Record audit
   auditService.recordStatusChange({
@@ -161,7 +162,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   const validated = validateSchema(loginSchema, body);
   const normalizedEmail = validated.email.trim().toLowerCase();
 
-  const user = userRepository.findByEmail(normalizedEmail);
+  const user = await userRepository.findByEmailAsync(normalizedEmail);
 
   if (!user) {
     loginRateLimiter.recordIpAttempt(ip);
@@ -181,7 +182,7 @@ export async function handleLogin(req: Request): Promise<Response> {
         ),
       );
     } else {
-      userRepository.unlockAccount(user.id);
+      await userRepository.unlockAccountAsync(user.id);
     }
   }
 
@@ -209,7 +210,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   const passwordMatch = verifyPassword(validated.password, user.passwordHash);
   if (!passwordMatch) {
     loginRateLimiter.recordIpAttempt(ip);
-    const lockResult = userRepository.recordLoginFailure(user.id);
+    const lockResult = await userRepository.recordLoginFailureAsync(user.id);
     if (lockResult.locked) {
       return errorResponse(
         new AppError(
@@ -223,8 +224,8 @@ export async function handleLogin(req: Request): Promise<Response> {
   }
 
   // Successful login
-  userRepository.recordLoginSuccess(user.id);
-  const sessionRes = createUserSession(user.id, req, {
+  await userRepository.recordLoginSuccessAsync(user.id);
+  const sessionRes = await createUserSessionAsync(user.id, req, {
     persistent: validated.rememberMe ?? true,
   });
 
@@ -296,7 +297,7 @@ export async function handleFirebaseBootstrap(req: Request): Promise<Response> {
 export async function handleLogout(req: Request): Promise<Response> {
   const token = extractTokenFromRequest(req);
   if (token) {
-    sessionRepository.revokeSessionByToken(token);
+    await sessionRepository.revokeSessionByTokenAsync(token);
   }
 
   const clearCookie = createClearCookieHeader();
@@ -317,7 +318,7 @@ export async function handleForgotPassword(req: Request): Promise<Response> {
   }
 
   const validated = validateSchema(forgotPasswordSchema, body);
-  const user = userRepository.findByEmail(validated.email);
+  const user = await userRepository.findByEmailAsync(validated.email);
 
   if (user) {
     const { token } = tokenRepository.createPasswordResetToken(user.id, 60);
@@ -421,7 +422,7 @@ export async function handleResendVerification(req: Request): Promise<Response> 
   }
 
   const validated = validateSchema(resendVerificationSchema, body);
-  const user = userRepository.findByEmail(validated.email);
+  const user = await userRepository.findByEmailAsync(validated.email);
 
   if (user && !user.emailVerified) {
     const { token } = tokenRepository.createEmailVerificationToken(user.id, 48);

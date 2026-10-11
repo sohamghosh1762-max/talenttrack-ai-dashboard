@@ -398,7 +398,7 @@ class InterviewRepository {
       const updated = await Interview.findByIdAndUpdate(
         id,
         { $set: updateDoc },
-        { new: true },
+        { new: true, runValidators: true },
       ).lean<any>();
 
       if (!updated) return null;

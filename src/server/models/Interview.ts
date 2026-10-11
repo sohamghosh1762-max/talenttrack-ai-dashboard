@@ -255,6 +255,7 @@ const InterviewSchema = new Schema<IInterviewDocument>(
   },
 );
 
+InterviewSchema.index({ applicationId: 1, scheduledAt: 1 });
 InterviewSchema.index({ applicantId: 1, scheduledAt: -1 });
 InterviewSchema.index({ recruiterId: 1, scheduledAt: -1 });
 InterviewSchema.index({ hiringManagerId: 1, scheduledAt: -1 });

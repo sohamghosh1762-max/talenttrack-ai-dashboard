@@ -393,7 +393,7 @@ class JobRepository {
             updatedAt: new Date(),
           },
         },
-        { new: true },
+        { new: true, runValidators: true },
       ).lean<any>();
 
       if (!updatedDoc) return null;

@@ -6,6 +6,7 @@ import { Bell, Check, Globe, Lock, Save, Settings, ShieldCheck, User } from "luc
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { recruiterProfile } from "@/data/mockData";
+import { useAuth } from "@/auth/auth-context";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -21,10 +22,13 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const [name, setName] = useState(recruiterProfile.name);
-  const [email, setEmail] = useState(recruiterProfile.email);
-  const [role, setRole] = useState(recruiterProfile.role);
-  const [dept, setDept] = useState(recruiterProfile.department);
+  const { user } = useAuth();
+  const [name, setName] = useState(user?.name || recruiterProfile.name);
+  const [email, setEmail] = useState(user?.email || recruiterProfile.email);
+  const [role, setRole] = useState(user?.role || recruiterProfile.role);
+  const [dept, setDept] = useState(
+    user?.recruiterProfile?.department || recruiterProfile.department,
+  );
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [aiAlerts, setAiAlerts] = useState(true);
   const [interviewReminders, setInterviewReminders] = useState(true);

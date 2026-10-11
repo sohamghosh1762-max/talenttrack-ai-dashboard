@@ -140,3 +140,82 @@ export function validateSessionToken(token: string): { user: SafeUser; session: 
     session,
   };
 }
+
+/**
+ * Async create active server session awaiting MongoDB persistence
+ */
+export async function createUserSessionAsync(
+  userId: string,
+  req?: Request,
+  options: {
+    persistent?: boolean;
+    ttlHours?: number;
+  } = {},
+): Promise<SessionResult> {
+  let user = userRepository.findFullUserById(userId);
+  if (!user) {
+    user = await userRepository.findFullUserByIdAsync(userId);
+  }
+  if (!user) {
+    throw new Error("User not found for session creation");
+  }
+
+  const token = generateSessionToken();
+  const ttlHours = options.ttlHours ?? (options.persistent ? 30 * 24 : 24);
+
+  let ipAddress: string | undefined = undefined;
+  let userAgent: string | undefined = undefined;
+
+  if (req) {
+    ipAddress =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      undefined;
+    userAgent = req.headers.get("user-agent") || undefined;
+  }
+
+  const session = await sessionRepository.createSessionAsync(userId, token, {
+    ttlHours,
+    ...(ipAddress ? { ipAddress } : {}),
+    ...(userAgent ? { userAgent } : {}),
+  });
+
+  const cookieHeader = createCookieHeader(token, {
+    maxAgeSeconds: ttlHours * 3600,
+  });
+
+  return {
+    session,
+    token,
+    cookieHeader,
+    user: toSafeUser(user),
+  };
+}
+
+/**
+ * Async validate session token checking both memory cache and MongoDB
+ */
+export async function validateSessionTokenAsync(
+  token: string,
+): Promise<{ user: SafeUser; session: ISession } | null> {
+  if (!token) return null;
+
+  let session = sessionRepository.findValidSessionByToken(token);
+  if (!session) {
+    session = await sessionRepository.findValidSessionByTokenAsync(token);
+  }
+  if (!session) return null;
+
+  let fullUser = userRepository.findFullUserById(session.userId);
+  if (!fullUser) {
+    fullUser = await userRepository.findFullUserByIdAsync(session.userId);
+  }
+  if (!fullUser) return null;
+
+  sessionRepository.touchSession(token);
+
+  return {
+    user: toSafeUser(fullUser),
+    session,
+  };
+}

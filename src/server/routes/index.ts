@@ -8,7 +8,7 @@ import { handleAtsApiRequest } from "./ats-routes.ts";
 import { handleApplicantApiRequest } from "./applicant-routes.ts";
 import { handleConversationApiRequest } from "./conversation-routes.ts";
 import { handleNotificationApiRequest } from "./notification-routes.ts";
-import { getDatabaseStatus } from "../db/mongodb.ts";
+import { getDatabaseStatus, pingDatabase } from "../db/mongodb.ts";
 import { errorResponse, successResponse } from "../utils/response.ts";
 import { NotFoundError } from "../utils/errors.ts";
 import { createRequestLogger } from "../middleware/request-logger.ts";
@@ -53,17 +53,20 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
 
     if (pathname === "/api/ready" && req.method === "GET") {
       const dbStatus = getDatabaseStatus();
-      const isReady = dbStatus.status === "connected";
+      const isConnected = dbStatus.status === "connected";
+      const isAlive = isConnected ? await pingDatabase().catch(() => false) : false;
+      const isReady = isConnected && isAlive;
       const statusCode = isReady ? 200 : 503;
       const response = successResponse(
         {
           ready: isReady,
           status: isReady ? "ready" : "not_ready",
           database: dbStatus.status,
+          databaseAlive: isAlive,
           readyState: dbStatus.readyState,
           timestamp: new Date().toISOString(),
         },
-        isReady ? "Service is ready to handle traffic" : "Database dependency not ready",
+        isReady ? "Service is ready to handle traffic" : "Database dependency not ready or unreachable",
         statusCode,
       );
       requestLogger(req, startTime, statusCode);

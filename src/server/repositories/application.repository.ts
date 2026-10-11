@@ -27,7 +27,7 @@ import type {
   CreateApplicationInput,
   UpdateApplicationStatusInput,
 } from "../types/application-types.ts";
-import { ValidationError } from "../utils/errors.ts";
+import { ValidationError, ConflictError } from "../utils/errors.ts";
 
 const DEFAULT_SEED_APPLICATIONS: IApplication[] = [
   {
@@ -592,20 +592,28 @@ class ApplicationRepository {
     };
 
     if (isDatabaseConnected()) {
-      const created = await Application.create({
-        _id: id,
-        jobId: applicationData.jobId,
-        applicantId: applicationData.applicantId,
-        recruiterId: applicationData.recruiterId,
-        resumeId: applicationData.resumeId,
-        coverLetter: applicationData.coverLetter,
-        status: applicationData.status,
-        currentStage: applicationData.currentStage,
-        notes: applicationData.notes,
-        appliedAt: now,
-      } as any);
+      try {
+        const created = await Application.create({
+          _id: id,
+          jobId: applicationData.jobId,
+          applicantId: applicationData.applicantId,
+          recruiterId: applicationData.recruiterId,
+          resumeId: applicationData.resumeId,
+          coverLetter: applicationData.coverLetter,
+          status: applicationData.status,
+          currentStage: applicationData.currentStage,
+          aiScore: applicationData.aiScore,
+          notes: applicationData.notes,
+          appliedAt: now,
+        } as any);
 
-      applicationData.id = (created as any)._id?.toString() || id;
+        applicationData.id = (created as any)._id?.toString() || id;
+      } catch (err: any) {
+        if (err.code === 11000) {
+          throw new ConflictError("Applicant has already submitted an application for this job opening.");
+        }
+        throw err;
+      }
     }
 
     this.inMemoryApplications.set(applicationData.id, applicationData);
@@ -629,7 +637,7 @@ class ApplicationRepository {
             updatedAt: new Date(),
           },
         },
-        { new: true },
+        { new: true, runValidators: true },
       )
         .populate("jobId", "title department location employmentType status")
         .populate("applicantId", "name email applicantProfile")
@@ -1268,10 +1276,26 @@ class ApplicationRepository {
   public async updateStage(
     id: string,
     stage: IApplication["currentStage"],
+    reason?: string,
+    changedBy: string = "system",
+    changedByName: string = "Recruiter",
   ): Promise<IApplication | null> {
+    const existing = await this.findById(id);
+    const fromStage = existing?.currentStage || "APPLIED";
+    const historyItem: StageHistoryItem = {
+      fromStage,
+      toStage: stage,
+      changedBy,
+      changedByName,
+      changedAt: new Date().toISOString(),
+      ...(reason ? { reason } : {}),
+    };
+    const stageHistory = [...(existing?.stageHistory || []), historyItem];
+
     return this.updateStatus(id, {
       status: stage,
       currentStage: stage,
+      stageHistory,
     });
   }
 

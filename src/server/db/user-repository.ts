@@ -41,6 +41,33 @@ export function toSafeUser(user: IUser): SafeUser {
   return safe;
 }
 
+// Convert Mongoose User document to internal IUser entity
+export function docToUser(doc: any): IUser {
+  const obj = doc.toObject ? doc.toObject() : doc;
+  const idStr = doc._id ? doc._id.toString() : obj.id || doc.id;
+  return {
+    id: String(idStr),
+    name: obj.name,
+    email: (obj.email || "").toLowerCase().trim(),
+    passwordHash: obj.passwordHash,
+    role: obj.role,
+    status: obj.status || "ACTIVE",
+    emailVerified: obj.emailVerified ?? false,
+    emailVerifiedAt: obj.emailVerifiedAt,
+    avatarUrl: obj.avatarUrl,
+    failedLoginAttempts: obj.failedLoginAttempts ?? 0,
+    lockedUntil: obj.lockedUntil ?? null,
+    createdAt: obj.createdAt ? new Date(obj.createdAt).toISOString() : new Date().toISOString(),
+    updatedAt: obj.updatedAt ? new Date(obj.updatedAt).toISOString() : new Date().toISOString(),
+    lastActive:
+      obj.lastActive || (obj.updatedAt ? new Date(obj.updatedAt).toISOString() : undefined),
+    recruiterProfile: obj.recruiterProfile,
+    applicantProfile: obj.applicantProfile,
+    adminProfile: obj.adminProfile,
+    firebaseUid: obj.firebaseUid,
+  };
+}
+
 // Pre-seeded database records with genuine 24-hex MongoDB ObjectIds
 export const DEFAULT_SEED_USERS: IUser[] = [
   // Administrators
@@ -595,6 +622,82 @@ class UserRepository {
   }
 
   /**
+   * Async find full user by ID with MongoDB fallback and caching
+   */
+  public async findFullUserByIdAsync(id: string): Promise<IUser | null> {
+    const cached = this.findFullUserById(id);
+    if (cached) return cached;
+
+    if (isValidObjectId(id) && isDatabaseConnected()) {
+      try {
+        const doc = await User.findById(id).exec();
+        if (doc) {
+          const user = docToUser(doc);
+          this.users.set(user.id, user);
+          return user;
+        }
+      } catch (err) {
+        console.warn(`[UserRepository] MongoDB findFullUserByIdAsync error:`, err);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Async find safe user by ID with MongoDB fallback and caching
+   */
+  public async findByIdAsync(id: string): Promise<SafeUser | null> {
+    const full = await this.findFullUserByIdAsync(id);
+    return full ? toSafeUser(full) : null;
+  }
+
+  /**
+   * Async find user by email with MongoDB fallback and caching
+   */
+  public async findByEmailAsync(email: string): Promise<IUser | null> {
+    const normalized = email.trim().toLowerCase();
+    const cached = this.findByEmail(normalized);
+    if (cached) return cached;
+
+    if (isDatabaseConnected()) {
+      try {
+        const doc = await User.findOne({ email: normalized }).exec();
+        if (doc) {
+          const user = docToUser(doc);
+          this.users.set(user.id, user);
+          return user;
+        }
+      } catch (err) {
+        console.warn(`[UserRepository] MongoDB findByEmailAsync error:`, err);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Async find user by Firebase UID with MongoDB fallback and caching
+   */
+  public async findByFirebaseUidAsync(firebaseUid: string): Promise<IUser | null> {
+    if (!firebaseUid) return null;
+    const cached = this.findByFirebaseUid(firebaseUid);
+    if (cached) return cached;
+
+    if (isDatabaseConnected()) {
+      try {
+        const doc = await User.findOne({ firebaseUid }).exec();
+        if (doc) {
+          const user = docToUser(doc);
+          this.users.set(user.id, user);
+          return user;
+        }
+      } catch (err) {
+        console.warn(`[UserRepository] MongoDB findByFirebaseUidAsync error:`, err);
+      }
+    }
+    return null;
+  }
+
+  /**
    * Link Firebase UID to existing user (and associated Applicant document if applicable)
    */
   public linkFirebaseUid(userId: string, firebaseUid: string): boolean {
@@ -997,6 +1100,96 @@ class UserRepository {
   }
 
   /**
+   * Create and persist a new user entity asynchronously in MongoDB Atlas
+   */
+  public async createUserAsync(userData: {
+    name: string;
+    email: string;
+    passwordHash: string;
+    role: UserRole;
+    status?: UserStatus;
+    emailVerified?: boolean;
+    recruiterProfile?: RecruiterProfileInfo;
+    applicantProfile?: ApplicantProfileInfo;
+    adminProfile?: AdminProfileInfo;
+  }): Promise<IUser> {
+    const normalizedEmail = userData.email.trim().toLowerCase();
+    const existing = await this.findByEmailAsync(normalizedEmail);
+    if (existing) {
+      throw new Error("An account with this email address already exists.");
+    }
+
+    const id = generateObjectId();
+    const now = new Date().toISOString();
+    const newUser: IUser = {
+      id,
+      name: userData.name.trim(),
+      email: normalizedEmail,
+      passwordHash: userData.passwordHash,
+      role: userData.role,
+      status: userData.status || "ACTIVE",
+      emailVerified: userData.emailVerified ?? false,
+      emailVerifiedAt: userData.emailVerified ? now : undefined,
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      createdAt: now,
+      updatedAt: now,
+      lastActive: now,
+      ...(userData.recruiterProfile ? { recruiterProfile: userData.recruiterProfile } : {}),
+      ...(userData.applicantProfile ? { applicantProfile: userData.applicantProfile } : {}),
+      ...(userData.adminProfile ? { adminProfile: userData.adminProfile } : {}),
+    };
+
+    if (isDatabaseConnected()) {
+      try {
+        const createdUserDoc = await User.create({
+          _id: id,
+          name: newUser.name,
+          email: newUser.email,
+          passwordHash: newUser.passwordHash,
+          role: newUser.role,
+          status: newUser.status,
+          emailVerified: newUser.emailVerified,
+          emailVerifiedAt: newUser.emailVerifiedAt,
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          recruiterProfile: newUser.recruiterProfile,
+          applicantProfile: newUser.applicantProfile,
+          adminProfile: newUser.adminProfile,
+        });
+
+        if (newUser.role === "RECRUITER" && newUser.recruiterProfile) {
+          await Recruiter.create({
+            userId: createdUserDoc._id,
+            companyName: newUser.recruiterProfile.companyName,
+            designation: newUser.recruiterProfile.jobTitle,
+            department: newUser.recruiterProfile.department || "Talent Acquisition",
+          } as any).catch(console.error);
+        } else if (newUser.role === "APPLICANT" && newUser.applicantProfile) {
+          await Applicant.create({
+            userId: createdUserDoc._id,
+            headline: newUser.applicantProfile.headline,
+            location: newUser.applicantProfile.location,
+            phone: newUser.applicantProfile.phone,
+            skills: newUser.applicantProfile.skills || [],
+            experience: newUser.applicantProfile.experienceYears,
+            resume: newUser.applicantProfile.resumeFileName,
+          } as any).catch(console.error);
+        }
+      } catch (err: any) {
+        if (err.code === 11000) {
+          throw new Error("An account with this email address already exists.");
+        }
+        console.error(`[UserRepository] MongoDB error persisting user ${newUser.email}:`, err);
+        throw err;
+      }
+    }
+
+    this.users.set(id, newUser);
+    return { ...newUser };
+  }
+
+  /**
    * Alias for createUser
    */
   public create(userData: Parameters<UserRepository["createUser"]>[0]): IUser {
@@ -1133,6 +1326,82 @@ class UserRepository {
     }
 
     return true;
+  }
+
+  /**
+   * Async record login success in both cache and MongoDB
+   */
+  public async recordLoginSuccessAsync(userId: string): Promise<void> {
+    this.recordLoginSuccess(userId);
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      const now = new Date().toISOString();
+      await User.findByIdAndUpdate(userId, {
+        $set: {
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          status: "ACTIVE",
+          lastLoginAt: now,
+          lastActive: now,
+        },
+      }).catch(() => {});
+    }
+  }
+
+  /**
+   * Async record login failure in both cache and MongoDB
+   */
+  public async recordLoginFailureAsync(
+    userId: string,
+  ): Promise<{ locked: boolean; lockedUntil?: string | undefined }> {
+    const res = this.recordLoginFailure(userId);
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      const user = this.users.get(userId);
+      if (user) {
+        await User.findByIdAndUpdate(userId, {
+          $set: {
+            failedLoginAttempts: user.failedLoginAttempts,
+            lockedUntil: user.lockedUntil,
+            status: user.status,
+          },
+        }).catch(() => {});
+      }
+    }
+    return res;
+  }
+
+  /**
+   * Async unlock account in both cache and MongoDB
+   */
+  public async unlockAccountAsync(userId: string): Promise<boolean> {
+    const res = this.unlockAccount(userId);
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      await User.findByIdAndUpdate(userId, {
+        $set: {
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          status: "ACTIVE",
+        },
+      }).catch(() => {});
+    }
+    return res;
+  }
+
+  /**
+   * Sync all persisted users from MongoDB Atlas into in-memory cache
+   */
+  public async syncFromDatabase(): Promise<number> {
+    if (!isDatabaseConnected()) return 0;
+    try {
+      const docs = await User.find({}).exec();
+      for (const doc of docs) {
+        const user = docToUser(doc);
+        this.users.set(user.id, user);
+      }
+      return docs.length;
+    } catch (err) {
+      console.warn("[UserRepository] Failed to sync users from database:", err);
+      return 0;
+    }
   }
 
   /**

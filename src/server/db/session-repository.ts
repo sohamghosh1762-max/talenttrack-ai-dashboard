@@ -85,7 +85,7 @@ class SessionRepository {
   public findValidSessionByToken(token: string): ISession | null {
     if (!token) return null;
     const tokenHash = hashToken(token);
-    let session = this.sessions.get(tokenHash);
+    const session = this.sessions.get(tokenHash);
 
     if (!session) return null;
 
@@ -168,6 +168,107 @@ class SessionRepository {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Async create and persist a new session in MongoDB Atlas
+   */
+  public async createSessionAsync(
+    userId: string,
+    token: string,
+    options: {
+      ttlHours?: number;
+      ipAddress?: string;
+      userAgent?: string;
+    } = {},
+  ): Promise<ISession> {
+    const ttlHours = options.ttlHours ?? 24;
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + ttlHours * 60 * 60 * 1000);
+
+    const tokenHash = hashToken(token);
+    const sessionId = `sess_${now.getTime().toString(36)}_${crypto.randomBytes(8).toString("hex")}`;
+    const session: ISession = {
+      id: sessionId,
+      userId,
+      tokenHash,
+      createdAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+      lastUsedAt: now.toISOString(),
+      revokedAt: null,
+      ...(options.ipAddress ? { ipAddress: options.ipAddress } : {}),
+      ...(options.userAgent ? { userAgent: options.userAgent } : {}),
+    };
+
+    this.sessions.set(tokenHash, session);
+
+    if (isDatabaseConnected()) {
+      try {
+        const mongoUserId = isValidObjectId(userId)
+          ? new mongoose.Types.ObjectId(userId)
+          : new mongoose.Types.ObjectId();
+
+        await Session.create({
+          sessionId,
+          userId: mongoUserId,
+          tokenHash,
+          ...(options.ipAddress ? { ipAddress: options.ipAddress } : {}),
+          ...(options.userAgent ? { userAgent: options.userAgent } : {}),
+          createdAt: now,
+          expiresAt,
+          lastUsedAt: now,
+          revokedAt: null,
+        });
+      } catch (err: any) {
+        console.warn("[SessionRepository] MongoDB session write warning:", err.message);
+      }
+    }
+
+    return session;
+  }
+
+  /**
+   * Async revoke active session in both memory and MongoDB
+   */
+  public async revokeSessionByTokenAsync(token: string): Promise<boolean> {
+    const res = this.revokeSessionByToken(token);
+    const tokenHash = hashToken(token);
+    if (isDatabaseConnected()) {
+      await Session.updateOne({ tokenHash }, { $set: { revokedAt: new Date() } }).catch(() => {});
+    }
+    return res;
+  }
+
+  /**
+   * Sync active unexpired sessions from MongoDB Atlas into memory cache
+   */
+  public async syncFromDatabase(): Promise<number> {
+    if (!isDatabaseConnected()) return 0;
+    try {
+      const docs = await Session.find({
+        revokedAt: null,
+        expiresAt: { $gt: new Date() },
+      }).lean<any>();
+
+      for (const doc of docs) {
+        const session: ISession = {
+          id: doc.sessionId || doc._id.toString(),
+          userId: doc.userId.toString(),
+          tokenHash: doc.tokenHash,
+          createdAt: doc.createdAt?.toISOString?.() || new Date(doc.createdAt).toISOString(),
+          expiresAt: doc.expiresAt?.toISOString?.() || new Date(doc.expiresAt).toISOString(),
+          lastUsedAt: doc.lastUsedAt?.toISOString?.() || new Date().toISOString(),
+          revokedAt: doc.revokedAt ? new Date(doc.revokedAt).toISOString() : null,
+          ipAddress: doc.ipAddress,
+          userAgent: doc.userAgent,
+        };
+        this.sessions.set(session.tokenHash, session);
+      }
+      return docs.length;
+    } catch (err) {
+      console.warn("[SessionRepository] Failed to sync sessions from database:", err);
+      return 0;
+    }
   }
 
   /**

@@ -56,10 +56,11 @@ const UserSchema = new Schema<IUserDocument>(
     name: { type: String, required: true, trim: true },
     email: {
       type: String,
-      required: true,
+      required: [true, "Email address is required"],
       unique: true,
       lowercase: true,
       trim: true,
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Please provide a valid email address"],
       index: true,
     },
     passwordHash: { type: String, required: true },

@@ -30,9 +30,16 @@ export async function authenticate(req: Request): Promise<AuthenticatedUser> {
   }
 
   // 1. Look up active session in cryptographic session store (Recruiter / Admin / Legacy sessions)
-  const session = sessionRepository.findValidSessionByToken(token);
+  let session = sessionRepository.findValidSessionByToken(token);
+  if (!session) {
+    session = await sessionRepository.findValidSessionByTokenAsync(token);
+  }
+
   if (session) {
-    const user = userRepository.findFullUserById(session.userId);
+    let user = userRepository.findFullUserById(session.userId);
+    if (!user) {
+      user = await userRepository.findFullUserByIdAsync(session.userId);
+    }
     if (!user) {
       throw new AuthError("User account no longer exists.", 401);
     }
@@ -60,7 +67,10 @@ export async function authenticate(req: Request): Promise<AuthenticatedUser> {
   }
 
   // 2. Direct user ID / legacy compatibility for test suites
-  const directUser = userRepository.findFullUserById(token);
+  let directUser = userRepository.findFullUserById(token);
+  if (!directUser) {
+    directUser = await userRepository.findFullUserByIdAsync(token);
+  }
   if (directUser) {
     if (directUser.status === "SUSPENDED") {
       throw new AuthError("Account has been suspended. Please contact support.", 403);

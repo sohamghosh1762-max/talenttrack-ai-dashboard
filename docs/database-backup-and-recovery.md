@@ -93,14 +93,49 @@ mongosh talenttrack_restore_test --eval "db.dropDatabase()"
 
 ---
 
-## 5. Post-Restoration Validation Checklist
+## 5. Programmatic Node.js Backup & Restore Engine (`scripts/backup-restore-util.ts`)
+
+In environments where native CLI binaries (`mongodump` / `mongorestore`) are not installed or where cross-platform Node.js execution is preferred, TalentTrack AI includes a built-in programmatic backup and restore utility:
+
+```bash
+# Generate a compressed gzip backup with sha256 checksum
+npx tsx scripts/backup-restore-util.ts backup --out ./backups/snapshot.json.gz
+
+# Restore a snapshot to an isolated target database
+npx tsx scripts/backup-restore-util.ts restore --file ./backups/snapshot.json.gz --uri mongodb://127.0.0.1:27017/talenttrack_test
+
+# Verify integrity and document counts of an existing archive
+npx tsx scripts/backup-restore-util.ts verify --file ./backups/snapshot.json.gz
+```
+
+### Features:
+- **Zero Binary Dependency:** Works using standard Mongoose/MongoDB Node.js driver connections.
+- **Data Integrity:** Calculates and verifies SHA-256 checksums on all generated archives.
+- **Safe Dry-Run:** Built-in verification mode inspects document counts and structure prior to restoring.
+
+---
+
+## 6. MongoDB Atlas Network Access Configuration
+
+When deploying against MongoDB Atlas, connectivity requires appropriate network access permissions:
+1. **Atlas IP Access List:** If your application server IP changes or is dynamic, ensure the public IP address is added to the Atlas Network Access list via:
+   - Atlas Console -> Security -> Network Access -> Add IP Address (`<server-ip>/32` or `0.0.0.0/0` for universal cloud egress).
+2. **DNS & SRV Resolution:** Ensure egress port 27017 is accessible and DNS resolvers can resolve `_mongodb._tcp.*` SRV records.
+3. **Connection Failure Diagnostics:** When connection fails due to IP restrictions, TalentTrack AI safely logs:
+   `[MongoDB] Connection error: Could not connect to any servers in your MongoDB Atlas cluster... verify that your current IP address is on your Atlas cluster's IP whitelist.` without exposing credentials.
+
+---
+
+## 7. Post-Restoration Validation Checklist
 
 Operators must confirm the following criteria before routing traffic back to the restored database:
 
 - [ ] **Document Count Verification:** All collections (`users`, `jobs`, `applications`, `interviews`, `resumes`, `notifications`, `background_jobs`, `sessions`, `authtokens`) contain the expected document counts.
 - [ ] **Index Rebuild Verification:** Check that all unique constraints and compound indexes are active:
   - `users`: `{ email: 1 }` (unique)
-  - `applications`: `{ jobId: 1, applicantId: 1 }` (unique)
+  - `jobs`: `{ status: 1, createdAt: -1 }`, `{ status: 1, department: 1 }`, `{ recruiterId: 1, status: 1 }`
+  - `applications`: `{ jobId: 1, applicantId: 1 }` (unique), `{ applicantId: 1, appliedAt: -1 }`, `{ jobId: 1, currentStage: 1 }`
+  - `interviews`: `{ applicationId: 1, scheduledAt: 1 }`, `{ recruiterId: 1, scheduledAt: 1 }`
   - `resumes`: `{ s3Key: 1 }` (unique)
   - `sessions`: `{ tokenHash: 1 }` (unique), TTL index `{ expiresAt: 1 }`
   - `authtokens`: `{ tokenHash: 1 }` (unique), TTL index `{ expiresAt: 1 }`
