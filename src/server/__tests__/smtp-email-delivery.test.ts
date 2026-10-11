@@ -51,6 +51,24 @@ describe("Real SMTP Email Delivery & Reliability Tests", () => {
       assert.equal(provider.isSecure(), true);
     });
 
+    it("configures Resend SMTP relay with port 465, user resend, and implicit TLS", () => {
+      const provider = new SmtpEmailProvider(null, {
+        host: "smtp.resend.com",
+        port: 465,
+        user: "resend",
+        password: "mock_resend_api_key",
+        secure: true,
+        fromEmail: "onboarding@resend.dev",
+        fromName: "TalentTrack AI",
+      });
+
+      assert.equal(provider.getHost(), "smtp.resend.com");
+      assert.equal(provider.getPort(), 465);
+      assert.equal(provider.isSecure(), true);
+      assert.equal(provider.getUser(), "resend");
+      assert.equal(provider.getPassword(), "mock_resend_api_key");
+    });
+
     it("invokes transport and returns provider messageId upon successful delivery", async () => {
       let capturedMailOptions: unknown = null;
       const mockTransporter = {

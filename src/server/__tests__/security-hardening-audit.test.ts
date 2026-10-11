@@ -10,7 +10,11 @@ import { authenticate } from "../middleware/auth-middleware.ts";
 import { validateProductionEnvironment } from "../config/env.ts";
 import { seedDatabase } from "../db/seed.ts";
 import { createUserSessionAsync } from "../auth/session-service.ts";
-import { SmtpEmailProvider, emailService } from "../services/email/index.ts";
+import {
+  SmtpEmailProvider,
+  DevConsoleEmailProvider,
+  emailService,
+} from "../services/email/index.ts";
 import { hasPermission, PERMISSIONS } from "../permissions/index.ts";
 
 describe("CRITICAL SECURITY & AUTHENTICATION HARDENING SUITE", () => {
@@ -449,27 +453,36 @@ describe("CRITICAL SECURITY & AUTHENTICATION HARDENING SUITE", () => {
 
   describe("Task 3: Production Email Delivery & Sandbox Failure Guards", () => {
     it("delivers verification and reset emails safely via emailService", async () => {
-      const testEmail = "candidate.notify@example.com";
-      const sent = await emailService.sendVerificationEmail({
-        to: testEmail,
-        userName: "Candidate Notify",
-        token: "tok_test_verify_link_123",
-      });
-      assert.equal(sent, true);
+      const originalProvider = emailService.getProvider();
+      const mockProvider = new DevConsoleEmailProvider();
+      emailService.setProvider(mockProvider);
+      try {
+        const testEmail = "candidate.notify@example.com";
+        const sent = await emailService.sendVerificationEmail({
+          to: testEmail,
+          userName: "Candidate Notify",
+          token: "tok_test_verify_link_123",
+        });
+        assert.equal(sent, true);
 
-      const resetSent = await emailService.sendPasswordResetEmail({
-        to: testEmail,
-        userName: "Candidate Notify",
-        token: "tok_test_reset_link_456",
-      });
-      assert.equal(resetSent, true);
+        const resetSent = await emailService.sendPasswordResetEmail({
+          to: testEmail,
+          userName: "Candidate Notify",
+          token: "tok_test_reset_link_456",
+        });
+        assert.equal(resetSent, true);
+      } finally {
+        emailService.setProvider(originalProvider);
+      }
     });
 
     it("SmtpEmailProvider fails safe when SMTP_HOST is missing in production without throwing unhandled exceptions", async () => {
       const originalEnv = process.env["NODE_ENV"];
+      const originalHost = process.env["SMTP_HOST"];
       try {
         process.env["NODE_ENV"] = "production";
-        const smtpProvider = new SmtpEmailProvider();
+        delete process.env["SMTP_HOST"];
+        const smtpProvider = new SmtpEmailProvider(null, { host: "" });
         const res = await smtpProvider.send({
           to: "user@example.com",
           subject: "Test Subject",
@@ -485,6 +498,9 @@ describe("CRITICAL SECURITY & AUTHENTICATION HARDENING SUITE", () => {
         );
       } finally {
         process.env["NODE_ENV"] = originalEnv;
+        if (originalHost !== undefined) {
+          process.env["SMTP_HOST"] = originalHost;
+        }
       }
     });
 

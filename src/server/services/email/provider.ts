@@ -70,7 +70,10 @@ export class SmtpEmailProvider implements EmailProvider {
   }
 
   public getHost(): string | undefined {
-    return this.options.host || config.email.host;
+    if ("host" in this.options) {
+      return this.options.host || undefined;
+    }
+    return config.email.host || undefined;
   }
 
   public getPort(): number {
@@ -112,9 +115,9 @@ export class SmtpEmailProvider implements EmailProvider {
       port,
       secure,
       ...(user && pass ? { auth: { user, pass } } : {}),
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
+      connectionTimeout: 30000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
       tls: {
         rejectUnauthorized: true,
         minVersion: "TLSv1.2",
