@@ -46,6 +46,17 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 import { handleApiRequest } from "./server/routes/index.ts";
 import { connectToDatabase, isDatabaseConnected } from "./server/db/mongodb.ts";
+import { validateProductionEnvironment } from "./server/config/env.ts";
+
+// Validate production environment configuration before database initialization or serving traffic
+if (typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production") {
+  const envCheck = validateProductionEnvironment();
+  if (!envCheck.valid) {
+    const errorMsg = `Production environment configuration validation failed: ${envCheck.errors.join("; ")}`;
+    console.error(`[Server] FATAL: ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+}
 
 // Initialize database connection in background
 if (typeof process !== "undefined" && process.env?.["NODE_ENV"] !== "test") {

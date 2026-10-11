@@ -1,4 +1,4 @@
-import { userRepository } from "../db/user-repository.ts";
+import { userRepository, DEFAULT_SEED_EMAILS } from "../db/user-repository.ts";
 import { sessionRepository } from "../db/session-repository.ts";
 import { tokenRepository } from "../db/token-repository.ts";
 import {
@@ -19,6 +19,7 @@ import {
   resetPasswordSchema,
   verifyEmailSchema,
   resendVerificationSchema,
+  changePasswordSchema,
 } from "../validators/auth.ts";
 import { validateSchema } from "../validators/common.ts";
 import { successResponse, errorResponse } from "../utils/response.ts";
@@ -165,6 +166,15 @@ export async function handleLogin(req: Request): Promise<Response> {
   const user = await userRepository.findByEmailAsync(normalizedEmail);
 
   if (!user) {
+    loginRateLimiter.recordIpAttempt(ip);
+    return errorResponse(new AppError("Invalid email or password.", 401, "INVALID_CREDENTIALS"));
+  }
+
+  // Strictly block demo/seed accounts and unhashed credentials in production
+  if (
+    process.env["NODE_ENV"] === "production" &&
+    (DEFAULT_SEED_EMAILS.has(normalizedEmail) || !user.passwordHash?.startsWith("scrypt$"))
+  ) {
     loginRateLimiter.recordIpAttempt(ip);
     return errorResponse(new AppError("Invalid email or password.", 401, "INVALID_CREDENTIALS"));
   }
@@ -321,7 +331,7 @@ export async function handleForgotPassword(req: Request): Promise<Response> {
   const user = await userRepository.findByEmailAsync(validated.email);
 
   if (user) {
-    const { token } = tokenRepository.createPasswordResetToken(user.id, 60);
+    const { token } = await tokenRepository.createPasswordResetTokenAsync(user.id, 60);
     await emailService.sendPasswordResetEmail({
       to: user.email,
       userName: user.name,
@@ -349,7 +359,7 @@ export async function handleResetPassword(req: Request): Promise<Response> {
 
   const validated = validateSchema(resetPasswordSchema, body);
 
-  const tokenVerification = tokenRepository.verifyPasswordResetToken(validated.token);
+  const tokenVerification = await tokenRepository.verifyPasswordResetTokenAsync(validated.token);
   if (!tokenVerification.valid || !tokenVerification.userId) {
     return errorResponse(
       new AppError(
@@ -368,11 +378,14 @@ export async function handleResetPassword(req: Request): Promise<Response> {
   }
 
   const newHash = hashPassword(validated.password);
-  userRepository.updatePassword(tokenVerification.userId, newHash);
-  tokenRepository.consumePasswordResetToken(validated.token);
+
+  // Persist the password update before consuming the reset token.
+  // If the database write fails, the token is not consumed so the user can retry.
+  await userRepository.updatePasswordAsync(tokenVerification.userId, newHash);
+  await tokenRepository.consumePasswordResetTokenAsync(validated.token);
 
   // Invalidate all active sessions for security
-  sessionRepository.revokeAllUserSessions(tokenVerification.userId);
+  await sessionRepository.revokeAllUserSessionsAsync(tokenVerification.userId);
 
   return successResponse(
     { reset: true },
@@ -392,7 +405,7 @@ export async function handleVerifyEmail(req: Request): Promise<Response> {
   }
 
   const validated = validateSchema(verifyEmailSchema, body);
-  const verification = tokenRepository.verifyEmailVerificationToken(validated.token);
+  const verification = await tokenRepository.verifyEmailVerificationTokenAsync(validated.token);
 
   if (!verification.valid || !verification.userId) {
     return errorResponse(
@@ -404,8 +417,8 @@ export async function handleVerifyEmail(req: Request): Promise<Response> {
     );
   }
 
-  userRepository.updateEmailVerification(verification.userId, true);
-  tokenRepository.consumeEmailVerificationToken(validated.token);
+  await userRepository.updateEmailVerificationAsync(verification.userId, true);
+  await tokenRepository.consumeEmailVerificationTokenAsync(validated.token);
 
   return successResponse({ verified: true }, "Email address successfully verified.");
 }
@@ -425,7 +438,7 @@ export async function handleResendVerification(req: Request): Promise<Response> 
   const user = await userRepository.findByEmailAsync(validated.email);
 
   if (user && !user.emailVerified) {
-    const { token } = tokenRepository.createEmailVerificationToken(user.id, 48);
+    const { token } = await tokenRepository.createEmailVerificationTokenAsync(user.id, 48);
     await emailService.sendVerificationEmail({
       to: user.email,
       userName: user.name,
@@ -436,6 +449,58 @@ export async function handleResendVerification(req: Request): Promise<Response> 
   return successResponse(
     { sent: true },
     "If your account requires verification, a new link has been sent.",
+  );
+}
+
+/**
+ * Handle POST /api/auth/change-password
+ * Requires authenticated session; validates current password and revokes other sessions
+ */
+export async function handlePasswordChange(req: Request): Promise<Response> {
+  const authUser = await authenticate(req);
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    throw new ValidationError("Invalid JSON payload");
+  }
+
+  const validated = validateSchema(changePasswordSchema, body);
+
+  const fullUser =
+    (await userRepository.findFullUserByIdAsync(authUser.id)) ||
+    userRepository.findFullUserById(authUser.id);
+
+  if (!fullUser) {
+    throw new AuthError("User account no longer exists.", 401);
+  }
+
+  // Validate current password
+  const currentMatches = verifyPassword(validated.currentPassword, fullUser.passwordHash);
+  if (!currentMatches) {
+    throw new AppError("Current password is incorrect.", 400, "INVALID_CURRENT_PASSWORD");
+  }
+
+  // Validate new password policy
+  const policyCheck = validatePasswordPolicy(validated.newPassword);
+  if (!policyCheck.valid) {
+    throw new ValidationError(
+      policyCheck.message || "New password does not meet security requirements.",
+    );
+  }
+
+  // Hash new password and persist to MongoDB
+  const newHash = hashPassword(validated.newPassword);
+  await userRepository.updatePasswordAsync(authUser.id, newHash);
+
+  // Invalidate all other active sessions, keeping current token active
+  const currentToken = extractTokenFromRequest(req);
+  await sessionRepository.revokeAllUserSessionsAsync(authUser.id, currentToken || undefined);
+
+  return successResponse(
+    { changed: true },
+    "Password has been changed successfully. Other active sessions have been revoked.",
   );
 }
 
@@ -485,6 +550,10 @@ export async function handleAuthApiRequest(req: Request): Promise<Response | nul
 
     if (pathname === "/api/auth/resend-verification" && req.method === "POST") {
       return await handleResendVerification(req);
+    }
+
+    if (pathname === "/api/auth/change-password" && req.method === "POST") {
+      return await handlePasswordChange(req);
     }
 
     return errorResponse(new AppError("Authentication endpoint not found.", 404, "NOT_FOUND"));

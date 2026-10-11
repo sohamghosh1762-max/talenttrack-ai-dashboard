@@ -20,6 +20,19 @@ export function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+interface ISessionDoc {
+  _id: mongoose.Types.ObjectId | string;
+  sessionId?: string;
+  userId: mongoose.Types.ObjectId | string;
+  tokenHash: string;
+  createdAt: Date | string;
+  expiresAt: Date | string;
+  lastUsedAt?: Date | string;
+  revokedAt?: Date | string | null;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
 class SessionRepository {
   private sessions: Map<string, ISession> = new Map(); // Key: tokenHash
 
@@ -80,7 +93,7 @@ class SessionRepository {
   }
 
   /**
-   * Find an active, non-expired, non-revoked session by its raw token
+   * Find an active, non-expired, non-revoked session by its raw token (cache check)
    */
   public findValidSessionByToken(token: string): ISession | null {
     if (!token) return null;
@@ -102,42 +115,52 @@ class SessionRepository {
   }
 
   /**
-   * Async finder that checks MongoDB if not found in memory cache
+   * Authoritative session validation checking MongoDB Atlas for cross-instance validity
    */
   public async findValidSessionByTokenAsync(token: string): Promise<ISession | null> {
-    const cached = this.findValidSessionByToken(token);
-    if (cached) return cached;
-
-    if (!token || !isDatabaseConnected()) return null;
-
+    if (!token) return null;
     const tokenHash = hashToken(token);
-    try {
-      const doc = await Session.findOne({
-        tokenHash,
-        revokedAt: null,
-        expiresAt: { $gt: new Date() },
-      }).lean<any>();
 
-      if (doc) {
-        const session: ISession = {
-          id: doc.sessionId || doc._id.toString(),
-          userId: doc.userId.toString(),
-          tokenHash: doc.tokenHash,
-          createdAt: doc.createdAt?.toISOString?.() || new Date(doc.createdAt).toISOString(),
-          expiresAt: doc.expiresAt?.toISOString?.() || new Date(doc.expiresAt).toISOString(),
-          lastUsedAt: doc.lastUsedAt?.toISOString?.() || new Date().toISOString(),
-          revokedAt: doc.revokedAt ? new Date(doc.revokedAt).toISOString() : null,
-          ipAddress: doc.ipAddress,
-          userAgent: doc.userAgent,
-        };
-        this.sessions.set(tokenHash, session);
-        return session;
+    if (isDatabaseConnected()) {
+      try {
+        const doc = await Session.findOne({
+          tokenHash,
+          revokedAt: null,
+          expiresAt: { $gt: new Date() },
+        }).lean<ISessionDoc>();
+
+        if (doc) {
+          const session: ISession = {
+            id: doc.sessionId || doc._id.toString(),
+            userId: doc.userId.toString(),
+            tokenHash: doc.tokenHash,
+            createdAt: new Date(doc.createdAt).toISOString(),
+            expiresAt: new Date(doc.expiresAt).toISOString(),
+            lastUsedAt: doc.lastUsedAt
+              ? new Date(doc.lastUsedAt).toISOString()
+              : new Date().toISOString(),
+            revokedAt: doc.revokedAt ? new Date(doc.revokedAt).toISOString() : null,
+            ...(doc.ipAddress ? { ipAddress: doc.ipAddress } : {}),
+            ...(doc.userAgent ? { userAgent: doc.userAgent } : {}),
+          };
+          this.sessions.set(tokenHash, session);
+          return session;
+        }
+
+        // If not found in database or revoked, invalidate local cache
+        this.sessions.delete(tokenHash);
+        return null;
+      } catch (err) {
+        if (process.env["NODE_ENV"] === "production") {
+          return null; // Fail closed in production on database error
+        }
       }
-    } catch {
-      // Fall through to null
+    } else if (process.env["NODE_ENV"] === "production") {
+      return null; // Fail closed when database is unavailable in production
     }
 
-    return null;
+    // In-memory fallback for local development & unit tests
+    return this.findValidSessionByToken(token);
   }
 
   /**
@@ -171,7 +194,7 @@ class SessionRepository {
   }
 
   /**
-   * Async create and persist a new session in MongoDB Atlas
+   * Asynchronously create and persist a new session in MongoDB Atlas before returning
    */
   public async createSessionAsync(
     userId: string,
@@ -200,43 +223,50 @@ class SessionRepository {
       ...(options.userAgent ? { userAgent: options.userAgent } : {}),
     };
 
-    this.sessions.set(tokenHash, session);
-
     if (isDatabaseConnected()) {
-      try {
-        const mongoUserId = isValidObjectId(userId)
-          ? new mongoose.Types.ObjectId(userId)
-          : new mongoose.Types.ObjectId();
+      const mongoUserId = isValidObjectId(userId)
+        ? new mongoose.Types.ObjectId(userId)
+        : new mongoose.Types.ObjectId();
 
-        await Session.create({
-          sessionId,
-          userId: mongoUserId,
-          tokenHash,
-          ...(options.ipAddress ? { ipAddress: options.ipAddress } : {}),
-          ...(options.userAgent ? { userAgent: options.userAgent } : {}),
-          createdAt: now,
-          expiresAt,
-          lastUsedAt: now,
-          revokedAt: null,
-        });
-      } catch (err: any) {
-        console.warn("[SessionRepository] MongoDB session write warning:", err.message);
-      }
+      await Session.create({
+        sessionId,
+        userId: mongoUserId,
+        tokenHash,
+        ...(options.ipAddress ? { ipAddress: options.ipAddress } : {}),
+        ...(options.userAgent ? { userAgent: options.userAgent } : {}),
+        createdAt: now,
+        expiresAt,
+        lastUsedAt: now,
+        revokedAt: null,
+      });
+    } else if (process.env["NODE_ENV"] === "production") {
+      throw new Error("Cannot create session: Database is unavailable.");
     }
 
+    this.sessions.set(tokenHash, session);
     return session;
   }
 
   /**
-   * Async revoke active session in both memory and MongoDB
+   * Asynchronously revoke active session in both memory and MongoDB
    */
   public async revokeSessionByTokenAsync(token: string): Promise<boolean> {
-    const res = this.revokeSessionByToken(token);
+    if (!token) return false;
     const tokenHash = hashToken(token);
+    const now = new Date();
+
     if (isDatabaseConnected()) {
-      await Session.updateOne({ tokenHash }, { $set: { revokedAt: new Date() } }).catch(() => {});
+      const res = await Session.updateOne({ tokenHash }, { $set: { revokedAt: now } });
+      const session = this.sessions.get(tokenHash);
+      if (session) {
+        session.revokedAt = now.toISOString();
+      }
+      return res.matchedCount > 0;
+    } else if (process.env["NODE_ENV"] === "production") {
+      throw new Error("Cannot revoke session: Database is unavailable.");
     }
-    return res;
+
+    return this.revokeSessionByToken(token);
   }
 
   /**
@@ -248,19 +278,21 @@ class SessionRepository {
       const docs = await Session.find({
         revokedAt: null,
         expiresAt: { $gt: new Date() },
-      }).lean<any>();
+      }).lean<ISessionDoc[]>();
 
       for (const doc of docs) {
         const session: ISession = {
           id: doc.sessionId || doc._id.toString(),
           userId: doc.userId.toString(),
           tokenHash: doc.tokenHash,
-          createdAt: doc.createdAt?.toISOString?.() || new Date(doc.createdAt).toISOString(),
-          expiresAt: doc.expiresAt?.toISOString?.() || new Date(doc.expiresAt).toISOString(),
-          lastUsedAt: doc.lastUsedAt?.toISOString?.() || new Date().toISOString(),
+          createdAt: new Date(doc.createdAt).toISOString(),
+          expiresAt: new Date(doc.expiresAt).toISOString(),
+          lastUsedAt: doc.lastUsedAt
+            ? new Date(doc.lastUsedAt).toISOString()
+            : new Date().toISOString(),
           revokedAt: doc.revokedAt ? new Date(doc.revokedAt).toISOString() : null,
-          ipAddress: doc.ipAddress,
-          userAgent: doc.userAgent,
+          ...(doc.ipAddress ? { ipAddress: doc.ipAddress } : {}),
+          ...(doc.userAgent ? { userAgent: doc.userAgent } : {}),
         };
         this.sessions.set(session.tokenHash, session);
       }
@@ -293,6 +325,39 @@ class SessionRepository {
     }
 
     return count;
+  }
+
+  /**
+   * Asynchronously revoke all sessions for a user, optionally preserving the current active token
+   */
+  public async revokeAllUserSessionsAsync(userId: string, exceptToken?: string): Promise<number> {
+    const now = new Date();
+    const filter: Record<string, unknown> = {
+      userId: isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : userId,
+      revokedAt: null,
+    };
+    if (exceptToken) {
+      filter["tokenHash"] = { $ne: hashToken(exceptToken) };
+    }
+
+    let modifiedCount = 0;
+    if (isDatabaseConnected()) {
+      const res = await Session.updateMany(filter, { $set: { revokedAt: now } });
+      modifiedCount = res.modifiedCount;
+    } else if (process.env["NODE_ENV"] === "production") {
+      throw new Error("Cannot revoke user sessions: Database is unavailable.");
+    }
+
+    for (const session of this.sessions.values()) {
+      if (
+        session.userId === userId &&
+        (!exceptToken || session.tokenHash !== hashToken(exceptToken))
+      ) {
+        session.revokedAt = now.toISOString();
+      }
+    }
+
+    return modifiedCount;
   }
 
   /**

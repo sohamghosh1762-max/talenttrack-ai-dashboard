@@ -29,16 +29,16 @@ export async function authenticate(req: Request): Promise<AuthenticatedUser> {
     throw new AuthError("Authentication required. Please log in.", 401);
   }
 
-  // 1. Look up active session in cryptographic session store (Recruiter / Admin / Legacy sessions)
-  let session = sessionRepository.findValidSessionByToken(token);
-  if (!session) {
-    session = await sessionRepository.findValidSessionByTokenAsync(token);
+  // 1. Look up active session in cryptographic session store (authoritative async lookup)
+  let session = await sessionRepository.findValidSessionByTokenAsync(token);
+  if (!session && process.env["NODE_ENV"] !== "production") {
+    session = sessionRepository.findValidSessionByToken(token);
   }
 
   if (session) {
-    let user = userRepository.findFullUserById(session.userId);
-    if (!user) {
-      user = await userRepository.findFullUserByIdAsync(session.userId);
+    let user = await userRepository.findFullUserByIdAsync(session.userId);
+    if (!user && process.env["NODE_ENV"] !== "production") {
+      user = userRepository.findFullUserById(session.userId);
     }
     if (!user) {
       throw new AuthError("User account no longer exists.", 401);
@@ -66,29 +66,31 @@ export async function authenticate(req: Request): Promise<AuthenticatedUser> {
     };
   }
 
-  // 2. Direct user ID / legacy compatibility for test suites
-  let directUser = userRepository.findFullUserById(token);
-  if (!directUser) {
-    directUser = await userRepository.findFullUserByIdAsync(token);
-  }
-  if (directUser) {
-    if (directUser.status === "SUSPENDED") {
-      throw new AuthError("Account has been suspended. Please contact support.", 403);
+  // 2. Direct user ID legacy fallback strictly restricted to test/dev environments (prohibited in production)
+  if (process.env["NODE_ENV"] !== "production") {
+    let directUser = userRepository.findFullUserById(token);
+    if (!directUser) {
+      directUser = await userRepository.findFullUserByIdAsync(token);
     }
-    if (directUser.status === "LOCKED") {
-      throw new AuthError(
-        "Account is temporarily locked. Please try again later or reset your password.",
-        403,
-      );
-    }
-    if (directUser.status === "DEACTIVATED") {
-      throw new AuthError("Account is deactivated. Please contact an administrator.", 403);
-    }
+    if (directUser) {
+      if (directUser.status === "SUSPENDED") {
+        throw new AuthError("Account has been suspended. Please contact support.", 403);
+      }
+      if (directUser.status === "LOCKED") {
+        throw new AuthError(
+          "Account is temporarily locked. Please try again later or reset your password.",
+          403,
+        );
+      }
+      if (directUser.status === "DEACTIVATED") {
+        throw new AuthError("Account is deactivated. Please contact an administrator.", 403);
+      }
 
-    return {
-      ...toSafeUser(directUser),
-      token,
-    };
+      return {
+        ...toSafeUser(directUser),
+        token,
+      };
+    }
   }
 
   // 3. Firebase ID Token Verification (for Applicant authentication)

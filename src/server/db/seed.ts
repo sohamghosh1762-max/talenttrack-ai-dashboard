@@ -6,7 +6,13 @@ import { Job } from "../models/Job.ts";
 import { Application } from "../models/Application.ts";
 import { hashPassword } from "../auth/password.ts";
 
-async function runSeed() {
+export async function seedDatabase() {
+  if (process.env["NODE_ENV"] === "production" && process.env["ALLOW_PRODUCTION_SEED"] !== "true") {
+    const errorMsg = "[Seed] FATAL: Database seeding is prohibited in production environments.";
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+
   console.log("==================================================");
   console.log("  TalentTrack AI — Development Database Seeder  ");
   console.log("==================================================");
@@ -197,10 +203,14 @@ async function runSeed() {
     console.log("==================================================");
   } catch (err) {
     console.error("[Seed] Seeding failed with error:", err);
-    process.exit(1);
+    throw err;
   } finally {
     await disconnectDatabase();
   }
 }
 
-runSeed();
+if (process.argv[1]?.includes("seed.ts")) {
+  seedDatabase()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+}

@@ -20,6 +20,7 @@ import type {
 } from "../types/user-types.ts";
 import type { IParsedResumeProfile } from "../types/resume-types.ts";
 import { auditService } from "../services/audit-service.ts";
+import { AppError } from "../utils/errors.ts";
 
 // Standard 24-character hexadecimal MongoDB ObjectId validator
 export function isValidObjectId(id: string): boolean {
@@ -42,6 +43,7 @@ export function toSafeUser(user: IUser): SafeUser {
 }
 
 // Convert Mongoose User document to internal IUser entity
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 export function docToUser(doc: any): IUser {
   const obj = doc.toObject ? doc.toObject() : doc;
   const idStr = doc._id ? doc._id.toString() : obj.id || doc.id;
@@ -68,6 +70,10 @@ export function docToUser(doc: any): IUser {
   };
 }
 
+// Pre-computed scrypt hash for development seed accounts (password123)
+export const DEFAULT_SEED_PASSWORD_HASH =
+  "scrypt$770a1a77abc429427d5543a4c06986ac$bb8de7458a9e53290bfe6fb5f954c590a64d82dd1ed9577dea7c450e86135728e2e714ba02f691540aab1a820df15a91ec11d510b86c2dec29372756958c16e9";
+
 // Pre-seeded database records with genuine 24-hex MongoDB ObjectIds
 export const DEFAULT_SEED_USERS: IUser[] = [
   // Administrators
@@ -75,7 +81,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c001",
     name: "Platform Administrator",
     email: "admin@talenttrack.ai",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "ADMIN",
     status: "ACTIVE",
     emailVerified: true,
@@ -92,7 +98,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c002",
     name: "Elena Rostova",
     email: "elena.admin@talenttrack.ai",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "ADMIN",
     status: "ACTIVE",
     emailVerified: true,
@@ -110,7 +116,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c020",
     name: "Sarah Chen",
     email: "manager@talenttrack.ai",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "HIRING_MANAGER",
     status: "ACTIVE",
     emailVerified: true,
@@ -128,7 +134,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c003",
     name: "Rahul Mehta",
     email: "rahul.mehta@talenttrack.ai",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "RECRUITER",
     status: "ACTIVE",
     emailVerified: true,
@@ -145,7 +151,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c004",
     name: "Sarah Jenkins",
     email: "sarah.j@stripe-recruit.com",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "RECRUITER",
     status: "ACTIVE",
     emailVerified: true,
@@ -162,7 +168,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c005",
     name: "David Kim",
     email: "david.kim@databricks-partners.com",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "RECRUITER",
     status: "ACTIVE",
     emailVerified: true,
@@ -179,7 +185,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c006",
     name: "Claire Dupont",
     email: "claire.dupont@scale-talent.io",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "RECRUITER",
     status: "SUSPENDED",
     emailVerified: true,
@@ -196,7 +202,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c007",
     name: "Marcus Vance",
     email: "marcus.v@fintechhiring.net",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "RECRUITER",
     status: "INACTIVE",
     emailVerified: false,
@@ -214,7 +220,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c008",
     name: "Aarav Mehta",
     email: "aarav.mehta@example.com",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -234,7 +240,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c009",
     name: "Sophia Chen",
     email: "sophia.chen@example.org",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -254,7 +260,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c010",
     name: "Lucas Althaus",
     email: "lucas.althaus@example.de",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -274,7 +280,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c011",
     name: "Maya Patel",
     email: "maya.patel@example.com",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: false,
@@ -294,7 +300,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c012",
     name: "Daniel Santos",
     email: "daniel.santos@example.com",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "APPLICANT",
     status: "SUSPENDED",
     emailVerified: true,
@@ -314,7 +320,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c013",
     name: "Amira Zahra",
     email: "amira.zahra@example.io",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "APPLICANT",
     status: "INACTIVE",
     emailVerified: false,
@@ -334,7 +340,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c014",
     name: "Nathaniel Cole",
     email: "nathaniel.cole@example.com",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -354,7 +360,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c015",
     name: "Jessica Taylor",
     email: "jessica.taylor@example.com",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -374,7 +380,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c016",
     name: "Vikram Singhania",
     email: "vikram.singh@example.co.in",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -394,7 +400,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c017",
     name: "Chloe Martin",
     email: "chloe.martin@example.fr",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: false,
@@ -414,7 +420,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c018",
     name: "Ethan Wright",
     email: "ethan.wright@example.com",
-    passwordHash: "password123",
+    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -432,18 +438,27 @@ export const DEFAULT_SEED_USERS: IUser[] = [
   },
 ];
 
+export const DEFAULT_SEED_EMAILS = new Set(DEFAULT_SEED_USERS.map((u) => u.email.toLowerCase()));
+
 class UserRepository {
   private users: Map<string, IUser> = new Map();
 
   constructor() {
-    this.resetToDefaults();
+    // Strictly isolate seed users from production
+    if (process.env["NODE_ENV"] !== "production") {
+      this.resetToDefaults();
+    }
   }
 
   /**
-   * Reset database to initial seed dataset (useful for testing)
+   * Reset database to initial seed dataset (strictly prohibited in production)
    */
   public resetToDefaults(): void {
     this.users.clear();
+    if (process.env["NODE_ENV"] === "production") {
+      // In production, NEVER load mock/seed users
+      return;
+    }
     for (const u of DEFAULT_SEED_USERS) {
       // Store clone to prevent mutations
       this.users.set(u.id, JSON.parse(JSON.stringify(u)));
@@ -622,13 +637,10 @@ class UserRepository {
   }
 
   /**
-   * Async find full user by ID with MongoDB fallback and caching
+   * Async find full user by ID with authoritative MongoDB persistence
    */
   public async findFullUserByIdAsync(id: string): Promise<IUser | null> {
-    const cached = this.findFullUserById(id);
-    if (cached) return cached;
-
-    if (isValidObjectId(id) && isDatabaseConnected()) {
+    if (isDatabaseConnected() && isValidObjectId(id)) {
       try {
         const doc = await User.findById(id).exec();
         if (doc) {
@@ -636,10 +648,21 @@ class UserRepository {
           this.users.set(user.id, user);
           return user;
         }
+        if (process.env["NODE_ENV"] === "production") {
+          return null;
+        }
       } catch (err) {
         console.warn(`[UserRepository] MongoDB findFullUserByIdAsync error:`, err);
+        if (process.env["NODE_ENV"] === "production") {
+          throw new AppError("User service temporarily unavailable.", 503, "DATABASE_UNAVAILABLE");
+        }
       }
+    } else if (process.env["NODE_ENV"] === "production") {
+      return null;
     }
+
+    const cached = this.findFullUserById(id);
+    if (cached) return cached;
     return null;
   }
 
@@ -652,12 +675,10 @@ class UserRepository {
   }
 
   /**
-   * Async find user by email with MongoDB fallback and caching
+   * Async find user by email with authoritative MongoDB persistence
    */
   public async findByEmailAsync(email: string): Promise<IUser | null> {
     const normalized = email.trim().toLowerCase();
-    const cached = this.findByEmail(normalized);
-    if (cached) return cached;
 
     if (isDatabaseConnected()) {
       try {
@@ -667,10 +688,31 @@ class UserRepository {
           this.users.set(user.id, user);
           return user;
         }
+        // In production, MongoDB is strictly authoritative: non-existent records return null
+        if (process.env["NODE_ENV"] === "production") {
+          return null;
+        }
       } catch (err) {
         console.warn(`[UserRepository] MongoDB findByEmailAsync error:`, err);
+        if (process.env["NODE_ENV"] === "production") {
+          throw new AppError(
+            "Authentication service temporarily unavailable.",
+            503,
+            "DATABASE_UNAVAILABLE",
+          );
+        }
       }
+    } else if (process.env["NODE_ENV"] === "production") {
+      throw new AppError(
+        "Authentication service temporarily unavailable.",
+        503,
+        "DATABASE_UNAVAILABLE",
+      );
     }
+
+    // In-memory fallback for local development & unit tests
+    const cached = this.findByEmail(normalized);
+    if (cached) return cached;
     return null;
   }
 
@@ -791,7 +833,7 @@ class UserRepository {
             location: applicantProfile.location,
             phone: applicantProfile.phone,
             skills: [],
-          } as any).catch(console.error);
+          }).catch(console.error);
         })
         .catch((err) => {
           console.error(`[MongoDB] Error saving Firebase user ${newUser.email}:`, err);
@@ -1077,7 +1119,7 @@ class UserRepository {
               companyName: newUser.recruiterProfile.companyName,
               designation: newUser.recruiterProfile.jobTitle,
               department: newUser.recruiterProfile.department || "Talent Acquisition",
-            } as any).catch(console.error);
+            }).catch(console.error);
           } else if (newUser.role === "APPLICANT" && newUser.applicantProfile) {
             await Applicant.create({
               userId: createdUserDoc._id,
@@ -1087,7 +1129,7 @@ class UserRepository {
               skills: newUser.applicantProfile.skills || [],
               experience: newUser.applicantProfile.experienceYears,
               resume: newUser.applicantProfile.resumeFileName,
-            } as any).catch(console.error);
+            }).catch(console.error);
           }
         })
         .catch((err) => {
@@ -1141,6 +1183,7 @@ class UserRepository {
     };
 
     if (isDatabaseConnected()) {
+      let createdUserDocId: string | null = null;
       try {
         const createdUserDoc = await User.create({
           _id: id,
@@ -1157,6 +1200,7 @@ class UserRepository {
           applicantProfile: newUser.applicantProfile,
           adminProfile: newUser.adminProfile,
         });
+        createdUserDocId = String(createdUserDoc._id);
 
         if (newUser.role === "RECRUITER" && newUser.recruiterProfile) {
           await Recruiter.create({
@@ -1164,7 +1208,7 @@ class UserRepository {
             companyName: newUser.recruiterProfile.companyName,
             designation: newUser.recruiterProfile.jobTitle,
             department: newUser.recruiterProfile.department || "Talent Acquisition",
-          } as any).catch(console.error);
+          });
         } else if (newUser.role === "APPLICANT" && newUser.applicantProfile) {
           await Applicant.create({
             userId: createdUserDoc._id,
@@ -1174,15 +1218,21 @@ class UserRepository {
             skills: newUser.applicantProfile.skills || [],
             experience: newUser.applicantProfile.experienceYears,
             resume: newUser.applicantProfile.resumeFileName,
-          } as any).catch(console.error);
+          });
         }
-      } catch (err: any) {
-        if (err.code === 11000) {
+      } catch (err: unknown) {
+        if (createdUserDocId) {
+          await User.findByIdAndDelete(createdUserDocId).catch(() => {});
+        }
+        const mongoErr = err as { code?: number };
+        if (mongoErr.code === 11000) {
           throw new Error("An account with this email address already exists.");
         }
         console.error(`[UserRepository] MongoDB error persisting user ${newUser.email}:`, err);
         throw err;
       }
+    } else if (process.env["NODE_ENV"] === "production") {
+      throw new Error("Cannot create user: Database is unavailable.");
     }
 
     this.users.set(id, newUser);
@@ -1216,6 +1266,30 @@ class UserRepository {
   }
 
   /**
+   * Asynchronously update password hash in MongoDB Atlas before updating cache
+   */
+  public async updatePasswordAsync(userId: string, newPasswordHash: string): Promise<boolean> {
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      const updated = await User.findByIdAndUpdate(userId, {
+        $set: { passwordHash: newPasswordHash, updatedAt: new Date() },
+      });
+      if (!updated && process.env["NODE_ENV"] === "production") {
+        throw new Error("User account not found for password update.");
+      }
+    } else if (process.env["NODE_ENV"] === "production") {
+      throw new Error("Cannot update password: Database is unavailable.");
+    }
+
+    const user = this.users.get(userId);
+    if (user) {
+      user.passwordHash = newPasswordHash;
+      user.updatedAt = new Date().toISOString();
+      return true;
+    }
+    return !process.env["NODE_ENV"] || process.env["NODE_ENV"] !== "production";
+  }
+
+  /**
    * Update email verification state
    */
   public updateEmailVerification(userId: string, verified: boolean): boolean {
@@ -1240,6 +1314,41 @@ class UserRepository {
       }).catch(console.error);
     }
 
+    return true;
+  }
+
+  /**
+   * Asynchronously update email verification state in MongoDB Atlas
+   */
+  public async updateEmailVerificationAsync(userId: string, verified: boolean): Promise<boolean> {
+    const now = new Date();
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      const userDoc = await User.findById(userId);
+      const newStatus =
+        verified && userDoc?.status === "PENDING_VERIFICATION" ? "ACTIVE" : userDoc?.status;
+
+      await User.findByIdAndUpdate(userId, {
+        $set: {
+          emailVerified: verified,
+          emailVerifiedAt: verified ? now : undefined,
+          status: newStatus,
+          updatedAt: now,
+        },
+      });
+    } else if (process.env["NODE_ENV"] === "production") {
+      throw new Error("Cannot update email verification: Database is unavailable.");
+    }
+
+    const user = this.users.get(userId);
+    if (user) {
+      user.emailVerified = verified;
+      user.emailVerifiedAt = verified ? now.toISOString() : undefined;
+      if (verified && user.status === "PENDING_VERIFICATION") {
+        user.status = "ACTIVE";
+      }
+      user.updatedAt = now.toISOString();
+      return true;
+    }
     return true;
   }
 

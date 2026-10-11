@@ -135,14 +135,21 @@ export async function connectToDatabase(
     return cachedConnectionPromise;
   }
 
-  const rawUri = normalizeMongoUri(
+  const uriCandidate =
     customUri ||
-      (typeof process !== "undefined" && process.env?.["MONGODB_URI"]) ||
-      (typeof process !== "undefined" && process.env?.["DATABASE_URL"]) ||
-      env.MONGODB_URI ||
-      "mongodb://127.0.0.1:27017/talenttrack",
-  );
+    (typeof process !== "undefined" && process.env?.["MONGODB_URI"]) ||
+    (typeof process !== "undefined" && process.env?.["DATABASE_URL"]) ||
+    env.MONGODB_URI;
 
+  if (process.env["NODE_ENV"] === "production") {
+    if (!uriCandidate || uriCandidate.includes("127.0.0.1") || uriCandidate.includes("localhost")) {
+      throw new Error(
+        "Production startup failure: MONGODB_URI is required and cannot be a local address in production.",
+      );
+    }
+  }
+
+  const rawUri = normalizeMongoUri(uriCandidate || "mongodb://127.0.0.1:27017/talenttrack");
   const sanitized = sanitizeMongoUri(rawUri);
 
   const defaultOptions: mongoose.ConnectOptions = {
