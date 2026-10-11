@@ -11,6 +11,7 @@ import { validateProductionEnvironment } from "../config/env.ts";
 import { seedDatabase } from "../db/seed.ts";
 import { createUserSessionAsync } from "../auth/session-service.ts";
 import { SmtpEmailProvider, emailService } from "../services/email/index.ts";
+import { hasPermission, PERMISSIONS } from "../permissions/index.ts";
 
 describe("CRITICAL SECURITY & AUTHENTICATION HARDENING SUITE", () => {
   const originalEnv = { ...process.env };
@@ -538,6 +539,59 @@ describe("CRITICAL SECURITY & AUTHENTICATION HARDENING SUITE", () => {
       // Verify token cannot be re-consumed
       const reVerify = await tokenRepository.verifyPasswordResetTokenAsync(token);
       assert.equal(reVerify.valid, false);
+    });
+
+    it("rejects expired password reset tokens and expired sessions", async () => {
+      // 1. Expired token (negative duration)
+      const { token } = await tokenRepository.createPasswordResetTokenAsync(
+        "usr-expired-test",
+        -10,
+      );
+      const tokenCheck = await tokenRepository.verifyPasswordResetTokenAsync(token);
+      assert.equal(tokenCheck.valid, false);
+      assert.match(tokenCheck.error || "", /expired/i);
+
+      // 2. Expired session
+      const expiredSession = await sessionRepository.createSessionAsync(
+        "usr-expired-session",
+        "sess_already_expired_tok_999",
+        { ttlHours: -5 },
+      );
+      assert.ok(expiredSession);
+      const sessionCheck = await sessionRepository.findValidSessionByTokenAsync(
+        "sess_already_expired_tok_999",
+      );
+      assert.equal(sessionCheck, null, "Expired session must return null");
+    });
+
+    it("enforces role-based authorization and resource isolation", () => {
+      // 1. RECRUITER can create and manage jobs, but cannot manage platform users or system settings
+      assert.equal(hasPermission("RECRUITER", PERMISSIONS.JOBS_CREATE), true);
+      assert.equal(hasPermission("RECRUITER", PERMISSIONS.USERS_CREATE), false);
+      assert.equal(hasPermission("RECRUITER", PERMISSIONS.SETTINGS_MANAGE), false);
+
+      // 2. APPLICANT cannot create jobs or evaluate screening
+      assert.equal(hasPermission("APPLICANT", PERMISSIONS.JOBS_CREATE), false);
+      assert.equal(hasPermission("APPLICANT", PERMISSIONS.SCREENING_EVALUATE), false);
+      assert.equal(hasPermission("APPLICANT", PERMISSIONS.RESUMES_UPLOAD), true);
+
+      // 3. ADMIN has full administrative capabilities
+      assert.equal(hasPermission("ADMIN", PERMISSIONS.USERS_CREATE), true);
+      assert.equal(hasPermission("ADMIN", PERMISSIONS.SETTINGS_MANAGE), true);
+      assert.equal(hasPermission("ADMIN", PERMISSIONS.JOBS_DELETE), true);
+    });
+
+    it("fails closed on user creation when database is unavailable in production", async () => {
+      process.env["NODE_ENV"] = "production";
+
+      await assert.rejects(async () => {
+        await userRepository.createUserAsync({
+          email: "orphan.user@production.fail",
+          passwordHash: hashPassword("SafePass123!"),
+          name: "Orphan User",
+          role: "RECRUITER",
+        });
+      }, /Database is unavailable|Authentication service temporarily unavailable/i);
     });
   });
 });
