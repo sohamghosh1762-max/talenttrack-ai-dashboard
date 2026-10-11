@@ -104,4 +104,85 @@ GEMINI_MODEL=gemini-3.6-flash
 FIREBASE_PROJECT_ID=your-firebase-project-id
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n<your-private-key-here>\n-----END PRIVATE KEY-----\n"
+
+# Email Delivery & SMTP (Nodemailer Production Transport)
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USER=apikey
+SMTP_PASSWORD=your-smtp-api-key
+SMTP_SECURE=false
+SMTP_FROM_EMAIL=no-reply@talenttrack.ai
+SMTP_FROM_NAME="TalentTrack AI"
+REQUIRE_SMTP=false
 ```
+
+---
+
+## 7. Email Delivery & SMTP Configuration (Nodemailer)
+
+TalentTrack AI utilizes **Nodemailer** for outbound transactional email delivery (email verification, password resets, and candidate notifications).
+
+| Variable Name | Required | Default / Example | Purpose |
+| :--- | :---: | :--- | :--- |
+| `SMTP_HOST` | In Prod (with email) | `smtp.sendgrid.net` | Hostname of the outbound SMTP relay server. |
+| `SMTP_PORT` | No | `587` | SMTP port: 587 (STARTTLS), 465 (implicit TLS), or 2525. |
+| `SMTP_USER` | When Auth Required | `apikey` | Username or API key for SMTP authentication. |
+| `SMTP_PASSWORD` | When Auth Required | `<smtp-secret-key>` | Password or API secret key for SMTP authentication. |
+| `SMTP_SECURE` | No | `false` (auto-true for port 465) | Set `true` for implicit TLS (port 465), `false` for STARTTLS (port 587). |
+| `SMTP_FROM_EMAIL` | No | `no-reply@talenttrack.ai` | Valid RFC 5322 sender email address. |
+| `SMTP_FROM_NAME` | No | `TalentTrack AI` | Sender display name. |
+| `REQUIRE_SMTP` | No | `false` | When `true`, enforces that `SMTP_HOST` is configured during production startup. |
+
+### Environment Behavior
+
+1. **Development & Testing:**
+   - If `SMTP_HOST` is omitted, the system falls back safely to `DevConsoleEmailProvider`, which logs simulated dispatch metadata without leaking sensitive credentials or raw tokens.
+   - If `SMTP_HOST` is supplied, it connects through the specified SMTP server.
+
+2. **Production:**
+   - In production (`NODE_ENV=production`), silent fallback to the console mock is **strictly prohibited**.
+   - If `SMTP_HOST` is missing or the SMTP server rejects transmission, the provider safely returns a delivery failure and logs sanitized error details.
+   - Tokens generated for failed delivery attempts remain in MongoDB and are **not** invalidated, enabling users to request resends.
+
+### Provider Integration Examples
+
+- **SendGrid:**
+  - `SMTP_HOST=smtp.sendgrid.net`
+  - `SMTP_PORT=587`
+  - `SMTP_USER=apikey`
+  - `SMTP_PASSWORD=<Your SendGrid API Key>`
+  - `SMTP_SECURE=false`
+
+- **Mailgun:**
+  - `SMTP_HOST=smtp.mailgun.org`
+  - `SMTP_PORT=587`
+  - `SMTP_USER=postmaster@your-domain.mailgun.org`
+  - `SMTP_PASSWORD=<Your Mailgun SMTP Password>`
+  - `SMTP_SECURE=false`
+
+- **Amazon SES:**
+  - `SMTP_HOST=email-smtp.us-east-1.amazonaws.com`
+  - `SMTP_PORT=465`
+  - `SMTP_USER=<Your SES SMTP Username>`
+  - `SMTP_PASSWORD=<Your SES SMTP Password>`
+  - `SMTP_SECURE=true`
+
+### Running Email Tests & Optional Live Smoke Test
+
+1. **Automated Unit & Integration Tests (Mocked SMTP):**
+   ```bash
+   node --test --experimental-strip-types src/server/__tests__/smtp-email-delivery.test.ts
+   ```
+
+2. **Opt-in Live SMTP Smoke Test (Real Inbound Mailbox):**
+   ```bash
+   RUN_LIVE_SMTP_TEST=true TEST_EMAIL_RECIPIENT="your-test-mailbox@example.com" node --experimental-strip-types scripts/smtp-smoke-test.ts
+   ```
+
+### Troubleshooting Common SMTP Issues
+
+- **Authentication Failed (`535 5.7.8`):** Verify `SMTP_USER` and `SMTP_PASSWORD`. For Gmail/Google Workspace, ensure you are using an App Password rather than your account password.
+- **Connection Timeout (`ETIMEDOUT`):** Many cloud hosts block outbound port 25. Use port 587 or port 465.
+- **TLS Handshake / Certificate Errors:** Ensure `SMTP_SECURE=true` is used only on port 465 and `false` on port 587. Insecure TLS workarounds (`rejectUnauthorized: false`) are intentionally blocked for security.
+- **Rejected Recipient (`550 5.1.1`):** Verify that the destination inbox exists and that your sending domain has valid SPF/DKIM records.
+

@@ -49,13 +49,26 @@ export const envSchema = z
     // Email / SMTP
     SMTP_HOST: z.string().optional(),
     SMTP_PORT: z
-      .string()
+      .union([
+        z.string().transform((val) => {
+          const parsed = parseInt(val, 10);
+          return isNaN(parsed) ? 587 : parsed;
+        }),
+        z.number(),
+      ])
       .optional()
-      .transform((val) => (val ? parseInt(val, 10) : 587)),
+      .default(587),
     SMTP_USER: z.string().optional(),
     SMTP_PASSWORD: z.string().optional(),
+    SMTP_SECURE: z
+      .union([
+        z.string().transform((val) => val.toLowerCase() === "true" || val === "1"),
+        z.boolean(),
+      ])
+      .optional(),
     SMTP_FROM_EMAIL: z.string().email().default("no-reply@talenttrack.ai"),
     SMTP_FROM_NAME: z.string().default("TalentTrack AI"),
+    REQUIRE_SMTP: z.string().optional().default("false"),
   })
   .superRefine((data, ctx) => {
     if (data.NODE_ENV === "production") {
@@ -121,6 +134,32 @@ export const envSchema = z
           message:
             "Demo accounts and development seeds are strictly prohibited in production environments.",
         });
+      }
+
+      // 5. Require and validate SMTP if REQUIRE_SMTP is enabled or SMTP_HOST is configured
+      if (data.REQUIRE_SMTP === "true" && !data.SMTP_HOST) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["SMTP_HOST"],
+          message: "SMTP_HOST is required in production when REQUIRE_SMTP is enabled.",
+        });
+      }
+
+      if (data.SMTP_HOST) {
+        if (data.SMTP_PORT < 1 || data.SMTP_PORT > 65535) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["SMTP_PORT"],
+            message: "SMTP_PORT must be a valid port number between 1 and 65535.",
+          });
+        }
+        if (data.SMTP_USER && !data.SMTP_PASSWORD) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["SMTP_PASSWORD"],
+            message: "SMTP_PASSWORD is required when SMTP_USER is specified.",
+          });
+        }
       }
     }
   });

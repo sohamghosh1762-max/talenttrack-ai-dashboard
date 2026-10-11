@@ -24,6 +24,7 @@ import {
 import { validateSchema } from "../validators/common.ts";
 import { successResponse, errorResponse } from "../utils/response.ts";
 import { ValidationError, AppError } from "../utils/errors.ts";
+import { logger } from "../utils/logger.ts";
 import type { UserRole } from "../types/user-types.ts";
 
 /**
@@ -98,12 +99,18 @@ export async function handleRegister(req: Request): Promise<Response> {
   });
 
   // Generate email verification token & send email
-  const { token: verificationToken } = tokenRepository.createEmailVerificationToken(newUser.id);
-  await emailService.sendVerificationEmail({
+  const { token: verificationToken } = await tokenRepository.createEmailVerificationTokenAsync(
+    newUser.id,
+    48,
+  );
+  const emailSent = await emailService.sendVerificationEmail({
     to: newUser.email,
     userName: newUser.name,
     token: verificationToken,
   });
+  if (!emailSent) {
+    logger.warn(`[Auth] Verification email dispatch was not accepted for user ${newUser.id}`);
+  }
 
   // Create session and set cookie
   const sessionRes = await createUserSessionAsync(newUser.id, req, { persistent: true });
@@ -332,11 +339,14 @@ export async function handleForgotPassword(req: Request): Promise<Response> {
 
   if (user) {
     const { token } = await tokenRepository.createPasswordResetTokenAsync(user.id, 60);
-    await emailService.sendPasswordResetEmail({
+    const emailSent = await emailService.sendPasswordResetEmail({
       to: user.email,
       userName: user.name,
       token,
     });
+    if (!emailSent) {
+      logger.warn(`[Auth] Password reset email dispatch was not accepted for user ${user.id}`);
+    }
   }
 
   // Always return generic success to prevent user enumeration
@@ -439,11 +449,14 @@ export async function handleResendVerification(req: Request): Promise<Response> 
 
   if (user && !user.emailVerified) {
     const { token } = await tokenRepository.createEmailVerificationTokenAsync(user.id, 48);
-    await emailService.sendVerificationEmail({
+    const emailSent = await emailService.sendVerificationEmail({
       to: user.email,
       userName: user.name,
       token,
     });
+    if (!emailSent) {
+      logger.warn(`[Auth] Resend verification email dispatch was not accepted for user ${user.id}`);
+    }
   }
 
   return successResponse(
