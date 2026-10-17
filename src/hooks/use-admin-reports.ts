@@ -111,10 +111,13 @@ export function useAdminReports() {
 
       try {
         const dashboard = await fetchAdminDashboard({ range: timeframe });
-        const appCard = dashboard.recruitmentOverview?.cards?.find((c: any) => c.id === "total-apps");
+        const appCard = dashboard.recruitmentOverview?.cards?.find(
+          (c: any) => c.id === "total-apps",
+        );
         const appsCount = appCard?.count ?? dashboard.analytics?.applications?.total ?? 0;
         const offerCard = dashboard.recruitmentOverview?.cards?.find((c: any) => c.id === "offers");
-        const offersCount = offerCard?.count ?? dashboard.analytics?.applications?.byStage?.OFFER ?? 0;
+        const offersCount =
+          offerCard?.count ?? dashboard.analytics?.applications?.byStage?.OFFER ?? 0;
         const acceptanceRate =
           appsCount > 0 ? `${((offersCount / appsCount) * 100).toFixed(1)}%` : "0.0%";
 

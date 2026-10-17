@@ -197,7 +197,10 @@ describe("RESUME UPLOAD & METADATA PERSISTENCE SUITE", () => {
     const json = await res.json();
     assert.equal(json.success, true);
     assert.equal(json.data.originalFileName, "Profile_Document.docx");
-    assert.equal(json.data.mimeType, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    assert.equal(
+      json.data.mimeType,
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
   });
 
   it("should reject unauthenticated upload requests with 401", async () => {
@@ -255,7 +258,9 @@ describe("RESUME UPLOAD & METADATA PERSISTENCE SUITE", () => {
   });
 
   it("should reject files with forged extensions (e.g. .pdf extension but binary is plain text)", async () => {
-    const textBytes = new TextEncoder().encode("Hello, this is just plain text masquerading as a pdf.");
+    const textBytes = new TextEncoder().encode(
+      "Hello, this is just plain text masquerading as a pdf.",
+    );
     const req = createMultipartResumeRequest("https://talenttrack.ai/api/resumes", {
       token: applicant1Token,
       fileName: "fake_resume.pdf",
@@ -347,9 +352,12 @@ describe("RESUME UPLOAD & METADATA PERSISTENCE SUITE", () => {
     const resumeId = uploaded.id || uploaded._id;
 
     // Request download URL
-    const downloadReq = createJsonRequest(`https://talenttrack.ai/api/resumes/${resumeId}/download`, {
-      token: applicant1Token,
-    });
+    const downloadReq = createJsonRequest(
+      `https://talenttrack.ai/api/resumes/${resumeId}/download`,
+      {
+        token: applicant1Token,
+      },
+    );
     const downloadRes = await handleApiRequest(downloadReq);
     assert.ok(downloadRes);
     assert.equal(downloadRes.status, 200);

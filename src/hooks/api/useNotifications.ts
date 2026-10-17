@@ -26,7 +26,9 @@ export function useNotifications(
       const res = await apiClient.get<PaginatedNotificationsResponse>("/api/notifications", {
         params: params as Record<string, string | number | boolean>,
       });
-      return res || { notifications: [], total: 0, page: 1, limit: 20, totalPages: 0, unreadCount: 0 };
+      return (
+        res || { notifications: [], total: 0, page: 1, limit: 20, totalPages: 0, unreadCount: 0 }
+      );
     },
     enabled: options.enabled ?? true,
     refetchInterval: options.refetchInterval ?? 30_000,
@@ -75,7 +77,9 @@ export function useMarkNotificationRead() {
             ...old,
             unreadCount: Math.max(0, old.unreadCount - 1),
             notifications: old.notifications.map((n) =>
-              n.id === updatedNotification.id ? { ...n, readAt: updatedNotification.readAt || new Date().toISOString() } : n,
+              n.id === updatedNotification.id
+                ? { ...n, readAt: updatedNotification.readAt || new Date().toISOString() }
+                : n,
             ),
           };
         },

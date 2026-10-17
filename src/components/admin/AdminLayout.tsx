@@ -21,8 +21,7 @@ export function AdminLayout({
   const navigate = useNavigate();
 
   const isApplicantRoute =
-    location.pathname === "/admin/applicants" ||
-    location.pathname.startsWith("/admin/applicants/");
+    location.pathname === "/admin/applicants" || location.pathname.startsWith("/admin/applicants/");
 
   const [activeNav, setActiveNav] = useState<AdminNavItemKey>(
     isApplicantRoute

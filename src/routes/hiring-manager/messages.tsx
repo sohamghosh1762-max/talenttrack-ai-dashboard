@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Mail,
-  MessageSquare,
-  Send,
-  User,
-  Users,
-} from "lucide-react";
+import { Mail, MessageSquare, Send, User, Users } from "lucide-react";
 import { HiringManagerLayout } from "@/components/hiring-manager/HiringManagerLayout";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthProvider";
@@ -97,7 +91,10 @@ function HiringManagerMessagesPage() {
           </div>
 
           {/* Input form */}
-          <form onSubmit={handleSend} className="pt-4 border-t border-border flex items-center gap-2">
+          <form
+            onSubmit={handleSend}
+            className="pt-4 border-t border-border flex items-center gap-2"
+          >
             <input
               type="text"
               value={messageText}

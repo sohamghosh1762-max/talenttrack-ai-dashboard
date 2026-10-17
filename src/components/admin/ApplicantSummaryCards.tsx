@@ -4,10 +4,7 @@ import type { AdminApplicantSummaryStats, UserStatus } from "@/server/types/user
 interface ApplicantSummaryCardsProps {
   summary: AdminApplicantSummaryStats | undefined;
   isLoading: boolean;
-  onCardClick?: (
-    type: "status" | "emailVerified" | "clear",
-    value?: UserStatus | boolean,
-  ) => void;
+  onCardClick?: (type: "status" | "emailVerified" | "clear", value?: UserStatus | boolean) => void;
 }
 
 const APPLICANT_CARD_DEFS = [

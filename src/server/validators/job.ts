@@ -115,7 +115,10 @@ export const jobQuerySchema = z.object({
   location: z.string().trim().optional(),
   employmentType: employmentTypeEnum.optional(),
   recruiterId: z.string().trim().optional(),
-  sortBy: z.enum(["createdAt", "title", "department", "applicationsCount"]).default("createdAt").optional(),
+  sortBy: z
+    .enum(["createdAt", "title", "department", "applicationsCount"])
+    .default("createdAt")
+    .optional(),
   sortOrder: z.enum(["asc", "desc"]).default("desc").optional(),
 });
 

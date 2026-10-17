@@ -3,7 +3,11 @@ import { resumeRepository } from "../repositories/resume.repository.ts";
 import { applicantPreferencesRepository } from "../repositories/applicant-preferences.repository.ts";
 import { authenticate } from "../middleware/auth-middleware.ts";
 import { validateUpdateApplicantProfile } from "../validators/applicant-profile-validator.ts";
-import { handleGetApplicantAtsScore, handleAnalyzeApplicantAtsScore, handleGetApplicantJobMatch } from "./ats-routes.ts";
+import {
+  handleGetApplicantAtsScore,
+  handleAnalyzeApplicantAtsScore,
+  handleGetApplicantJobMatch,
+} from "./ats-routes.ts";
 import { successResponse, errorResponse } from "../utils/response.ts";
 import { ForbiddenError, NotFoundError, ValidationError } from "../utils/errors.ts";
 import type { ApplicantProfileResponse } from "../types/user-types.ts";
@@ -21,7 +25,9 @@ export async function handleGetApplicantProfile(req: Request): Promise<Response>
   const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 
   if (!isApplicant && !isAdmin) {
-    throw new ForbiddenError("Only candidate applicant accounts can access applicant profile data.");
+    throw new ForbiddenError(
+      "Only candidate applicant accounts can access applicant profile data.",
+    );
   }
 
   const fullUser = userRepository.findFullUserById(user.id);
@@ -90,7 +96,9 @@ export async function handleUpdateApplicantProfile(req: Request): Promise<Respon
   const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 
   if (!isApplicant && !isAdmin) {
-    throw new ForbiddenError("Only candidate applicant accounts are permitted to update applicant profile data.");
+    throw new ForbiddenError(
+      "Only candidate applicant accounts are permitted to update applicant profile data.",
+    );
   }
 
   let body: unknown;
@@ -169,7 +177,11 @@ export async function handleUpdateApplicantProfile(req: Request): Promise<Respon
       : null,
   };
 
-  return successResponse(profileResponse, "Applicant profile updated and persisted successfully.", 200);
+  return successResponse(
+    profileResponse,
+    "Applicant profile updated and persisted successfully.",
+    200,
+  );
 }
 
 /**
@@ -214,7 +226,9 @@ export async function handleUpdateApplicantSettings(req: Request): Promise<Respo
   const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 
   if (!isApplicant && !isAdmin) {
-    throw new ForbiddenError("Only candidate applicant accounts are permitted to update applicant settings.");
+    throw new ForbiddenError(
+      "Only candidate applicant accounts are permitted to update applicant settings.",
+    );
   }
 
   let body: unknown;
@@ -297,10 +311,7 @@ export async function handleApplicantApiRequest(req: Request): Promise<Response 
     }
 
     // 3. ATS Score routes: /api/applicant/ats-score
-    if (
-      pathname === "/api/applicant/ats-score/analyze" &&
-      req.method === "POST"
-    ) {
+    if (pathname === "/api/applicant/ats-score/analyze" && req.method === "POST") {
       return await handleAnalyzeApplicantAtsScore(req);
     }
 
@@ -324,4 +335,3 @@ export async function handleApplicantApiRequest(req: Request): Promise<Response 
     return errorResponse(err);
   }
 }
-

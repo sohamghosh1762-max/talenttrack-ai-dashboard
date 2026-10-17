@@ -73,10 +73,7 @@ export function ApplicantDashboardPage() {
     refetch: refetchApps,
   } = useMyApplications();
 
-  const {
-    data: interviews = [],
-    isLoading: isInterviewsLoading,
-  } = useMyInterviews();
+  const { data: interviews = [], isLoading: isInterviewsLoading } = useMyInterviews();
 
   const {
     data: jobsData,
@@ -112,11 +109,8 @@ export function ApplicantDashboardPage() {
   }, [applications]);
 
   const activeInterviewsCount = useMemo(() => {
-    return interviews.filter(
-      (i) => i.status !== "CANCELLED" && i.status !== "COMPLETED",
-    ).length;
+    return interviews.filter((i) => i.status !== "CANCELLED" && i.status !== "COMPLETED").length;
   }, [interviews]);
-
 
   // Derived recommended jobs
   const publishedJobs: IJob[] = jobsData?.jobs || jobsData?.data || [];
@@ -192,9 +186,8 @@ export function ApplicantDashboardPage() {
     setApplyError(null);
 
     try {
-      const resumeId = (user?.applicantProfile as Record<string, unknown>)?.[
-        "resumeId"
-      ] as string | undefined;
+      const resumeId = (user?.applicantProfile as Record<string, unknown>)?.["resumeId"] as
+        string | undefined;
 
       await createApplicationMutation.mutateAsync({
         jobId: selectedJob.id,
@@ -252,9 +245,7 @@ export function ApplicantDashboardPage() {
                   <kpi.icon className="size-4" />
                 </span>
               </div>
-              <strong className="block text-2xl font-extrabold text-foreground">
-                {kpi.value}
-              </strong>
+              <strong className="block text-2xl font-extrabold text-foreground">{kpi.value}</strong>
               <span className="text-[10.5px] font-semibold text-foreground/75 mt-1 block truncate">
                 {kpi.change}
               </span>
@@ -580,7 +571,8 @@ export function ApplicantDashboardPage() {
 
                         <div className="flex items-center justify-between pt-1 border-t border-border/50">
                           <span className="text-[10px] text-muted-foreground">
-                            {job.employmentType || "Full-time"} • {job.experienceRequired || "Mid-Senior"}
+                            {job.employmentType || "Full-time"} •{" "}
+                            {job.experienceRequired || "Mid-Senior"}
                           </span>
 
                           <div className="flex items-center gap-1.5">
@@ -654,7 +646,8 @@ export function ApplicantDashboardPage() {
                 Apply for {selectedJob?.title}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Submit your verified profile and resume to the {selectedJob?.department || "hiring"} team.
+                Submit your verified profile and resume to the {selectedJob?.department || "hiring"}{" "}
+                team.
               </DialogDescription>
             </DialogHeader>
 

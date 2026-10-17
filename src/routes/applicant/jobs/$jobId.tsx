@@ -107,9 +107,8 @@ function ApplicantJobDetailsPage() {
     setSubmitError(null);
 
     try {
-      let resumeId = (user?.applicantProfile as Record<string, any>)?.[
-        "resumeId"
-      ] as string | undefined;
+      let resumeId = (user?.applicantProfile as Record<string, any>)?.["resumeId"] as
+        string | undefined;
 
       // 1. Upload custom resume if selected
       if (selectedFile) {
@@ -156,7 +155,9 @@ function ApplicantJobDetailsPage() {
           </div>
           <h2 className="text-base font-bold text-foreground">Job Not Found</h2>
           <p className="text-xs text-muted-foreground">
-            {error ? (error as Error).message : "This job opening is either unavailable or has been archived."}
+            {error
+              ? (error as Error).message
+              : "This job opening is either unavailable or has been archived."}
           </p>
           <Link to="/applicant/jobs">
             <Button size="sm" className="bg-brand-blue text-primary-foreground text-xs">
@@ -172,19 +173,19 @@ function ApplicantJobDetailsPage() {
   const isArchived = job.status === "ARCHIVED";
 
   const formattedDeadline = job.deadline
-    ? new Date(job.deadline.includes("T") ? job.deadline : `${job.deadline}T00:00:00`).toLocaleDateString(
-        "en-US",
-        {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        },
-      )
+    ? new Date(
+        job.deadline.includes("T") ? job.deadline : `${job.deadline}T00:00:00`,
+      ).toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
     : null;
 
   const isPastDeadline = job.deadline
-    ? new Date(job.deadline.includes("T") ? job.deadline : `${job.deadline}T23:59:59.999Z`).getTime() <
-      Date.now()
+    ? new Date(
+        job.deadline.includes("T") ? job.deadline : `${job.deadline}T23:59:59.999Z`,
+      ).getTime() < Date.now()
     : false;
 
   const formattedPostedDate = job.createdAt
@@ -245,9 +246,9 @@ function ApplicantJobDetailsPage() {
                 </span>
                 {job.salaryRange && (job.salaryRange.min || job.salaryRange.max) && (
                   <span className="flex items-center gap-1 text-brand-green font-semibold">
-                    <DollarSign className="size-3.5" />
-                    ${job.salaryRange.min?.toLocaleString()}
-                    {job.salaryRange.max ? ` - $${job.salaryRange.max?.toLocaleString()}` : "+"} / year
+                    <DollarSign className="size-3.5" />${job.salaryRange.min?.toLocaleString()}
+                    {job.salaryRange.max ? ` - $${job.salaryRange.max?.toLocaleString()}` : "+"} /
+                    year
                   </span>
                 )}
                 {formattedDeadline && (
@@ -307,7 +308,9 @@ function ApplicantJobDetailsPage() {
             <div className="rounded-xl border border-brand-blue/20 bg-surface-blue/20 p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <Loader2 className="size-4 animate-spin text-brand-blue" />
-                <span className="text-xs font-bold text-foreground">Calculating qualification match...</span>
+                <span className="text-xs font-bold text-foreground">
+                  Calculating qualification match...
+                </span>
               </div>
               <p className="text-[11.5px] text-muted-foreground">
                 Evaluating your profile skills and experience against position requirements.
@@ -322,14 +325,21 @@ function ApplicantJobDetailsPage() {
                     AI Semantic Qualification Match
                   </strong>
                 </div>
-                <span className="text-[11px] font-semibold text-muted-foreground">Sign In Required</span>
+                <span className="text-[11px] font-semibold text-muted-foreground">
+                  Sign In Required
+                </span>
               </div>
               <p className="text-[11.5px] text-muted-foreground leading-relaxed">
-                Sign in to your candidate account to see your personalized AI match score for this position.
+                Sign in to your candidate account to see your personalized AI match score for this
+                position.
               </p>
               <div className="pt-1">
                 <Link to="/login">
-                  <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5 text-brand-blue border-brand-blue/30 hover:bg-surface-blue">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7 gap-1.5 text-brand-blue border-brand-blue/30 hover:bg-surface-blue"
+                  >
                     Sign In to View Match
                   </Button>
                 </Link>
@@ -344,14 +354,21 @@ function ApplicantJobDetailsPage() {
                     AI Semantic Qualification Match
                   </strong>
                 </div>
-                <span className="text-[11px] font-medium text-muted-foreground">Analysis Pending</span>
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  Analysis Pending
+                </span>
               </div>
               <p className="text-[11.5px] text-muted-foreground leading-relaxed">
-                {matchData?.summary || "Upload your resume to see how well your profile matches this position."}
+                {matchData?.summary ||
+                  "Upload your resume to see how well your profile matches this position."}
               </p>
               <div className="pt-1 flex items-center gap-2">
                 <Link to="/applicant/profile">
-                  <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5 text-brand-blue border-brand-blue/30 hover:bg-surface-blue">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7 gap-1.5 text-brand-blue border-brand-blue/30 hover:bg-surface-blue"
+                  >
                     <Upload className="size-3.5" />
                     Upload Resume
                   </Button>
@@ -388,7 +405,9 @@ function ApplicantJobDetailsPage() {
               </p>
               {matchData.matchedSkills && matchData.matchedSkills.length > 0 && (
                 <div className="pt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <span className="font-semibold text-foreground text-[10.5px]">Matched Skills:</span>
+                  <span className="font-semibold text-foreground text-[10.5px]">
+                    Matched Skills:
+                  </span>
                   {matchData.matchedSkills.map((sk) => (
                     <span
                       key={sk}
@@ -400,7 +419,9 @@ function ApplicantJobDetailsPage() {
                   ))}
                   {matchData.missingSkills && matchData.missingSkills.length > 0 && (
                     <>
-                      <span className="ml-1 font-semibold text-foreground text-[10.5px]">Missing:</span>
+                      <span className="ml-1 font-semibold text-foreground text-[10.5px]">
+                        Missing:
+                      </span>
                       {matchData.missingSkills.map((sk) => (
                         <span
                           key={sk}
@@ -427,7 +448,9 @@ function ApplicantJobDetailsPage() {
 
             {job.skills && job.skills.length > 0 && (
               <section className="space-y-2">
-                <h2 className="text-sm font-bold text-foreground">Required Skills & Proficiencies</h2>
+                <h2 className="text-sm font-bold text-foreground">
+                  Required Skills & Proficiencies
+                </h2>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {job.skills.map((skill) => {
                     const isMatch =
@@ -496,7 +519,7 @@ function ApplicantJobDetailsPage() {
                   <label className="block text-xs font-semibold text-foreground mb-1.5">
                     Resume Document (PDF or DOCX, max 10MB)
                   </label>
-                  
+
                   <input
                     type="file"
                     ref={fileInputRef}

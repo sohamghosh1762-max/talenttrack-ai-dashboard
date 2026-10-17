@@ -27,8 +27,18 @@ const DEFAULT_SEED_RESUMES: IResume[] = [
         github: "https://github.com/aaravmehta",
         portfolio: "https://aaravmehta.dev",
       },
-      summary: "Senior Frontend Engineer with 5+ years of experience in React, TypeScript, and Next.js.",
-      skills: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Redux", "Node.js", "GraphQL", "AWS"],
+      summary:
+        "Senior Frontend Engineer with 5+ years of experience in React, TypeScript, and Next.js.",
+      skills: [
+        "React",
+        "TypeScript",
+        "Next.js",
+        "Tailwind CSS",
+        "Redux",
+        "Node.js",
+        "GraphQL",
+        "AWS",
+      ],
       education: [
         {
           degree: "B.S. in Computer Science",
@@ -157,7 +167,8 @@ class ResumeRepository {
       s3Key: data.s3Key || "resumes/sample.pdf",
       s3Bucket: data.s3Bucket || "talenttrack-resumes",
       uploadedAt: now,
-      parsingStatus: (data as any).parsingStatus || ((data as any).parsedProfile ? "COMPLETED" : "NOT_STARTED"),
+      parsingStatus:
+        (data as any).parsingStatus || ((data as any).parsedProfile ? "COMPLETED" : "NOT_STARTED"),
       parsedProfile: (data as any).parsedProfile || null,
       parsedAt: (data as any).parsedProfile ? now : null,
       parsingError: null,
@@ -189,9 +200,7 @@ class ResumeRepository {
     if (!applicantId) return [];
 
     if (isDatabaseConnected() && isValidObjectId(applicantId)) {
-      const docs = await Resume.find({ applicantId })
-        .sort({ createdAt: -1 })
-        .lean<any[]>();
+      const docs = await Resume.find({ applicantId }).sort({ createdAt: -1 }).lean<any[]>();
 
       return docs.map((doc) => this.mapDocumentToResume(doc));
     }
@@ -276,7 +285,11 @@ class ResumeRepository {
     }
 
     if (isDatabaseConnected() && isValidObjectId(id)) {
-      const doc = await Resume.findByIdAndUpdate(id, { $set: updateFields }, { new: true }).lean<any>();
+      const doc = await Resume.findByIdAndUpdate(
+        id,
+        { $set: updateFields },
+        { new: true },
+      ).lean<any>();
       if (!doc) return null;
       return this.mapDocumentToResume(doc);
     }
@@ -288,10 +301,7 @@ class ResumeRepository {
     return JSON.parse(JSON.stringify(item));
   }
 
-  public async updateAtsAnalysis(
-    id: string,
-    atsAnalysis: any,
-  ): Promise<IResume | null> {
+  public async updateAtsAnalysis(id: string, atsAnalysis: any): Promise<IResume | null> {
     if (!id) return null;
 
     const updateFields: Record<string, any> = {
@@ -301,7 +311,11 @@ class ResumeRepository {
     };
 
     if (isDatabaseConnected() && isValidObjectId(id)) {
-      const doc = await Resume.findByIdAndUpdate(id, { $set: updateFields }, { new: true }).lean<any>();
+      const doc = await Resume.findByIdAndUpdate(
+        id,
+        { $set: updateFields },
+        { new: true },
+      ).lean<any>();
       if (!doc) return null;
       return this.mapDocumentToResume(doc);
     }
@@ -330,6 +344,13 @@ class ResumeRepository {
       .map((r) => JSON.parse(JSON.stringify(r)));
   }
 
+  public async update(
+    id: string,
+    update: Partial<IResume> | Record<string, any>,
+  ): Promise<IResume | null> {
+    return this.updateParsingStatus(id, update as any);
+  }
+
   public async delete(id: string): Promise<boolean> {
     if (!id) return false;
 
@@ -343,4 +364,3 @@ class ResumeRepository {
 }
 
 export const resumeRepository = new ResumeRepository();
-

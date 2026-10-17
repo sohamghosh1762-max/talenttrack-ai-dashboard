@@ -48,7 +48,8 @@ const DEFAULT_SEED_INTERVIEWS: IInterview[] = [
     timezone: "Asia/Kolkata",
     instructions: "Recruiter will initiate the phone call at the scheduled time.",
     status: "COMPLETED",
-    notes: "Initial phone screening completed successfully. Candidate approved for technical round.",
+    notes:
+      "Initial phone screening completed successfully. Candidate approved for technical round.",
     createdBy: "65f1a2b3c4d5e6f7a8b9c003",
     createdAt: "2025-09-10T08:00:00.000Z",
     updatedAt: "2025-09-12T09:30:00.000Z",
@@ -87,7 +88,9 @@ class InterviewRepository {
       };
     }
 
-    const interviewerUser = userRepository.findById(iv.recruiterId) || (iv.hiringManagerId ? userRepository.findById(iv.hiringManagerId) : null);
+    const interviewerUser =
+      userRepository.findById(iv.recruiterId) ||
+      (iv.hiringManagerId ? userRepository.findById(iv.hiringManagerId) : null);
     let interviewerSummary: IInterviewInterviewer | undefined = undefined;
     if (interviewerUser) {
       interviewerSummary = {
@@ -144,7 +147,8 @@ class InterviewRepository {
           : undefined,
         title: doc.title,
         type: doc.type,
-        scheduledAt: doc.scheduledAt instanceof Date ? doc.scheduledAt.toISOString() : doc.scheduledAt,
+        scheduledAt:
+          doc.scheduledAt instanceof Date ? doc.scheduledAt.toISOString() : doc.scheduledAt,
         durationMinutes: doc.durationMinutes,
         timezone: doc.timezone,
         meetingUrl: doc.meetingUrl || undefined,
@@ -187,7 +191,8 @@ class InterviewRepository {
           : undefined,
         title: doc.title,
         type: doc.type,
-        scheduledAt: doc.scheduledAt instanceof Date ? doc.scheduledAt.toISOString() : doc.scheduledAt,
+        scheduledAt:
+          doc.scheduledAt instanceof Date ? doc.scheduledAt.toISOString() : doc.scheduledAt,
         durationMinutes: doc.durationMinutes,
         timezone: doc.timezone,
         meetingUrl: doc.meetingUrl || undefined,
@@ -207,7 +212,10 @@ class InterviewRepository {
     return this.enrichInterview({ ...iv }, hideNotes);
   }
 
-  public async findByApplicationId(applicationId: string, hideNotes = false): Promise<IInterview[]> {
+  public async findByApplicationId(
+    applicationId: string,
+    hideNotes = false,
+  ): Promise<IInterview[]> {
     if (isDatabaseConnected() && isValidObjectId(applicationId)) {
       const docs = await Interview.find({ applicationId }).sort({ scheduledAt: 1 }).lean<any[]>();
       const list: IInterview[] = docs.map((doc) => ({
@@ -222,7 +230,8 @@ class InterviewRepository {
           : undefined,
         title: doc.title,
         type: doc.type,
-        scheduledAt: doc.scheduledAt instanceof Date ? doc.scheduledAt.toISOString() : doc.scheduledAt,
+        scheduledAt:
+          doc.scheduledAt instanceof Date ? doc.scheduledAt.toISOString() : doc.scheduledAt,
         durationMinutes: doc.durationMinutes,
         timezone: doc.timezone,
         meetingUrl: doc.meetingUrl || undefined,
@@ -243,14 +252,21 @@ class InterviewRepository {
     return Promise.all(matched.map((iv) => this.enrichInterview(iv, hideNotes)));
   }
 
-  public async findAll(params: InterviewQueryParams = {}, hideNotes = false): Promise<IInterview[]> {
+  public async findAll(
+    params: InterviewQueryParams = {},
+    hideNotes = false,
+  ): Promise<IInterview[]> {
     if (isDatabaseConnected()) {
       const query: Record<string, unknown> = {};
-      if (params.applicantId && isValidObjectId(params.applicantId)) query["applicantId"] = params.applicantId;
-      if (params.recruiterId && isValidObjectId(params.recruiterId)) query["recruiterId"] = params.recruiterId;
-      if (params.hiringManagerId && isValidObjectId(params.hiringManagerId)) query["hiringManagerId"] = params.hiringManagerId;
+      if (params.applicantId && isValidObjectId(params.applicantId))
+        query["applicantId"] = params.applicantId;
+      if (params.recruiterId && isValidObjectId(params.recruiterId))
+        query["recruiterId"] = params.recruiterId;
+      if (params.hiringManagerId && isValidObjectId(params.hiringManagerId))
+        query["hiringManagerId"] = params.hiringManagerId;
       if (params.jobId && isValidObjectId(params.jobId)) query["jobId"] = params.jobId;
-      if (params.applicationId && isValidObjectId(params.applicationId)) query["applicationId"] = params.applicationId;
+      if (params.applicationId && isValidObjectId(params.applicationId))
+        query["applicationId"] = params.applicationId;
       if (params.status && params.status !== "ALL") query["status"] = params.status;
 
       const docs = await Interview.find(query).sort({ scheduledAt: -1 }).lean<any[]>();
@@ -266,7 +282,8 @@ class InterviewRepository {
           : undefined,
         title: doc.title,
         type: doc.type,
-        scheduledAt: doc.scheduledAt instanceof Date ? doc.scheduledAt.toISOString() : doc.scheduledAt,
+        scheduledAt:
+          doc.scheduledAt instanceof Date ? doc.scheduledAt.toISOString() : doc.scheduledAt,
         durationMinutes: doc.durationMinutes,
         timezone: doc.timezone,
         meetingUrl: doc.meetingUrl || undefined,
@@ -370,16 +387,18 @@ class InterviewRepository {
       if (input.scheduledAt !== undefined) updateDoc["scheduledAt"] = new Date(input.scheduledAt);
       if (input.durationMinutes !== undefined) updateDoc["durationMinutes"] = input.durationMinutes;
       if (input.timezone !== undefined) updateDoc["timezone"] = input.timezone;
-      if (input.meetingUrl !== undefined) updateDoc["meetingUrl"] = input.meetingUrl.trim() || undefined;
+      if (input.meetingUrl !== undefined)
+        updateDoc["meetingUrl"] = input.meetingUrl.trim() || undefined;
       if (input.location !== undefined) updateDoc["location"] = input.location.trim() || undefined;
-      if (input.instructions !== undefined) updateDoc["instructions"] = input.instructions.trim() || undefined;
+      if (input.instructions !== undefined)
+        updateDoc["instructions"] = input.instructions.trim() || undefined;
       if (input.status !== undefined) updateDoc["status"] = input.status;
       if (input.notes !== undefined) updateDoc["notes"] = input.notes.trim() || undefined;
 
       const updated = await Interview.findByIdAndUpdate(
         id,
         { $set: updateDoc },
-        { new: true },
+        { new: true, runValidators: true },
       ).lean<any>();
 
       if (!updated) return null;
@@ -391,12 +410,14 @@ class InterviewRepository {
 
     if (input.title !== undefined) existing.title = input.title.trim();
     if (input.type !== undefined) existing.type = input.type;
-    if (input.scheduledAt !== undefined) existing.scheduledAt = new Date(input.scheduledAt).toISOString();
+    if (input.scheduledAt !== undefined)
+      existing.scheduledAt = new Date(input.scheduledAt).toISOString();
     if (input.durationMinutes !== undefined) existing.durationMinutes = input.durationMinutes;
     if (input.timezone !== undefined) existing.timezone = input.timezone;
     if (input.meetingUrl !== undefined) existing.meetingUrl = input.meetingUrl.trim() || undefined;
     if (input.location !== undefined) existing.location = input.location.trim() || undefined;
-    if (input.instructions !== undefined) existing.instructions = input.instructions.trim() || undefined;
+    if (input.instructions !== undefined)
+      existing.instructions = input.instructions.trim() || undefined;
     if (input.status !== undefined) existing.status = input.status;
     if (input.notes !== undefined) existing.notes = input.notes.trim() || undefined;
     existing.updatedAt = now;

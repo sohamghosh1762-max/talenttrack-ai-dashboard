@@ -28,7 +28,6 @@ const envSchema = z.object({
   FIREBASE_CLIENT_EMAIL: z.string().optional(),
   FIREBASE_PRIVATE_KEY: z.string().optional(),
 
-
   // S3 / Storage (Phase 5)
   AWS_REGION: z.string().default("us-east-1"),
   AWS_ACCESS_KEY_ID: z.string().optional(),

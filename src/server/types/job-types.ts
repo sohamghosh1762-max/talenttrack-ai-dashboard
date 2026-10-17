@@ -1,11 +1,5 @@
 export type JobStatus =
-  | "DRAFT"
-  | "PUBLISHED"
-  | "ARCHIVED"
-  | "CLOSED"
-  | "Active"
-  | "Paused"
-  | "Closed";
+  "DRAFT" | "PUBLISHED" | "ARCHIVED" | "CLOSED" | "Active" | "Paused" | "Closed";
 
 export type EmploymentType =
   | "Full-Time"

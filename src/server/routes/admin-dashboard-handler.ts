@@ -66,9 +66,15 @@ function computeGrowthData(
     const dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 23, 59, 59, 999);
     const dayName = daysOfWeek[dayStart.getDay()] || "Day";
 
-    const usersCount = allUsers.filter((u) => new Date(u.createdAt).getTime() <= dayEnd.getTime()).length;
-    const jobsCount = allJobs.filter((j) => new Date(j.createdAt).getTime() <= dayEnd.getTime()).length;
-    const appsCount = allApps.filter((a) => new Date(a.appliedAt || a.createdAt || "").getTime() <= dayEnd.getTime()).length;
+    const usersCount = allUsers.filter(
+      (u) => new Date(u.createdAt).getTime() <= dayEnd.getTime(),
+    ).length;
+    const jobsCount = allJobs.filter(
+      (j) => new Date(j.createdAt).getTime() <= dayEnd.getTime(),
+    ).length;
+    const appsCount = allApps.filter(
+      (a) => new Date(a.appliedAt || a.createdAt || "").getTime() <= dayEnd.getTime(),
+    ).length;
 
     last7Days.push({
       period: dayName,
@@ -84,9 +90,15 @@ function computeGrowthData(
     const weekEnd = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
     const weekLabel = `Week ${4 - i}`;
 
-    const usersCount = allUsers.filter((u) => new Date(u.createdAt).getTime() <= weekEnd.getTime()).length;
-    const jobsCount = allJobs.filter((j) => new Date(j.createdAt).getTime() <= weekEnd.getTime()).length;
-    const appsCount = allApps.filter((a) => new Date(a.appliedAt || a.createdAt || "").getTime() <= weekEnd.getTime()).length;
+    const usersCount = allUsers.filter(
+      (u) => new Date(u.createdAt).getTime() <= weekEnd.getTime(),
+    ).length;
+    const jobsCount = allJobs.filter(
+      (j) => new Date(j.createdAt).getTime() <= weekEnd.getTime(),
+    ).length;
+    const appsCount = allApps.filter(
+      (a) => new Date(a.appliedAt || a.createdAt || "").getTime() <= weekEnd.getTime(),
+    ).length;
 
     last30Days.push({
       period: weekLabel,
@@ -97,16 +109,35 @@ function computeGrowthData(
   }
 
   // 3. "3 Months": 3 monthly buckets
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   const last3Months: GrowthDataPoint[] = [];
   for (let i = 2; i >= 0; i--) {
     const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
     const monthLabel = monthNames[targetDate.getMonth()] || "Month";
 
-    const usersCount = allUsers.filter((u) => new Date(u.createdAt).getTime() <= monthEnd.getTime()).length;
-    const jobsCount = allJobs.filter((j) => new Date(j.createdAt).getTime() <= monthEnd.getTime()).length;
-    const appsCount = allApps.filter((a) => new Date(a.appliedAt || a.createdAt || "").getTime() <= monthEnd.getTime()).length;
+    const usersCount = allUsers.filter(
+      (u) => new Date(u.createdAt).getTime() <= monthEnd.getTime(),
+    ).length;
+    const jobsCount = allJobs.filter(
+      (j) => new Date(j.createdAt).getTime() <= monthEnd.getTime(),
+    ).length;
+    const appsCount = allApps.filter(
+      (a) => new Date(a.appliedAt || a.createdAt || "").getTime() <= monthEnd.getTime(),
+    ).length;
 
     last3Months.push({
       period: monthLabel,
@@ -124,9 +155,15 @@ function computeGrowthData(
     const shortYear = targetDate.getFullYear().toString().slice(-2);
     const monthLabel = `${monthNames[targetDate.getMonth()]} '${shortYear}`;
 
-    const usersCount = allUsers.filter((u) => new Date(u.createdAt).getTime() <= monthEnd.getTime()).length;
-    const jobsCount = allJobs.filter((j) => new Date(j.createdAt).getTime() <= monthEnd.getTime()).length;
-    const appsCount = allApps.filter((a) => new Date(a.appliedAt || a.createdAt || "").getTime() <= monthEnd.getTime()).length;
+    const usersCount = allUsers.filter(
+      (u) => new Date(u.createdAt).getTime() <= monthEnd.getTime(),
+    ).length;
+    const jobsCount = allJobs.filter(
+      (j) => new Date(j.createdAt).getTime() <= monthEnd.getTime(),
+    ).length;
+    const appsCount = allApps.filter(
+      (a) => new Date(a.appliedAt || a.createdAt || "").getTime() <= monthEnd.getTime(),
+    ).length;
 
     last12Months.push({
       period: monthLabel,
@@ -228,8 +265,7 @@ export async function handleGetAdminDashboard(req: Request): Promise<Response> {
     (u) => !startTime || new Date(u.createdAt).getTime() >= startTime,
   );
   const applicantsInTimeframe = allUsers.filter(
-    (u) =>
-      u.role === "APPLICANT" && (!startTime || new Date(u.createdAt).getTime() >= startTime),
+    (u) => u.role === "APPLICANT" && (!startTime || new Date(u.createdAt).getTime() >= startTime),
   );
   const jobsInTimeframe = allJobs.filter(
     (j) => !startTime || new Date(j.createdAt).getTime() >= startTime,
@@ -284,25 +320,30 @@ export async function handleGetAdminDashboard(req: Request): Promise<Response> {
   // 2. Growth Data Points
   const growthDataByTimeframe = computeGrowthData(allUsers, allJobs, allApplications);
   const selectedGrowthData =
-    growthDataByTimeframe[rangeParam === "Today" ? "7 Days" : rangeParam === "All" ? "12 Months" : rangeParam] ||
-    growthDataByTimeframe["30 Days"];
+    growthDataByTimeframe[
+      rangeParam === "Today" ? "7 Days" : rangeParam === "All" ? "12 Months" : rangeParam
+    ] || growthDataByTimeframe["30 Days"];
 
   // 3. User Distribution (real percentages)
   const recruitersTotal = allUsers.filter((u) => u.role === "RECRUITER").length;
   const applicantsTotal = totalApplicantsCount;
-  const adminsTotal = allUsers.filter((u) => u.role === "ADMIN" || u.role === "HIRING_MANAGER").length;
+  const adminsTotal = allUsers.filter(
+    (u) => u.role === "ADMIN" || u.role === "HIRING_MANAGER",
+  ).length;
 
   const userDistribution: UserDistributionSegment[] = [
     {
       name: "Applicants",
       count: applicantsTotal,
-      percentage: totalUsersCount > 0 ? Math.round((applicantsTotal / totalUsersCount) * 1000) / 10 : 0,
+      percentage:
+        totalUsersCount > 0 ? Math.round((applicantsTotal / totalUsersCount) * 1000) / 10 : 0,
       color: "#2563eb", // blue
     },
     {
       name: "Recruiters",
       count: recruitersTotal,
-      percentage: totalUsersCount > 0 ? Math.round((recruitersTotal / totalUsersCount) * 1000) / 10 : 0,
+      percentage:
+        totalUsersCount > 0 ? Math.round((recruitersTotal / totalUsersCount) * 1000) / 10 : 0,
       color: "#7c3aed", // purple
     },
     {
@@ -316,21 +357,19 @@ export async function handleGetAdminDashboard(req: Request): Promise<Response> {
   // 4. Recruitment Pipeline Funnel & Stage Cards
   const totalAppsCount = allApplications.length;
   const shortlistedCount = allApplications.filter(
-    (a) =>
-      a.status === "Shortlisted" ||
-      a.status === "SCREENING" ||
-      a.currentStage === "SCREENING",
+    (a) => a.status === "Shortlisted" || a.status === "SCREENING" || a.currentStage === "SCREENING",
   ).length;
   const interviewsCount = allInterviews.length;
   const offersOrHiredCount = allApplications.filter(
-    (a) =>
-      a.currentStage === "OFFERED" ||
-      a.status === "OFFERED",
+    (a) => a.currentStage === "OFFERED" || a.status === "OFFERED",
   ).length;
 
-  const shortlistRate = totalAppsCount > 0 ? Math.round((shortlistedCount / totalAppsCount) * 100) : 0;
-  const interviewRate = totalAppsCount > 0 ? Math.round((interviewsCount / totalAppsCount) * 100) : 0;
-  const offerRate = totalAppsCount > 0 ? Math.round((offersOrHiredCount / totalAppsCount) * 100) : 0;
+  const shortlistRate =
+    totalAppsCount > 0 ? Math.round((shortlistedCount / totalAppsCount) * 100) : 0;
+  const interviewRate =
+    totalAppsCount > 0 ? Math.round((interviewsCount / totalAppsCount) * 100) : 0;
+  const offerRate =
+    totalAppsCount > 0 ? Math.round((offersOrHiredCount / totalAppsCount) * 100) : 0;
 
   const recruitmentCards: RecruitmentStageCard[] = [
     {
@@ -383,13 +422,15 @@ export async function handleGetAdminDashboard(req: Request): Promise<Response> {
     {
       stage: "Interviews Scheduled",
       count: interviewsCount,
-      conversionPct: shortlistedCount > 0 ? Math.round((interviewsCount / shortlistedCount) * 100) : 0,
+      conversionPct:
+        shortlistedCount > 0 ? Math.round((interviewsCount / shortlistedCount) * 100) : 0,
       overallPct: totalAppsCount > 0 ? Math.round((interviewsCount / totalAppsCount) * 100) : 0,
     },
     {
       stage: "Offers & Hired",
       count: offersOrHiredCount,
-      conversionPct: interviewsCount > 0 ? Math.round((offersOrHiredCount / interviewsCount) * 100) : 0,
+      conversionPct:
+        interviewsCount > 0 ? Math.round((offersOrHiredCount / interviewsCount) * 100) : 0,
       overallPct: totalAppsCount > 0 ? Math.round((offersOrHiredCount / totalAppsCount) * 100) : 0,
     },
   ];
@@ -516,7 +557,9 @@ export async function handleGetAdminDashboard(req: Request): Promise<Response> {
           total: totalApplicantsCount,
           active: activeApplicantsCount,
           newInPeriod: applicantsInTimeframe.length,
-          withResume: allUsers.filter((u) => u.applicantProfile?.resumeId || u.applicantProfile?.resumeFileName).length,
+          withResume: allUsers.filter(
+            (u) => u.applicantProfile?.resumeId || u.applicantProfile?.resumeFileName,
+          ).length,
         },
         applications: {
           total: totalAppsCount,

@@ -54,7 +54,11 @@ function ApplicantJobsPage() {
   const { data: myApps = [] } = useMyApplications();
   const createApplicationMutation = useCreateApplication();
 
-  const { data: jobsResponse, isLoading, error } = useJobs({
+  const {
+    data: jobsResponse,
+    isLoading,
+    error,
+  } = useJobs({
     status: "PUBLISHED",
     search: search.trim() || undefined,
     department: selectedDept === "All" ? undefined : selectedDept,
@@ -72,9 +76,8 @@ function ApplicantJobsPage() {
     setApplyError(null);
 
     try {
-      const resumeId = (user?.applicantProfile as Record<string, unknown>)?.[
-        "resumeId"
-      ] as string | undefined;
+      const resumeId = (user?.applicantProfile as Record<string, unknown>)?.["resumeId"] as
+        string | undefined;
 
       await createApplicationMutation.mutateAsync({
         jobId: selectedJob.id,
@@ -200,7 +203,8 @@ function ApplicantJobsPage() {
                       <div className="flex items-center gap-1.5">
                         <Building className="size-3.5 text-muted-foreground shrink-0" />
                         <span>
-                          {job.employmentType || "Full-time"} {job.experienceRequired ? `• ${job.experienceRequired}` : ""}
+                          {job.employmentType || "Full-time"}{" "}
+                          {job.experienceRequired ? `• ${job.experienceRequired}` : ""}
                         </span>
                       </div>
                       {job.salaryRange && (job.salaryRange.min || job.salaryRange.max) && (
@@ -208,7 +212,10 @@ function ApplicantJobsPage() {
                           <DollarSign className="size-3.5 shrink-0" />
                           <span>
                             ${job.salaryRange.min?.toLocaleString()}
-                            {job.salaryRange.max ? ` - $${job.salaryRange.max?.toLocaleString()}` : "+"} / yr
+                            {job.salaryRange.max
+                              ? ` - $${job.salaryRange.max?.toLocaleString()}`
+                              : "+"}{" "}
+                            / yr
                           </span>
                         </div>
                       )}
@@ -286,7 +293,8 @@ function ApplicantJobsPage() {
                 Apply for {selectedJob?.title}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Your authenticated profile and resume will be submitted to the {selectedJob?.department || "hiring"} team.
+                Your authenticated profile and resume will be submitted to the{" "}
+                {selectedJob?.department || "hiring"} team.
               </DialogDescription>
             </DialogHeader>
 

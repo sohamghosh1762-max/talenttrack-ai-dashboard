@@ -36,14 +36,18 @@ export const Route = createFileRoute("/applicant/interviews")({
       { title: "My Scheduled Interviews — TalentTrack AI" },
       {
         name: "description",
-        content: "View your verified scheduled candidate interviews, meeting links, and session details.",
+        content:
+          "View your verified scheduled candidate interviews, meeting links, and session details.",
       },
     ],
   }),
   component: ApplicantInterviewsPage,
 });
 
-function formatInterviewDateTime(isoString: string, timezone?: string): { date: string; time: string } {
+function formatInterviewDateTime(
+  isoString: string,
+  timezone?: string,
+): { date: string; time: string } {
   try {
     const date = new Date(isoString);
     if (isNaN(date.getTime())) return { date: "Date TBD", time: "Time TBD" };
@@ -75,37 +79,55 @@ function getStatusBadge(status: InterviewStatus) {
   switch (status) {
     case "SCHEDULED":
       return (
-        <Badge variant="outline" className="bg-brand-blue/10 text-brand-blue border-brand-blue/30 font-semibold text-[11px]">
+        <Badge
+          variant="outline"
+          className="bg-brand-blue/10 text-brand-blue border-brand-blue/30 font-semibold text-[11px]"
+        >
           ● Scheduled
         </Badge>
       );
     case "CONFIRMED":
       return (
-        <Badge variant="outline" className="bg-surface-green text-brand-green border-brand-green/30 font-semibold text-[11px]">
+        <Badge
+          variant="outline"
+          className="bg-surface-green text-brand-green border-brand-green/30 font-semibold text-[11px]"
+        >
           ✓ Confirmed
         </Badge>
       );
     case "RESCHEDULED":
       return (
-        <Badge variant="outline" className="bg-surface-peach text-brand-orange border-brand-orange/30 font-semibold text-[11px]">
+        <Badge
+          variant="outline"
+          className="bg-surface-peach text-brand-orange border-brand-orange/30 font-semibold text-[11px]"
+        >
           ↻ Rescheduled
         </Badge>
       );
     case "COMPLETED":
       return (
-        <Badge variant="outline" className="bg-muted text-muted-foreground border-border font-semibold text-[11px]">
+        <Badge
+          variant="outline"
+          className="bg-muted text-muted-foreground border-border font-semibold text-[11px]"
+        >
           ✓ Completed
         </Badge>
       );
     case "CANCELLED":
       return (
-        <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30 font-semibold text-[11px]">
+        <Badge
+          variant="outline"
+          className="bg-destructive/10 text-destructive border-destructive/30 font-semibold text-[11px]"
+        >
           ✕ Cancelled
         </Badge>
       );
     case "NO_SHOW":
       return (
-        <Badge variant="outline" className="bg-surface-peach text-destructive border-destructive/30 font-semibold text-[11px]">
+        <Badge
+          variant="outline"
+          className="bg-surface-peach text-destructive border-destructive/30 font-semibold text-[11px]"
+        >
           ⚠ No Show
         </Badge>
       );
@@ -185,7 +207,8 @@ function ApplicantInterviewsPage() {
     const scheduledAppIds = new Set(interviews.map((iv) => iv.applicationId));
     return applications.filter(
       (app: IApplication) =>
-        (app.currentStage?.toUpperCase() === "INTERVIEW" || app.status?.toUpperCase() === "INTERVIEW") &&
+        (app.currentStage?.toUpperCase() === "INTERVIEW" ||
+          app.status?.toUpperCase() === "INTERVIEW") &&
         !scheduledAppIds.has(app.id),
     );
   }, [applications, interviews]);
@@ -205,14 +228,18 @@ function ApplicantInterviewsPage() {
                   Interviews
                 </h1>
                 {upcomingInterviews.length > 0 && (
-                  <Badge variant="default" className="bg-brand-blue text-primary-foreground text-xs font-semibold h-5 px-2">
+                  <Badge
+                    variant="default"
+                    className="bg-brand-blue text-primary-foreground text-xs font-semibold h-5 px-2"
+                  >
                     {upcomingInterviews.length} upcoming
                   </Badge>
                 )}
               </div>
             </div>
             <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-              Track your verified scheduled interview sessions, meeting links, and recruiter instructions.
+              Track your verified scheduled interview sessions, meeting links, and recruiter
+              instructions.
             </p>
           </div>
 
@@ -224,10 +251,10 @@ function ApplicantInterviewsPage() {
                   tab === "All"
                     ? interviews.length
                     : tab === "Upcoming"
-                    ? upcomingInterviews.length
-                    : tab === "Completed"
-                    ? completedInterviews.length
-                    : cancelledInterviews.length;
+                      ? upcomingInterviews.length
+                      : tab === "Completed"
+                        ? completedInterviews.length
+                        : cancelledInterviews.length;
 
                 return (
                   <button
@@ -243,7 +270,9 @@ function ApplicantInterviewsPage() {
                     <span>{tab}</span>
                     <span
                       className={`text-[10px] px-1 rounded-full ${
-                        activeTab === tab ? "bg-brand-blue/10 text-brand-blue" : "bg-muted text-muted-foreground"
+                        activeTab === tab
+                          ? "bg-brand-blue/10 text-brand-blue"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {count}
@@ -278,9 +307,12 @@ function ApplicantInterviewsPage() {
             <p className="text-xs text-muted-foreground leading-relaxed">
               Your application has advanced to the interview stage for:{" "}
               <strong className="text-foreground">
-                {unscheduledInterviewApps.map((a: IApplication) => a.job?.title || a.jobTitle || "Open Role").join(", ")}
+                {unscheduledInterviewApps
+                  .map((a: IApplication) => a.job?.title || a.jobTitle || "Open Role")
+                  .join(", ")}
               </strong>
-              . The hiring team is preparing your session and you will see the scheduled time and meeting link here as soon as it is finalized.
+              . The hiring team is preparing your session and you will see the scheduled time and
+              meeting link here as soon as it is finalized.
             </p>
           </div>
         )}
@@ -313,45 +345,65 @@ function ApplicantInterviewsPage() {
             <AlertCircle className="size-8 text-destructive mx-auto" />
             <h3 className="text-sm font-bold text-foreground">Unable to load interviews</h3>
             <p className="text-xs text-muted-foreground">
-              {interviewsError instanceof Error ? interviewsError.message : "Network error. Please try again."}
+              {interviewsError instanceof Error
+                ? interviewsError.message
+                : "Network error. Please try again."}
             </p>
-            <Button size="sm" variant="outline" onClick={() => refetchInterviews()} className="text-xs">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => refetchInterviews()}
+              className="text-xs"
+            >
               Retry
             </Button>
           </div>
         )}
 
         {/* Empty State: Zero interviews total */}
-        {!isLoadingInterviews && !isInterviewsError && interviews.length === 0 && unscheduledInterviewApps.length === 0 && (
-          <div className="dashboard-card p-12 text-center space-y-3">
-            <div className="grid size-12 place-items-center rounded-2xl bg-muted mx-auto text-muted-foreground">
-              <CalendarDays className="size-6" />
+        {!isLoadingInterviews &&
+          !isInterviewsError &&
+          interviews.length === 0 &&
+          unscheduledInterviewApps.length === 0 && (
+            <div className="dashboard-card p-12 text-center space-y-3">
+              <div className="grid size-12 place-items-center rounded-2xl bg-muted mx-auto text-muted-foreground">
+                <CalendarDays className="size-6" />
+              </div>
+              <h3 className="text-sm font-bold text-foreground">No interviews scheduled yet</h3>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                When a recruiter coordinates an interview for your submitted applications, scheduled
+                dates, times, meeting links, and preparation instructions will appear here.
+              </p>
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                  <Link to="/applicant/applications">View Applications</Link>
+                </Button>
+                <Button
+                  asChild
+                  size="sm"
+                  className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs"
+                >
+                  <Link to="/applicant/jobs">Explore Jobs</Link>
+                </Button>
+              </div>
             </div>
-            <h3 className="text-sm font-bold text-foreground">No interviews scheduled yet</h3>
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-              When a recruiter coordinates an interview for your submitted applications, scheduled dates, times, meeting links, and preparation instructions will appear here.
-            </p>
-            <div className="flex items-center justify-center gap-2 pt-2">
-              <Button asChild variant="outline" size="sm" className="text-xs">
-                <Link to="/applicant/applications">View Applications</Link>
-              </Button>
-              <Button asChild size="sm" className="bg-brand-blue hover:bg-brand-blue/90 text-primary-foreground text-xs">
-                <Link to="/applicant/jobs">Explore Jobs</Link>
-              </Button>
-            </div>
-          </div>
-        )}
+          )}
 
         {/* Tab Filter Empty State */}
-        {!isLoadingInterviews && !isInterviewsError && interviews.length > 0 && displayInterviews.length === 0 && (
-          <div className="dashboard-card p-10 text-center space-y-2">
-            <Calendar className="size-8 text-muted-foreground/60 mx-auto" />
-            <h3 className="text-xs font-semibold text-foreground">No {activeTab.toLowerCase()} interviews found</h3>
-            <p className="text-[11px] text-muted-foreground">
-              Switch filter tabs or check back once updates are scheduled.
-            </p>
-          </div>
-        )}
+        {!isLoadingInterviews &&
+          !isInterviewsError &&
+          interviews.length > 0 &&
+          displayInterviews.length === 0 && (
+            <div className="dashboard-card p-10 text-center space-y-2">
+              <Calendar className="size-8 text-muted-foreground/60 mx-auto" />
+              <h3 className="text-xs font-semibold text-foreground">
+                No {activeTab.toLowerCase()} interviews found
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                Switch filter tabs or check back once updates are scheduled.
+              </p>
+            </div>
+          )}
 
         {/* Real Interviews List */}
         {!isLoadingInterviews && !isInterviewsError && displayInterviews.length > 0 && (
@@ -360,7 +412,8 @@ function ApplicantInterviewsPage() {
               const { date, time } = formatInterviewDateTime(iv.scheduledAt, iv.timezone);
               const isVideo = iv.type === "VIDEO";
               const hasMeetingUrl = Boolean(iv.meetingUrl && iv.meetingUrl.trim().length > 0);
-              const isPastOrCancelled = iv.status === "COMPLETED" || iv.status === "CANCELLED" || iv.status === "NO_SHOW";
+              const isPastOrCancelled =
+                iv.status === "COMPLETED" || iv.status === "CANCELLED" || iv.status === "NO_SHOW";
 
               return (
                 <div
@@ -400,14 +453,24 @@ function ApplicantInterviewsPage() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0 self-start sm:self-auto">
-                      <Button asChild variant="outline" size="sm" className="h-8 px-2.5 text-xs gap-1">
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2.5 text-xs gap-1"
+                      >
                         <Link to="/applicant/jobs/$jobId" params={{ jobId: iv.jobId }}>
                           <Briefcase className="size-3.5 text-brand-blue" />
                           <span>Job Details</span>
                         </Link>
                       </Button>
 
-                      <Button asChild variant="outline" size="sm" className="h-8 px-2.5 text-xs gap-1">
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2.5 text-xs gap-1"
+                      >
                         <Link to="/applicant/messages">
                           <MessageSquare className="size-3.5 text-muted-foreground" />
                           <span>Message</span>
@@ -433,9 +496,15 @@ function ApplicantInterviewsPage() {
                     <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-muted/20 border border-border/50">
                       <Clock className="size-4 text-brand-orange flex-shrink-0 mt-0.5" />
                       <div>
-                        <span className="block font-semibold text-foreground">{iv.durationMinutes} Minutes</span>
+                        <span className="block font-semibold text-foreground">
+                          {iv.durationMinutes} Minutes
+                        </span>
                         <span className="text-muted-foreground text-[11px]">
-                          {iv.type === "VIDEO" ? "Video Conference" : iv.type === "PHONE" ? "Phone Call" : "In-Person Interview"}
+                          {iv.type === "VIDEO"
+                            ? "Video Conference"
+                            : iv.type === "PHONE"
+                              ? "Phone Call"
+                              : "In-Person Interview"}
                         </span>
                       </div>
                     </div>
@@ -468,7 +537,10 @@ function ApplicantInterviewsPage() {
                   {iv.type === "PHONE" && (
                     <div className="p-3 rounded-lg bg-muted/30 border border-border text-xs flex items-start gap-2 text-muted-foreground">
                       <Phone className="size-4 text-purple-600 flex-shrink-0 mt-0.5" />
-                      <span>The interviewer will initiate the call to your profile phone number at the scheduled time.</span>
+                      <span>
+                        The interviewer will initiate the call to your profile phone number at the
+                        scheduled time.
+                      </span>
                     </div>
                   )}
 

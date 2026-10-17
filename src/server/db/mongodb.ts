@@ -5,6 +5,7 @@ import { env } from "../config/env.ts";
  * Sanitize MongoDB Connection URI to prevent leaking credentials in logs
  */
 export function sanitizeMongoUri(uri: string): string {
+  if (!uri || typeof uri !== "string") return "[EMPTY_URI]";
   try {
     return uri.replace(/(mongodb(?:\+srv)?:\/\/[^:]+:)([^@]+)@/i, "$1*****@");
   } catch {
@@ -13,16 +14,45 @@ export function sanitizeMongoUri(uri: string): string {
 }
 
 /**
- * Normalize MongoDB URI by removing accidental literal < > placeholders around password
+ * Normalize MongoDB URI by removing accidental literal < > placeholders around password and trimming whitespace
  */
 export function normalizeMongoUri(uri: string): string {
-  if (!uri) return uri;
-  return uri.replace(/(mongodb(?:\+srv)?:\/\/[^:]+:)<([^>@]+)>(@)/i, "$1$2$3");
+  if (!uri || typeof uri !== "string") return uri;
+  return uri.trim().replace(/(mongodb(?:\+srv)?:\/\/[^:]+:)<([^>@]+)>(@)/i, "$1$2$3");
 }
 
 // Global cached connection promise to prevent race conditions during concurrent startup
 let cachedConnectionPromise: Promise<typeof mongoose> | null = null;
 let isShutdownHookRegistered = false;
+let hasConnectionListenersAttached = false;
+
+/**
+ * Attach lifecycle event listeners to mongoose connection
+ */
+function attachConnectionListeners(): void {
+  if (hasConnectionListenersAttached || !mongoose.connection) {
+    return;
+  }
+  hasConnectionListenersAttached = true;
+
+  mongoose.connection.on("connected", () => {
+    const dbName = mongoose.connection.name || "talenttrack";
+    console.log(`[MongoDB] Successfully connected to database: ${dbName}`);
+  });
+
+  mongoose.connection.on("error", (err) => {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[MongoDB] Connection error encountered: ${errorMsg}`);
+  });
+
+  mongoose.connection.on("disconnected", () => {
+    console.warn("[MongoDB] Connection disconnected from database.");
+  });
+
+  mongoose.connection.on("reconnected", () => {
+    console.log("[MongoDB] Connection re-established successfully.");
+  });
+}
 
 /**
  * Get the current MongoDB connection status
@@ -67,6 +97,28 @@ export function isDatabaseConnected(): boolean {
 }
 
 /**
+ * Active ping probe to verify MongoDB can execute database operations
+ */
+export async function pingDatabase(timeoutMs: number = 2000): Promise<boolean> {
+  if (mongoose.connection.readyState !== 1) {
+    return false;
+  }
+  try {
+    const db = mongoose.connection.db;
+    if (!db) return false;
+    const admin = db.admin();
+    const pingPromise = admin.ping();
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("MongoDB ping probe timeout")), timeoutMs),
+    );
+    await Promise.race([pingPromise, timeoutPromise]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Connect to MongoDB with connection pooling, retries, and duplicate connection guards
  */
 export async function connectToDatabase(
@@ -85,28 +137,51 @@ export async function connectToDatabase(
 
   const rawUri = normalizeMongoUri(
     customUri ||
-    (typeof process !== "undefined" && process.env?.["MONGODB_URI"]) ||
-    (typeof process !== "undefined" && process.env?.["DATABASE_URL"]) ||
-    env.MONGODB_URI ||
-    "mongodb://127.0.0.1:27017/talenttrack",
+      (typeof process !== "undefined" && process.env?.["MONGODB_URI"]) ||
+      (typeof process !== "undefined" && process.env?.["DATABASE_URL"]) ||
+      env.MONGODB_URI ||
+      "mongodb://127.0.0.1:27017/talenttrack",
   );
 
   const sanitized = sanitizeMongoUri(rawUri);
 
   const defaultOptions: mongoose.ConnectOptions = {
-    serverSelectionTimeoutMS: 5000,
+    serverSelectionTimeoutMS:
+      options.serverSelectionTimeoutMS ||
+      (typeof process !== "undefined" && process.env?.["MONGODB_SERVER_TIMEOUT_MS"]
+        ? Number(process.env["MONGODB_SERVER_TIMEOUT_MS"])
+        : 10000),
     connectTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
     maxPoolSize: 10,
     minPoolSize: 2,
+    maxIdleTimeMS: 30000,
+    retryWrites: true,
+    retryReads: true,
+    dbName: options.dbName || "talenttrack",
     ...options,
   };
+
+  attachConnectionListeners();
 
   cachedConnectionPromise = (async () => {
     try {
       console.log(`[MongoDB] Connecting to database: ${sanitized}`);
       await mongoose.connect(rawUri, defaultOptions);
-      console.log(`[MongoDB] Successfully connected to MongoDB database: ${mongoose.connection.name || "talenttrack"}`);
+      console.log(
+        `[MongoDB] Successfully connected to MongoDB database: ${mongoose.connection.name || "talenttrack"}`,
+      );
       registerGracefulShutdown();
+      // Hydrate repository caches from MongoDB Atlas
+      import("./user-repository.ts")
+        .then((m) => m.userRepository.syncFromDatabase())
+        .catch(() => {});
+      import("./session-repository.ts")
+        .then((m) => m.sessionRepository.syncFromDatabase())
+        .catch(() => {});
+      import("./organization-repository.ts")
+        .then((m) => m.organizationRepository.syncFromDatabase())
+        .catch(() => {});
       return mongoose;
     } catch (error) {
       cachedConnectionPromise = null;
@@ -117,6 +192,33 @@ export async function connectToDatabase(
   })();
 
   return cachedConnectionPromise;
+}
+
+/**
+ * Ensure registered Mongoose models have synchronized database indexes
+ */
+export async function ensureDatabaseIndexes(): Promise<void> {
+  if (mongoose.connection.readyState !== 1) {
+    return;
+  }
+  try {
+    const models = Object.values(mongoose.models);
+    await Promise.all(
+      models.map(async (model) => {
+        try {
+          await model.syncIndexes();
+        } catch (err) {
+          console.warn(
+            `[MongoDB] Index sync notice for model ${model.modelName}:`,
+            (err as Error).message,
+          );
+        }
+      }),
+    );
+    console.log(`[MongoDB] Verified indexes for ${models.length} registered models.`);
+  } catch (err) {
+    console.warn("[MongoDB] Index synchronization warning:", err);
+  }
 }
 
 /**

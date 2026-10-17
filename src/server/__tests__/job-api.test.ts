@@ -133,7 +133,11 @@ describe("JOB MANAGEMENT REST API & RBAC SUITE", () => {
       assert.strictEqual(json.success, true);
       assert.ok(json.data.id, "Should return generated ID");
       assert.strictEqual(json.data.title, payload.title);
-      assert.strictEqual(json.data.recruiterId, recruiterUser.id, "recruiterId must match authenticated user");
+      assert.strictEqual(
+        json.data.recruiterId,
+        recruiterUser.id,
+        "recruiterId must match authenticated user",
+      );
       assert.strictEqual(json.data.status, "PUBLISHED");
     });
 
@@ -206,7 +210,11 @@ describe("JOB MANAGEMENT REST API & RBAC SUITE", () => {
       assert.strictEqual(res.status, 201);
 
       const json = await res.json();
-      assert.strictEqual(json.data.recruiterId, recruiterUser.id, "recruiterId must match authenticated recruiter, NOT spoofed ID");
+      assert.strictEqual(
+        json.data.recruiterId,
+        recruiterUser.id,
+        "recruiterId must match authenticated recruiter, NOT spoofed ID",
+      );
     });
   });
 
@@ -285,7 +293,10 @@ describe("JOB MANAGEMENT REST API & RBAC SUITE", () => {
       assert.ok(jobs.length >= 3);
       // Ensure all returned jobs are PUBLISHED or Active
       for (const job of jobs) {
-        assert.ok(job.status === "PUBLISHED" || job.status === "Active", `Status should be published/active, was ${job.status}`);
+        assert.ok(
+          job.status === "PUBLISHED" || job.status === "Active",
+          `Status should be published/active, was ${job.status}`,
+        );
         assert.notStrictEqual(job.title, "Internal Draft Role");
         assert.notStrictEqual(job.title, "Old Archived Position");
       }
@@ -305,8 +316,14 @@ describe("JOB MANAGEMENT REST API & RBAC SUITE", () => {
 
       assert.ok(titles.includes("Frontend Architect"));
       assert.ok(titles.includes("AI Research Scientist"));
-      assert.ok(titles.includes("Internal Draft Role"), "Recruiter should see their own draft jobs");
-      assert.ok(titles.includes("Old Archived Position"), "Recruiter should see their own archived jobs");
+      assert.ok(
+        titles.includes("Internal Draft Role"),
+        "Recruiter should see their own draft jobs",
+      );
+      assert.ok(
+        titles.includes("Old Archived Position"),
+        "Recruiter should see their own archived jobs",
+      );
     });
 
     it("Filters jobs by department and search keyword", async () => {
@@ -476,7 +493,11 @@ describe("JOB MANAGEMENT REST API & RBAC SUITE", () => {
       assert.strictEqual(res.status, 200);
 
       const inDb = await jobRepository.findById(jobId);
-      assert.strictEqual(inDb?.recruiterId, recruiterUser.id, "Ownership must remain with original recruiter");
+      assert.strictEqual(
+        inDb?.recruiterId,
+        recruiterUser.id,
+        "Ownership must remain with original recruiter",
+      );
     });
   });
 
@@ -543,7 +564,11 @@ describe("JOB MANAGEMENT REST API & RBAC SUITE", () => {
 
       const jobs = json.data.jobs || json.data;
       const ids = jobs.map((j: any) => j.id);
-      assert.strictEqual(ids.includes(jobId), false, "Archived job must not appear in public listings");
+      assert.strictEqual(
+        ids.includes(jobId),
+        false,
+        "Archived job must not appear in public listings",
+      );
     });
   });
 

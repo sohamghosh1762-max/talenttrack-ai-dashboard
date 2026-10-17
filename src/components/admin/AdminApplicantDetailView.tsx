@@ -216,7 +216,11 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
           Applicant Not Found
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-md mb-6">
-          No applicant record matches ID <span className="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{applicantId}</span>. The record may have been deleted or the ID is invalid.
+          No applicant record matches ID{" "}
+          <span className="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+            {applicantId}
+          </span>
+          . The record may have been deleted or the ID is invalid.
         </p>
         <Link
           to="/admin/applicants"
@@ -597,7 +601,10 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
                     >
                       <div className="flex flex-wrap items-center justify-between gap-1">
                         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                          {edu.degree || "Degree"} {edu.fieldOfStudy || edu.field ? `in ${edu.fieldOfStudy || edu.field}` : ""}
+                          {edu.degree || "Degree"}{" "}
+                          {edu.fieldOfStudy || edu.field
+                            ? `in ${edu.fieldOfStudy || edu.field}`
+                            : ""}
                         </h3>
                         <span className="text-xs text-slate-500 dark:text-slate-400">
                           {edu.startDate || "—"} - {edu.endDate || "—"}
@@ -799,9 +806,7 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
                         </p>
                       )}
                       {cert.issueDate && (
-                        <p className="text-[10px] text-slate-400">
-                          Date: {cert.issueDate}
-                        </p>
+                        <p className="text-[10px] text-slate-400">Date: {cert.issueDate}</p>
                       )}
                     </div>
                   ))}
@@ -825,7 +830,11 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
                       className="text-slate-400 hover:text-slate-600"
                       title="Copy full ID"
                     >
-                      {copiedId ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      {copiedId ? (
+                        <Check className="w-3 h-3 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3 h-3" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -932,7 +941,8 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
 
                       <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 space-y-2">
                         <span className="font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">
-                          Extracted Skills ({parsed.skills?.length || applicant.skills?.length || 0})
+                          Extracted Skills ({parsed.skills?.length || applicant.skills?.length || 0}
+                          )
                         </span>
                         <div className="flex flex-wrap gap-1">
                           {(parsed.skills || applicant.skills || []).map(
@@ -1156,7 +1166,8 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
                 Verified Interview Schedule
               </p>
               <p className="mt-0.5">
-                Displays real interview records from the platform database. Stage indicators without scheduled records are excluded.
+                Displays real interview records from the platform database. Stage indicators without
+                scheduled records are excluded.
               </p>
             </div>
           </div>
@@ -1165,13 +1176,19 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
             <div className="space-y-4">
               {interviews.map((interview: any) => {
                 const statusStyles: Record<string, string> = {
-                  SCHEDULED: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
-                  COMPLETED: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
-                  RESCHEDULED: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
-                  CANCELLED: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800",
-                  NO_SHOW: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800",
+                  SCHEDULED:
+                    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+                  COMPLETED:
+                    "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
+                  RESCHEDULED:
+                    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+                  CANCELLED:
+                    "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800",
+                  NO_SHOW:
+                    "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800",
                 };
-                const badgeClass = statusStyles[interview.status] || "bg-slate-100 text-slate-700 border-slate-200";
+                const badgeClass =
+                  statusStyles[interview.status] || "bg-slate-100 text-slate-700 border-slate-200";
 
                 return (
                   <div
@@ -1227,7 +1244,9 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
                           Duration
                         </span>
                         <p className="text-slate-800 dark:text-slate-200 font-medium">
-                          {interview.durationMinutes ? `${interview.durationMinutes} Minutes` : "30 Minutes"}
+                          {interview.durationMinutes
+                            ? `${interview.durationMinutes} Minutes`
+                            : "30 Minutes"}
                         </p>
                       </div>
 
@@ -1328,7 +1347,9 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
             <div>
               <p className="font-semibold">Confidentiality & Privacy Policy</p>
               <p className="mt-0.5 text-indigo-700/80 dark:text-indigo-300/80">
-                Direct message bodies are hidden by default to protect candidate-recruiter privacy. Only conversation metadata, participant info, unread counters, and timestamps are displayed.
+                Direct message bodies are hidden by default to protect candidate-recruiter privacy.
+                Only conversation metadata, participant info, unread counters, and timestamps are
+                displayed.
               </p>
             </div>
           </div>
@@ -1356,9 +1377,7 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 font-mono mt-0.5">
-                          ID: {conv.id}
-                        </p>
+                        <p className="text-xs text-slate-500 font-mono mt-0.5">ID: {conv.id}</p>
                       </div>
                     </div>
 
@@ -1435,9 +1454,12 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50 flex items-start gap-3 text-xs text-slate-600 dark:text-slate-400">
             <EyeOff className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-slate-700 dark:text-slate-300">Read-Only Audit View</p>
+              <p className="font-semibold text-slate-700 dark:text-slate-300">
+                Read-Only Audit View
+              </p>
               <p className="mt-0.5">
-                Viewing notifications from the Admin console does not mark them as read for the applicant. True read/unread states are preserved.
+                Viewing notifications from the Admin console does not mark them as read for the
+                applicant. True read/unread states are preserved.
               </p>
             </div>
           </div>
@@ -1525,7 +1547,8 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
                 Candidate Managed Preferences
               </p>
               <p className="mt-0.5">
-                These settings represent candidate communication and alert preferences configured in the Applicant Portal. This view is strictly read-only for administrators.
+                These settings represent candidate communication and alert preferences configured in
+                the Applicant Portal. This view is strictly read-only for administrators.
               </p>
             </div>
           </div>
@@ -1564,7 +1587,8 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
                       Interview Reminders
                     </p>
                     <p className="text-slate-500 text-[11px] mt-0.5">
-                      Receive automated reminders before scheduled screening calls and technical rounds.
+                      Receive automated reminders before scheduled screening calls and technical
+                      rounds.
                     </p>
                   </div>
                   <span
@@ -1584,7 +1608,8 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
                       Job Recommendation Alerts
                     </p>
                     <p className="text-slate-500 text-[11px] mt-0.5">
-                      Receive curated recommendations tailored to applicant resume ATS score and skills.
+                      Receive curated recommendations tailored to applicant resume ATS score and
+                      skills.
                     </p>
                   </div>
                   <span
@@ -1624,7 +1649,8 @@ export function AdminApplicantDetailView({ applicantId }: { applicantId: string 
                       Email Notifications
                     </p>
                     <p className="text-slate-500 text-[11px] mt-0.5">
-                      Receive digests, activity summaries, and platform news via verified email address.
+                      Receive digests, activity summaries, and platform news via verified email
+                      address.
                     </p>
                   </div>
                   <span

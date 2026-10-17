@@ -1,18 +1,9 @@
 import type { ResumeParsingStatus } from "./resume-types.ts";
 
 export type AtsCategoryKey =
-  | "completeness"
-  | "skills"
-  | "experience"
-  | "keywords"
-  | "education"
-  | "structure";
+  "completeness" | "skills" | "experience" | "keywords" | "education" | "structure";
 
-export type AtsCompatibilityTier =
-  | "EXCELLENT"
-  | "GOOD"
-  | "MODERATE"
-  | "NEEDS_IMPROVEMENT";
+export type AtsCompatibilityTier = "EXCELLENT" | "GOOD" | "MODERATE" | "NEEDS_IMPROVEMENT";
 
 export interface AtsScoringConfig {
   deterministicWeight: number; // 0.60
@@ -23,19 +14,19 @@ export interface AtsScoringConfig {
 }
 
 export const ATS_SCORING_CONFIG: AtsScoringConfig = {
-  deterministicWeight: 0.60,
-  geminiWeight: 0.40,
+  deterministicWeight: 0.6,
+  geminiWeight: 0.4,
   rubricVersion: "1.0",
   engineVersion: "1.0",
   promptVersion: "1.0",
 };
 
 export const ATS_CATEGORY_WEIGHTS: Record<AtsCategoryKey, { weight: number; label: string }> = {
-  completeness: { weight: 0.20, label: "Resume Completeness" },
+  completeness: { weight: 0.2, label: "Resume Completeness" },
   skills: { weight: 0.25, label: "Skills Presentation" },
-  experience: { weight: 0.20, label: "Experience Quality" },
-  keywords: { weight: 0.20, label: "Keyword Coverage" },
-  education: { weight: 0.10, label: "Education & Certifications" },
+  experience: { weight: 0.2, label: "Experience Quality" },
+  keywords: { weight: 0.2, label: "Keyword Coverage" },
+  education: { weight: 0.1, label: "Education & Certifications" },
   structure: { weight: 0.05, label: "Structure & Formatting" },
 };
 
@@ -88,10 +79,12 @@ export interface AtsAnalysisResult {
   strengths: string[];
   weaknesses: string[];
   improvements: string[];
-  keywords?: {
-    matched: string[];
-    potentialMissing: string[];
-  } | undefined;
+  keywords?:
+    | {
+        matched: string[];
+        potentialMissing: string[];
+      }
+    | undefined;
   keywordInsights?: string[] | undefined;
   recommendations?: string[] | undefined;
 
@@ -108,10 +101,12 @@ export interface AtsAnalysisResult {
   originalFileName: string;
   aiAvailable?: boolean | undefined;
   aiNotice?: string | undefined;
-  scoringConfig?: {
-    deterministicWeight: number;
-    geminiWeight: number;
-  } | undefined;
+  scoringConfig?:
+    | {
+        deterministicWeight: number;
+        geminiWeight: number;
+      }
+    | undefined;
 }
 
 export interface AtsScoreResponse {

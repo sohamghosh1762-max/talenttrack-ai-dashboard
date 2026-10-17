@@ -1,4 +1,7 @@
-import { ApplicantPreferences, type IApplicantPreferencesDocument } from "../models/ApplicantPreferences.ts";
+import {
+  ApplicantPreferences,
+  type IApplicantPreferencesDocument,
+} from "../models/ApplicantPreferences.ts";
 import { isDatabaseConnected } from "../db/mongodb.ts";
 import { generateObjectId, isValidObjectId } from "../db/user-repository.ts";
 import {
@@ -37,7 +40,7 @@ class ApplicantPreferencesRepository {
 
   public async findByUserId(userId: string): Promise<IApplicantPreferences> {
     if (isDatabaseConnected() && isValidObjectId(userId)) {
-      let doc = await ApplicantPreferences.findOne({ userId }).lean<any>();
+      const doc = await ApplicantPreferences.findOne({ userId }).lean<any>();
 
       if (!doc) {
         const id = generateObjectId();
@@ -55,8 +58,14 @@ class ApplicantPreferencesRepository {
           jobRecommendationAlerts: created.jobRecommendationAlerts ?? true,
           messageNotifications: created.messageNotifications ?? true,
           emailNotifications: created.emailNotifications ?? true,
-          createdAt: created.createdAt instanceof Date ? created.createdAt.toISOString() : new Date().toISOString(),
-          updatedAt: created.updatedAt instanceof Date ? created.updatedAt.toISOString() : new Date().toISOString(),
+          createdAt:
+            created.createdAt instanceof Date
+              ? created.createdAt.toISOString()
+              : new Date().toISOString(),
+          updatedAt:
+            created.updatedAt instanceof Date
+              ? created.updatedAt.toISOString()
+              : new Date().toISOString(),
         };
 
         this.inMemoryPreferences.set(userId, pref);
@@ -71,8 +80,14 @@ class ApplicantPreferencesRepository {
         jobRecommendationAlerts: doc.jobRecommendationAlerts ?? true,
         messageNotifications: doc.messageNotifications ?? true,
         emailNotifications: doc.emailNotifications ?? true,
-        createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt || new Date().toISOString(),
-        updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : doc.updatedAt || new Date().toISOString(),
+        createdAt:
+          doc.createdAt instanceof Date
+            ? doc.createdAt.toISOString()
+            : doc.createdAt || new Date().toISOString(),
+        updatedAt:
+          doc.updatedAt instanceof Date
+            ? doc.updatedAt.toISOString()
+            : doc.updatedAt || new Date().toISOString(),
       };
 
       this.inMemoryPreferences.set(userId, pref);
@@ -145,8 +160,10 @@ class ApplicantPreferencesRepository {
         jobRecommendationAlerts: doc.jobRecommendationAlerts ?? true,
         messageNotifications: doc.messageNotifications ?? true,
         emailNotifications: doc.emailNotifications ?? true,
-        createdAt: doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt || now,
-        updatedAt: doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : doc.updatedAt || now,
+        createdAt:
+          doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt || now,
+        updatedAt:
+          doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : doc.updatedAt || now,
       };
 
       this.inMemoryPreferences.set(userId, pref);

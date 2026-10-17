@@ -116,9 +116,8 @@ export function AdminDashboardView({
               Recruiter Management
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              Dedicated recruiter management will be available in a future phase.
-              Use the <strong>Users</strong> section to manage all platform accounts in the
-              meantime.
+              Dedicated recruiter management will be available in a future phase. Use the{" "}
+              <strong>Users</strong> section to manage all platform accounts in the meantime.
             </p>
           </div>
         ) : activeNav === "Jobs" ? (

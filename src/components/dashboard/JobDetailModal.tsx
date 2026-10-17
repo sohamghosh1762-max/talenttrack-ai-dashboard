@@ -1,7 +1,16 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
-import { Building, Calendar, CheckCircle2, Edit2, MapPin, Users, Archive, DollarSign } from "lucide-react";
+import {
+  Building,
+  Calendar,
+  CheckCircle2,
+  Edit2,
+  MapPin,
+  Users,
+  Archive,
+  DollarSign,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -32,9 +41,7 @@ export function JobDetailModal({
   if (!job) return null;
 
   const applicationsCount =
-    "applicationsCount" in job
-      ? job.applicationsCount || 0
-      : (job as JobOpening).applications || 0;
+    "applicationsCount" in job ? job.applicationsCount || 0 : (job as JobOpening).applications || 0;
 
   const postedDate =
     "createdAt" in job && job.createdAt
@@ -100,19 +107,21 @@ export function JobDetailModal({
             </div>
           </div>
 
-          {"salaryRange" in job && job.salaryRange && (job.salaryRange.min || job.salaryRange.max) && (
-            <div className="flex items-center gap-2 rounded-md bg-muted/50 p-2.5 text-xs text-foreground">
-              <DollarSign className="size-4 text-brand-green shrink-0" />
-              <span>
-                Compensation:{" "}
-                <strong>
-                  ${job.salaryRange.min?.toLocaleString()}
-                  {job.salaryRange.max ? ` - $${job.salaryRange.max?.toLocaleString()}` : "+"}
-                </strong>{" "}
-                / year
-              </span>
-            </div>
-          )}
+          {"salaryRange" in job &&
+            job.salaryRange &&
+            (job.salaryRange.min || job.salaryRange.max) && (
+              <div className="flex items-center gap-2 rounded-md bg-muted/50 p-2.5 text-xs text-foreground">
+                <DollarSign className="size-4 text-brand-green shrink-0" />
+                <span>
+                  Compensation:{" "}
+                  <strong>
+                    ${job.salaryRange.min?.toLocaleString()}
+                    {job.salaryRange.max ? ` - $${job.salaryRange.max?.toLocaleString()}` : "+"}
+                  </strong>{" "}
+                  / year
+                </span>
+              </div>
+            )}
 
           <div>
             <h4 className="font-semibold text-foreground mb-1">Role Description</h4>
@@ -187,7 +196,10 @@ export function JobDetailModal({
               Close
             </Button>
             <Link to="/jobs/$jobId" params={{ jobId: job.id }}>
-              <Button size="sm" className="bg-brand-blue text-primary-foreground hover:bg-brand-blue/90 text-xs">
+              <Button
+                size="sm"
+                className="bg-brand-blue text-primary-foreground hover:bg-brand-blue/90 text-xs"
+              >
                 View Full Pipeline
               </Button>
             </Link>

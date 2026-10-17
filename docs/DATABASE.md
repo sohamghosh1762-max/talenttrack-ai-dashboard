@@ -120,6 +120,7 @@ Stores job openings posted by recruiters.
 #### Compound Indexes on `Job`:
 - `{ status: 1, department: 1 }`: Optimized for filtered public job board searches.
 - `{ recruiterId: 1, status: 1 }`: Optimized for recruiter dashboard listings.
+- `{ status: 1, createdAt: -1 }`: Chronological sorting for active published job listings.
 - `{ createdAt: -1 }`: Chronological sorting for recent jobs.
 
 ---
@@ -160,6 +161,7 @@ Represents candidate applications to posted jobs.
 | `coverLetter` | `String` | Optional text | Candidate cover letter |
 | `status` | `String` | Indexed, Enum | `APPLIED`, `SCREENING`, `INTERVIEW`, `OFFERED`, `REJECTED`, `WITHDRAWN` |
 | `currentStage` | `String` | Indexed, Enum | Current Kanban column stage |
+| `stageHistory` | `[Mixed]` | Default: `[]` | Immutable audit log of stage transitions |
 | `aiScore` | `Number` | Min: 0, Max: 100 | AI match score against job requirements |
 | `notes` | `String` | Optional text | Recruiter internal notes |
 | `appliedAt` | `String` | Indexed, ISO Date | Submission timestamp |
@@ -168,3 +170,39 @@ Represents candidate applications to posted jobs.
 - `{ jobId: 1, applicantId: 1 }` (**UNIQUE**): Guarantees that a candidate can only apply to a specific job once. Duplicate applications are rejected with HTTP 409 Conflict.
 - `{ recruiterId: 1, status: 1 }`: Optimized for recruiter pipeline stage queries.
 - `{ currentStage: 1, appliedAt: -1 }`: Optimized for Kanban column ordering.
+- `{ applicantId: 1, appliedAt: -1 }`: Optimized for applicant dashboard history queries.
+- `{ jobId: 1, currentStage: 1 }`: Optimized for recruiter candidate stage filters per job.
+
+---
+
+### 7. `Interview` Schema (`src/server/models/Interview.ts`)
+Stores interview schedules, participants, meeting links, and recruiter/interviewer feedback.
+
+| Field | Type | Index / Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `applicationId` | `ObjectId` | Required, Indexed | Foreign key referencing `Application._id` |
+| `jobId` | `ObjectId` | Required, Indexed | Foreign key referencing `Job._id` |
+| `candidateId` | `ObjectId` | Required, Indexed | Foreign key referencing `User._id` |
+| `recruiterId` | `ObjectId` | Required, Indexed | Foreign key referencing `User._id` |
+| `hiringManagerId` | `ObjectId` | Optional, Indexed | Foreign key referencing `User._id` |
+| `interviewType` | `String` | Required, Enum | `INITIAL_SCREEN`, `TECHNICAL`, `BEHAVIORAL`, `FINAL_ROUND` |
+| `status` | `String` | Required, Enum | `SCHEDULED`, `COMPLETED`, `CANCELLED`, `RESCHEDULED` |
+| `scheduledAt` | `Date` | Required, Indexed | Date and time of interview |
+| `durationMinutes` | `Number` | Default: 45, Min: 15 | Interview length |
+
+#### Compound Indexes on `Interview`:
+- `{ applicationId: 1, scheduledAt: 1 }`: Chronological ordering of interviews for an application.
+- `{ recruiterId: 1, scheduledAt: 1 }`: Recruiter schedule calendar queries.
+- `{ candidateId: 1, scheduledAt: 1 }`: Candidate interview schedule queries.
+- `{ hiringManagerId: 1, scheduledAt: 1 }`: Hiring manager upcoming interviews.
+
+---
+
+## 3. Database Connection & Lifecycle
+
+The connection lifecycle is managed in `src/server/db/mongodb.ts`:
+- **Pool Management**: Configured with `maxPoolSize: 10`, `minPoolSize: 2`, `connectTimeoutMS: 10000`, `serverSelectionTimeoutMS: 5000`, `socketTimeoutMS: 45000`.
+- **Event Listeners**: Idempotent registration of `connected`, `error`, `disconnected`, and `reconnected` events.
+- **Credential Protection**: Strict URI masking in all logs preventing secret leaks.
+- **Active Readiness Check**: `/api/ready` performs an active `admin.ping()` command on MongoDB and returns `503 Service Unavailable` if disconnected or unresponsive.
+- **Index Synchronization**: Automated `ensureDatabaseIndexes()` invokes `syncIndexes()` safely across all registered schemas upon initial connection.

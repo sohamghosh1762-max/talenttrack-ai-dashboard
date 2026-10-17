@@ -695,16 +695,13 @@ describe("APPLICATION MANAGEMENT REST API & RBAC SUITE", () => {
       recruiterId: recruiter1User.id,
     });
 
-    const req = createJsonRequest(
-      `https://talenttrack.ai/api/applications/${app.id}/stage`,
-      {
-        method: "PATCH",
-        token: recruiter1Token,
-        body: {
-          stage: "INTERVIEW",
-        },
+    const req = createJsonRequest(`https://talenttrack.ai/api/applications/${app.id}/stage`, {
+      method: "PATCH",
+      token: recruiter1Token,
+      body: {
+        stage: "INTERVIEW",
       },
-    );
+    });
 
     const res = await handleApiRequest(req);
     assert.ok(res);

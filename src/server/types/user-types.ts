@@ -128,6 +128,10 @@ export interface IUser {
   createdAt: string;
   updatedAt: string;
   lastActive?: string | undefined;
+  organizationId?: string | undefined;
+  departmentId?: string | undefined;
+  organizationName?: string | undefined;
+  departmentName?: string | undefined;
   recruiterProfile?: RecruiterProfileInfo | undefined;
   applicantProfile?: ApplicantProfileInfo | undefined;
   adminProfile?: AdminProfileInfo | undefined;
@@ -135,6 +139,28 @@ export interface IUser {
 
 export type SafeUser = Omit<IUser, "passwordHash">;
 
+export interface CreateUserInput {
+  name: string;
+  email: string;
+  password?: string | undefined;
+  role: UserRole;
+  status?: UserStatus | undefined;
+  organizationId?: string | undefined;
+  departmentId?: string | undefined;
+  emailVerified?: boolean | undefined;
+}
+
+export interface UpdateUserInput {
+  name?: string | undefined;
+  email?: string | undefined;
+  role?: UserRole | undefined;
+  status?: UserStatus | undefined;
+  organizationId?: string | undefined;
+  departmentId?: string | undefined;
+  emailVerified?: boolean | undefined;
+  avatarUrl?: string | undefined;
+  password?: string | undefined;
+}
 
 export interface UserQueryParams {
   page?: number | undefined;
@@ -142,6 +168,8 @@ export interface UserQueryParams {
   search?: string | undefined;
   role?: UserRole | undefined;
   status?: UserStatus | undefined;
+  organizationId?: string | undefined;
+  departmentId?: string | undefined;
   emailVerified?: boolean | undefined;
   sortBy?: "createdAt" | "name" | "email" | "role" | "status" | undefined;
   sortOrder?: "asc" | "desc" | undefined;
@@ -236,15 +264,18 @@ export interface AdminApplicantItem {
   certifications?: ApplicantCertificationItem[] | undefined;
   projects?: ApplicantProjectItem[] | undefined;
   applicantProfile?: ApplicantProfileInfo | undefined;
-  resume?: {
-    id: string;
-    fileName: string;
-    fileSize?: number | undefined;
-    mimeType?: string | undefined;
-    uploadedAt?: string | undefined;
-    parsingStatus?: string | undefined;
-    atsScore?: number | null | undefined;
-  } | null | undefined;
+  resume?:
+    | {
+        id: string;
+        fileName: string;
+        fileSize?: number | undefined;
+        mimeType?: string | undefined;
+        uploadedAt?: string | undefined;
+        parsingStatus?: string | undefined;
+        atsScore?: number | null | undefined;
+      }
+    | null
+    | undefined;
   applicationsCount: number;
   createdAt: string;
   updatedAt: string;

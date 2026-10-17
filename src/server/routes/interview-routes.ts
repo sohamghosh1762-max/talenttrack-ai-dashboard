@@ -87,9 +87,7 @@ export async function handleGetInterviewById(req: Request, interviewId: string):
   }
 
   if (user.role === "RECRUITER") {
-    const isOwner =
-      interview.recruiterId === user.id ||
-      interview.createdBy === user.id;
+    const isOwner = interview.recruiterId === user.id || interview.createdBy === user.id;
     if (!isOwner) {
       // Check if recruiter owns the job
       const job = await jobRepository.findById(interview.jobId);
@@ -110,7 +108,9 @@ export async function handleCreateInterview(req: Request): Promise<Response> {
 
   // Applicants cannot schedule interviews
   if (user.role === "APPLICANT") {
-    throw new ForbiddenError("Applicants cannot schedule interviews. Please contact your recruiter.");
+    throw new ForbiddenError(
+      "Applicants cannot schedule interviews. Please contact your recruiter.",
+    );
   }
 
   let body: any;
@@ -182,7 +182,9 @@ export async function handleCreateInterview(req: Request): Promise<Response> {
     const isJobRecruiter = job?.recruiterId === user.id;
     const isAppRecruiter = application.recruiterId === user.id;
     if (!isJobRecruiter && !isAppRecruiter) {
-      throw new ForbiddenError("You are not authorized to schedule interviews for this application.");
+      throw new ForbiddenError(
+        "You are not authorized to schedule interviews for this application.",
+      );
     }
   }
 
@@ -268,7 +270,9 @@ export async function handleUpdateInterview(req: Request, interviewId: string): 
 
   // Authorization check
   if (user.role === "APPLICANT") {
-    throw new ForbiddenError("Applicants cannot modify interview schedules directly. Please contact your recruiter.");
+    throw new ForbiddenError(
+      "Applicants cannot modify interview schedules directly. Please contact your recruiter.",
+    );
   }
 
   if (user.role === "RECRUITER") {
@@ -298,7 +302,18 @@ export async function handleUpdateInterview(req: Request, interviewId: string): 
     throw new BadRequestError("Invalid JSON body.");
   }
 
-  const { title, type, scheduledAt, durationMinutes, timezone, meetingUrl, location, instructions, status, notes } = body;
+  const {
+    title,
+    type,
+    scheduledAt,
+    durationMinutes,
+    timezone,
+    meetingUrl,
+    location,
+    instructions,
+    status,
+    notes,
+  } = body;
 
   const updatePayload: UpdateInterviewInput = {};
 
@@ -372,10 +387,7 @@ export async function handleUpdateInterview(req: Request, interviewId: string): 
           jobTitle: job?.title || "Job Opening",
           interviewTitle: updated.title,
         });
-      } else if (
-        updatePayload.scheduledAt &&
-        updatePayload.scheduledAt !== existing.scheduledAt
-      ) {
+      } else if (updatePayload.scheduledAt && updatePayload.scheduledAt !== existing.scheduledAt) {
         await notificationService.notifyInterviewRescheduled({
           applicantId: existing.applicantId,
           interviewId: existing.id,
@@ -431,7 +443,10 @@ export async function handleInterviewApiRequest(req: Request): Promise<Response 
 
   try {
     // 1. GET /api/interviews/my or GET /api/interviews
-    if ((pathname === "/api/interviews/my" || pathname === "/api/interviews") && req.method === "GET") {
+    if (
+      (pathname === "/api/interviews/my" || pathname === "/api/interviews") &&
+      req.method === "GET"
+    ) {
       return await handleGetMyInterviews(req);
     }
 

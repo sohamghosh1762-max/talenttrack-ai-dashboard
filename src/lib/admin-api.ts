@@ -6,10 +6,27 @@ import type {
   UserStatus,
   BulkUpdateStatusResult,
   UserActivityItem,
+  CreateUserInput,
+  UpdateUserInput,
   AdminApplicantQueryParams,
   AdminApplicantItem,
   PaginatedAdminApplicantsResponse,
 } from "@/server/types/user-types";
+import type {
+  IOrganization,
+  IDepartment,
+  CreateOrganizationInput,
+  UpdateOrganizationInput,
+  CreateDepartmentInput,
+  UpdateDepartmentInput,
+  AssignMemberInput,
+  OrganizationQueryParams,
+  PaginatedOrganizationsResponse,
+} from "@/server/types/organization-types";
+import type {
+  AuditLogQueryParams,
+  PaginatedAuditLogsResponse,
+} from "@/server/services/audit-service";
 
 // ─── Query Params ────────────────────────────────────────────────────────────
 
@@ -19,6 +36,8 @@ export interface AdminUsersQueryParams {
   search?: string | undefined;
   role?: UserRole | "" | undefined;
   status?: UserStatus | "" | undefined;
+  organizationId?: string | undefined;
+  departmentId?: string | undefined;
   emailVerified?: boolean | "" | undefined;
   sortBy?: "createdAt" | "name" | "email" | "role" | "status" | undefined;
   sortOrder?: "asc" | "desc" | undefined;
@@ -323,11 +342,13 @@ export async function fetchAdminApplicantPreferences(
  * GET /api/admin/dashboard
  * Fetch live DB-driven admin dashboard analytics and overview metrics.
  */
-export async function fetchAdminDashboard(params: {
-  range?: string;
-  dateFrom?: string;
-  dateTo?: string;
-} = {}): Promise<any> {
+export async function fetchAdminDashboard(
+  params: {
+    range?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  } = {},
+): Promise<any> {
   const qs = new URLSearchParams();
   if (params.range) qs.set("range", params.range);
   if (params.dateFrom) qs.set("dateFrom", params.dateFrom);
@@ -337,3 +358,210 @@ export async function fetchAdminDashboard(params: {
   return adminFetch<any>(`/api/admin/dashboard${query ? `?${query}` : ""}`);
 }
 
+// ─── User Mutations ──────────────────────────────────────────────────────────
+
+/**
+ * POST /api/admin/users
+ */
+export async function createAdminUser(
+  data: CreateUserInput,
+): Promise<{ user: SafeUser; message: string }> {
+  return adminFetch<{ user: SafeUser; message: string }>("/api/admin/users", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * PATCH /api/admin/users/:id
+ */
+export async function updateAdminUser(
+  id: string,
+  data: UpdateUserInput,
+): Promise<{ user: SafeUser; message: string }> {
+  return adminFetch<{ user: SafeUser; message: string }>(`/api/admin/users/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * DELETE /api/admin/users/:id
+ */
+export async function deleteAdminUser(id: string): Promise<{ success: boolean; message: string }> {
+  return adminFetch<{ success: boolean; message: string }>(`/api/admin/users/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// ─── Organizations & Departments API ─────────────────────────────────────────
+
+/**
+ * GET /api/admin/organizations
+ */
+export async function fetchAdminOrganizations(
+  params: OrganizationQueryParams = {},
+): Promise<PaginatedOrganizationsResponse> {
+  const qs = new URLSearchParams();
+  if (params.page) qs.set("page", String(params.page));
+  if (params.limit) qs.set("limit", String(params.limit));
+  if (params.search) qs.set("search", params.search);
+  if (params.plan && params.plan !== "All") qs.set("plan", params.plan);
+  if (params.status && params.status !== "All") qs.set("status", params.status);
+
+  const query = qs.toString();
+  return adminFetch<PaginatedOrganizationsResponse>(
+    `/api/admin/organizations${query ? `?${query}` : ""}`,
+  );
+}
+
+/**
+ * GET /api/admin/organizations/:id
+ */
+export async function fetchAdminOrganizationById(
+  id: string,
+): Promise<{ organization: IOrganization; departments: IDepartment[] }> {
+  return adminFetch<{ organization: IOrganization; departments: IDepartment[] }>(
+    `/api/admin/organizations/${id}`,
+  );
+}
+
+/**
+ * POST /api/admin/organizations
+ */
+export async function createAdminOrganization(
+  data: CreateOrganizationInput,
+): Promise<{ organization: IOrganization; message: string }> {
+  return adminFetch<{ organization: IOrganization; message: string }>("/api/admin/organizations", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * PATCH /api/admin/organizations/:id
+ */
+export async function updateAdminOrganization(
+  id: string,
+  data: UpdateOrganizationInput,
+): Promise<{ organization: IOrganization; message: string }> {
+  return adminFetch<{ organization: IOrganization; message: string }>(
+    `/api/admin/organizations/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+/**
+ * DELETE /api/admin/organizations/:id
+ */
+export async function deleteAdminOrganization(id: string): Promise<{ message: string }> {
+  return adminFetch<{ message: string }>(`/api/admin/organizations/${id}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * GET /api/admin/organizations/:id/departments
+ */
+export async function fetchAdminDepartments(
+  organizationId: string,
+): Promise<{ departments: IDepartment[] }> {
+  return adminFetch<{ departments: IDepartment[] }>(
+    `/api/admin/organizations/${organizationId}/departments`,
+  );
+}
+
+/**
+ * POST /api/admin/organizations/:id/departments
+ */
+export async function createAdminDepartment(
+  organizationId: string,
+  data: CreateDepartmentInput,
+): Promise<{ department: IDepartment; message: string }> {
+  return adminFetch<{ department: IDepartment; message: string }>(
+    `/api/admin/organizations/${organizationId}/departments`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+/**
+ * PATCH /api/admin/departments/:id
+ */
+export async function updateAdminDepartment(
+  departmentId: string,
+  data: UpdateDepartmentInput,
+): Promise<{ department: IDepartment; message: string }> {
+  return adminFetch<{ department: IDepartment; message: string }>(
+    `/api/admin/departments/${departmentId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+/**
+ * DELETE /api/admin/departments/:id
+ */
+export async function deleteAdminDepartment(departmentId: string): Promise<{ message: string }> {
+  return adminFetch<{ message: string }>(`/api/admin/departments/${departmentId}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * POST /api/admin/organizations/:id/members
+ */
+export async function assignAdminOrganizationMember(
+  organizationId: string,
+  data: AssignMemberInput,
+): Promise<{ success: boolean; message: string; organization: IOrganization }> {
+  return adminFetch<{ success: boolean; message: string; organization: IOrganization }>(
+    `/api/admin/organizations/${organizationId}/members`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+// ─── Audit Logs & Roles API ──────────────────────────────────────────────────
+
+/**
+ * GET /api/admin/audit-logs
+ */
+export async function fetchAdminAuditLogs(
+  params: AuditLogQueryParams = {},
+): Promise<PaginatedAuditLogsResponse> {
+  const qs = new URLSearchParams();
+  if (params.page) qs.set("page", String(params.page));
+  if (params.limit) qs.set("limit", String(params.limit));
+  if (params.search) qs.set("search", params.search);
+  if (params.category && params.category !== "All") qs.set("category", params.category);
+  if (params.action && params.action !== "All") qs.set("action", params.action);
+  if (params.status && params.status !== "All") qs.set("status", params.status);
+  if (params.organizationId) qs.set("organizationId", params.organizationId);
+
+  const query = qs.toString();
+  return adminFetch<PaginatedAuditLogsResponse>(`/api/admin/audit-logs${query ? `?${query}` : ""}`);
+}
+
+/**
+ * GET /api/admin/roles
+ */
+export async function fetchAdminRoles(): Promise<{ roles: any[] }> {
+  return adminFetch<{ roles: any[] }>("/api/admin/roles");
+}
+
+/**
+ * GET /api/admin/permissions
+ */
+export async function fetchAdminPermissions(): Promise<{ permissions: any[] }> {
+  return adminFetch<{ permissions: any[] }>("/api/admin/permissions");
+}

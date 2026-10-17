@@ -60,7 +60,10 @@ class FirebaseAdminService {
         this.isInitialized = true;
       }
     } catch (err) {
-      console.warn("[Firebase Admin] Initialization deferred or unavailable:", (err as Error).message);
+      console.warn(
+        "[Firebase Admin] Initialization deferred or unavailable:",
+        (err as Error).message,
+      );
     }
   }
 

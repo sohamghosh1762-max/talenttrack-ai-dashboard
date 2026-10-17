@@ -66,7 +66,9 @@ describe("GEMINI API INTEGRATION & SECURITY FOUNDATION SUITE", () => {
 
   describe("2. Secret Sanitization & Error Scrubbing", () => {
     it("redacts configured API key from error strings", () => {
-      const rawError = new Error("Failed connecting with key test-fake-key-for-unit-testing on endpoint");
+      const rawError = new Error(
+        "Failed connecting with key test-fake-key-for-unit-testing on endpoint",
+      );
       const sanitized = gemini.sanitizeErrorMessage(rawError);
 
       assert.equal(sanitized.includes("test-fake-key-for-unit-testing"), false);
@@ -78,13 +80,17 @@ describe("GEMINI API INTEGRATION & SECURITY FOUNDATION SUITE", () => {
       assert.equal(gemini.sanitizeErrorMessage(aizaError).includes("AIzaSy"), false);
       assert.ok(gemini.sanitizeErrorMessage(aizaError).includes("[REDACTED_KEY]"));
 
-      const aqError = new Error("Token AQ.Ab8RN6ITpfhEDMveWISIaQtgQoYDTpsvLTxi6tlIRoTIdZbGA failed");
+      const aqError = new Error(
+        "Token AQ.Ab8RN6ITpfhEDMveWISIaQtgQoYDTpsvLTxi6tlIRoTIdZbGA failed",
+      );
       assert.equal(gemini.sanitizeErrorMessage(aqError).includes("AQ.Ab8RN6"), false);
       assert.ok(gemini.sanitizeErrorMessage(aqError).includes("[REDACTED_KEY]"));
     });
 
     it("redacts Bearer authentication tokens from error messages", () => {
-      const bearerError = new Error("Unauthorized request with Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.test");
+      const bearerError = new Error(
+        "Unauthorized request with Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.test",
+      );
       const sanitized = gemini.sanitizeErrorMessage(bearerError);
       assert.equal(sanitized.includes("eyJhbGciOiJIUzI1NiJ9"), false);
       assert.ok(sanitized.includes("Bearer [REDACTED_TOKEN]"));

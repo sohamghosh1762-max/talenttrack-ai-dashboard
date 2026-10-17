@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { recentApplicantsData, type Applicant } from "@/data/mockData";
+import { useRecruiterApplications } from "@/hooks/api/useApplications";
 import { CandidateDetailModal } from "./CandidateDetailModal";
 
 interface RecentApplicationsProps {
@@ -16,17 +17,35 @@ export function RecentApplications({
   onSelectCandidate,
 }: RecentApplicationsProps) {
   const [selectedCandidate, setSelectedCandidate] = useState<Applicant | null>(null);
+  const { data: dbApplications, isLoading } = useRecruiterApplications();
+
+  const baseApplicants: Applicant[] =
+    dbApplications && dbApplications.length > 0
+      ? dbApplications.slice(0, 10).map((a) => ({
+          id: a.id,
+          name: a.applicantName || a.applicant?.name || "Applicant",
+          email: a.applicantEmail || a.applicant?.email || "applicant@example.com",
+          job: a.jobTitle || a.job?.title || "Job Opening",
+          score: a.aiScore || 85,
+          status: (a.status as any) || "Applied",
+          initials: a.applicant?.initials || (a.applicantName?.[0] ?? "A"),
+          appliedOn: a.appliedAt ? new Date(a.appliedAt).toLocaleDateString() : "Recent",
+          ...(a.applicant?.phone ? { phone: a.applicant.phone } : {}),
+          ...(a.applicant?.location ? { location: a.applicant.location } : {}),
+          skills: a.applicant?.skills || [],
+        }))
+      : [];
 
   const filteredApplicants = useMemo(() => {
-    if (!searchQuery.trim()) return recentApplicantsData;
+    if (!searchQuery.trim()) return baseApplicants;
     const query = searchQuery.toLowerCase();
-    return recentApplicantsData.filter(
+    return baseApplicants.filter(
       (a) =>
         a.name.toLowerCase().includes(query) ||
         a.email.toLowerCase().includes(query) ||
         a.job.toLowerCase().includes(query),
     );
-  }, [searchQuery]);
+  }, [searchQuery, baseApplicants]);
 
   const getStatusBadge = (status: Applicant["status"]) => {
     switch (status) {

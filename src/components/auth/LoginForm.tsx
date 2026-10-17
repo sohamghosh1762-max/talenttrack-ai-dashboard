@@ -111,7 +111,9 @@ export function LoginForm({ redirectPath, targetRole, onChangeRole }: LoginFormP
         if (res.success && res.user) {
           const canonicalRole = normalizeRole(res.user.role);
           if (canonicalRole !== USER_ROLES.APPLICANT) {
-            setErrorMessage("Account type mismatch: This account is registered as a Recruiter or Admin.");
+            setErrorMessage(
+              "Account type mismatch: This account is registered as a Recruiter or Admin.",
+            );
             await logout();
             return;
           }
@@ -136,7 +138,10 @@ export function LoginForm({ redirectPath, targetRole, onChangeRole }: LoginFormP
       const canonicalRole = normalizeRole(res.user.role);
 
       // Account type mismatch protection
-      if ((targetRole === "recruiter" || targetRole === "hiring_manager") && canonicalRole === USER_ROLES.APPLICANT) {
+      if (
+        (targetRole === "recruiter" || targetRole === "hiring_manager") &&
+        canonicalRole === USER_ROLES.APPLICANT
+      ) {
         setErrorMessage(
           "Account type mismatch: This account is registered as an Applicant. Please choose the correct account type.",
         );
@@ -482,4 +487,3 @@ export function LoginForm({ redirectPath, targetRole, onChangeRole }: LoginFormP
     </>
   );
 }
-

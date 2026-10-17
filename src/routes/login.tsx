@@ -53,24 +53,25 @@ function LoginPage() {
   const isRedirectHiringManager = Boolean(search.redirect?.startsWith("/hiring-manager"));
   const isRedirectRecruiter = Boolean(
     search.redirect?.startsWith("/dashboard") ||
-      search.redirect?.startsWith("/pipeline") ||
-      search.redirect?.startsWith("/candidates") ||
-      search.redirect?.startsWith("/jobs") ||
-      search.redirect?.startsWith("/ai-screening") ||
-      search.redirect?.startsWith("/messages") ||
-      search.redirect?.startsWith("/reports") ||
-      search.redirect?.startsWith("/interviews"),
+    search.redirect?.startsWith("/pipeline") ||
+    search.redirect?.startsWith("/candidates") ||
+    search.redirect?.startsWith("/jobs") ||
+    search.redirect?.startsWith("/ai-screening") ||
+    search.redirect?.startsWith("/messages") ||
+    search.redirect?.startsWith("/reports") ||
+    search.redirect?.startsWith("/interviews"),
   );
 
-  const authIntent: "applicant" | "recruiter" | "hiring_manager" | "admin" | undefined = isRedirectAdmin
-    ? "admin"
-    : isRedirectApplicant
-      ? "applicant"
-      : isRedirectHiringManager
-        ? "hiring_manager"
-        : isRedirectRecruiter
-          ? "recruiter"
-          : search.role || search.intent;
+  const authIntent: "applicant" | "recruiter" | "hiring_manager" | "admin" | undefined =
+    isRedirectAdmin
+      ? "admin"
+      : isRedirectApplicant
+        ? "applicant"
+        : isRedirectHiringManager
+          ? "hiring_manager"
+          : isRedirectRecruiter
+            ? "recruiter"
+            : search.role || search.intent;
 
   // If user explicitly requests account selection or if neither role, intent nor redirect is specified:
   const shouldShowAccountTypeSelection =

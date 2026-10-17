@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Phone, KeyRound, AlertCircle, ArrowRight, RotateCw, CheckCircle2 } from "lucide-react";
 import { firebaseAuthService } from "@/auth/firebase-auth-service";
@@ -87,7 +93,9 @@ export function PhoneOtpModal({ open, onOpenChange, onSuccess }: PhoneOtpModalPr
       if (recaptchaVerifierRef.current) {
         try {
           recaptchaVerifierRef.current.clear();
-        } catch {}
+        } catch {
+          // Ignore cleanup error on recaptcha reset
+        }
         recaptchaVerifierRef.current = null;
       }
     } finally {
@@ -167,7 +175,10 @@ export function PhoneOtpModal({ open, onOpenChange, onSuccess }: PhoneOtpModalPr
         {step === "phone" ? (
           <form onSubmit={handleSendOtp} className="space-y-4 pt-2">
             <div>
-              <label htmlFor="phone-input" className="block text-xs font-semibold text-foreground mb-1">
+              <label
+                htmlFor="phone-input"
+                className="block text-xs font-semibold text-foreground mb-1"
+              >
                 Phone Number
               </label>
               <div className="relative">
@@ -208,7 +219,10 @@ export function PhoneOtpModal({ open, onOpenChange, onSuccess }: PhoneOtpModalPr
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-4 pt-2">
             <div>
-              <label htmlFor="otp-input" className="block text-xs font-semibold text-foreground mb-1">
+              <label
+                htmlFor="otp-input"
+                className="block text-xs font-semibold text-foreground mb-1"
+              >
                 6-Digit Verification Code
               </label>
               <div className="relative">

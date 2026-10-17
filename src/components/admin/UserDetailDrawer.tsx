@@ -28,12 +28,14 @@ import {
   UserX,
   PowerOff,
   BarChart3,
+  Edit,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import type { SafeUser, UserStatus } from "@/server/types/user-types";
 import { useAdminUser, useAdminUserActivity, useUpdateUserStatus } from "@/hooks/use-admin-users";
 import { UserStatusConfirmDialog } from "./UserStatusConfirmDialog";
+import { EditUserModal } from "./EditUserModal";
 
 interface UserDetailDrawerProps {
   userId: string | null;
@@ -298,6 +300,7 @@ function AccountMetricsSection({ user }: { user: SafeUser }) {
 function UserDetailContent({ user }: { user: SafeUser }) {
   const [activeTab, setActiveTab] = useState<"overview" | "activity" | "metrics">("overview");
   const [confirmStatus, setConfirmStatus] = useState<UserStatus | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const { mutate: updateStatus, isPending } = useUpdateUserStatus();
 
@@ -356,8 +359,16 @@ function UserDetailContent({ user }: { user: SafeUser }) {
       </div>
 
       {/* Quick Status Management Actions */}
-      <div className="flex items-center gap-1.5 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700">
+      <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700">
         <span className="text-[11px] font-semibold text-slate-500 shrink-0 mr-1">Actions:</span>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setIsEditOpen(true)}
+          className="h-7 text-[11px] font-semibold text-indigo-700 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300"
+        >
+          <Edit className="size-3 mr-1" /> Edit Profile
+        </Button>
         {user.status !== "ACTIVE" && (
           <Button
             size="sm"
@@ -597,6 +608,9 @@ function UserDetailContent({ user }: { user: SafeUser }) {
         isLoading={isPending}
         onConfirm={handleConfirmStatus}
       />
+
+      {/* Edit User Modal */}
+      <EditUserModal user={user} open={isEditOpen} onOpenChange={setIsEditOpen} />
     </div>
   );
 }

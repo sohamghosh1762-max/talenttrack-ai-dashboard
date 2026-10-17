@@ -155,7 +155,9 @@ function HiringManagerDashboardPage() {
           {/* 2. Candidates to Review */}
           <div className="rounded-xl border border-border bg-card p-4 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">Candidates to Review</span>
+              <span className="text-xs font-semibold text-muted-foreground">
+                Candidates to Review
+              </span>
               <div className="grid size-7 place-items-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
                 <Users className="size-4" />
               </div>
@@ -272,7 +274,8 @@ function HiringManagerDashboardPage() {
                 </div>
                 <h3 className="text-sm font-semibold text-foreground">No candidates to review</h3>
                 <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  Candidates who apply to your assigned positions will appear here for review and feedback.
+                  Candidates who apply to your assigned positions will appear here for review and
+                  feedback.
                 </p>
               </div>
             ) : (
@@ -301,13 +304,15 @@ function HiringManagerDashboardPage() {
                             {cand.stage}
                           </span>
 
-                          {(cand.decision?.status === "APPROVED" || (cand.decision as any) === "APPROVED") && (
+                          {(cand.decision?.status === "APPROVED" ||
+                            (cand.decision as any) === "APPROVED") && (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600">
                               <ThumbsUp className="size-3" /> Approved
                             </span>
                           )}
 
-                          {(cand.decision?.status === "REJECTED" || (cand.decision as any) === "REJECTED") && (
+                          {(cand.decision?.status === "REJECTED" ||
+                            (cand.decision as any) === "REJECTED") && (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600">
                               <ThumbsDown className="size-3" /> Rejected
                             </span>

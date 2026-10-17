@@ -27,7 +27,8 @@ const DEFAULT_SEED_NOTIFICATIONS: INotification[] = [
     userId: "65f1a2b3c4d5e6f7a8b9c008",
     type: "APPLICATION_SHORTLISTED",
     title: "Application Shortlisted 🎉",
-    message: "Your application for Senior Frontend Developer has been shortlisted by the recruiting team.",
+    message:
+      "Your application for Senior Frontend Developer has been shortlisted by the recruiting team.",
     applicationId: "65f1a2b3c4d5e6f7a8b9c201",
     jobId: "65f1a2b3c4d5e6f7a8b9c101",
     readAt: null,
@@ -81,11 +82,7 @@ class NotificationRepository {
       }
 
       const [docs, total, unreadCount] = await Promise.all([
-        Notification.find(query)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit)
-          .lean<any[]>(),
+        Notification.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean<any[]>(),
         Notification.countDocuments(query),
         Notification.countDocuments({ userId, readAt: null }),
       ]);
@@ -240,8 +237,10 @@ class NotificationRepository {
         conversationId: updated.conversationId?.toString() || undefined,
         metadata: updated.metadata || undefined,
         readAt: updated.readAt instanceof Date ? updated.readAt.toISOString() : updated.readAt,
-        createdAt: updated.createdAt instanceof Date ? updated.createdAt.toISOString() : updated.createdAt,
-        updatedAt: updated.updatedAt instanceof Date ? updated.updatedAt.toISOString() : updated.updatedAt,
+        createdAt:
+          updated.createdAt instanceof Date ? updated.createdAt.toISOString() : updated.createdAt,
+        updatedAt:
+          updated.updatedAt instanceof Date ? updated.updatedAt.toISOString() : updated.updatedAt,
       };
     }
 

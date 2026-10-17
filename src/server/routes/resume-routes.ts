@@ -7,7 +7,6 @@ import { successResponse, errorResponse } from "../utils/response.ts";
 import { NotFoundError, ForbiddenError, BadRequestError } from "../utils/errors.ts";
 import { isValidObjectId } from "../db/user-repository.ts";
 
-
 /**
  * Handle POST /api/resumes (Upload Resume)
  * - Authenticated applicant upload only
@@ -98,7 +97,12 @@ export async function handleUploadResume(req: Request): Promise<Response> {
 export async function handleGetResumeById(req: Request, resumeId: string): Promise<Response> {
   const user = await authenticate(req);
 
-  if (!isValidObjectId(resumeId) && !resumeId.startsWith("res-") && !resumeId.startsWith("resume-") && !resumeId.startsWith("65f")) {
+  if (
+    !isValidObjectId(resumeId) &&
+    !resumeId.startsWith("res-") &&
+    !resumeId.startsWith("resume-") &&
+    !resumeId.startsWith("65f")
+  ) {
     throw new NotFoundError(`Invalid resume ID format: ${resumeId}`);
   }
 
@@ -115,10 +119,12 @@ export async function handleGetResumeById(req: Request, resumeId: string): Promi
     if (isRecruiter) {
       const recruiterApps = await applicationRepository.findAll({ recruiterId: user.id });
       const hasAccess = recruiterApps.applications.some(
-        (app) => app.resumeId === resumeId || app.applicantId === resume.applicantId
+        (app) => app.resumeId === resumeId || app.applicantId === resume.applicantId,
       );
       if (!hasAccess) {
-        throw new ForbiddenError("You are not authorized to access resumes for candidates not applied to your jobs.");
+        throw new ForbiddenError(
+          "You are not authorized to access resumes for candidates not applied to your jobs.",
+        );
       }
     } else {
       throw new ForbiddenError("You are not authorized to access this resume.");
@@ -146,7 +152,10 @@ export async function handleGetResumeById(req: Request, resumeId: string): Promi
  * Handle GET /api/resumes/:id/download or /api/resumes/:id/url (Secure Presigned Download URL)
  * - Returns a time-limited (15 minutes) presigned S3 URL
  */
-export async function handleGetResumeDownloadUrl(req: Request, resumeId: string): Promise<Response> {
+export async function handleGetResumeDownloadUrl(
+  req: Request,
+  resumeId: string,
+): Promise<Response> {
   const user = await authenticate(req);
 
   const resume = await resumeRepository.findById(resumeId);
@@ -162,10 +171,12 @@ export async function handleGetResumeDownloadUrl(req: Request, resumeId: string)
     if (isRecruiter) {
       const recruiterApps = await applicationRepository.findAll({ recruiterId: user.id });
       const hasAccess = recruiterApps.applications.some(
-        (app) => app.resumeId === resumeId || app.applicantId === resume.applicantId
+        (app) => app.resumeId === resumeId || app.applicantId === resume.applicantId,
       );
       if (!hasAccess) {
-        throw new ForbiddenError("You are not authorized to download resumes for candidates not applied to your jobs.");
+        throw new ForbiddenError(
+          "You are not authorized to download resumes for candidates not applied to your jobs.",
+        );
       }
     } else {
       throw new ForbiddenError("You are not authorized to download this resume.");
@@ -214,17 +225,25 @@ export async function handleDeleteResume(req: Request, resumeId: string): Promis
 }
 
 import { resumeParserService } from "../services/resume-parser-service.ts";
+import { jobQueueService } from "../workers/job-queue.ts";
+import { resumeBackgroundWorker } from "../workers/resume-worker.ts";
 
 /**
  * Handle POST /api/resumes/:id/parse (AI Structured Resume Parsing)
  * - Applicant: own resume
  * - Recruiter: applicant applied to recruiter's job
  * - Admin: all resumes
+ * - Supports ?async=true or header "Prefer: respond-async" for durable background execution
  */
 export async function handleParseResume(req: Request, resumeId: string): Promise<Response> {
   const user = await authenticate(req);
 
-  if (!isValidObjectId(resumeId) && !resumeId.startsWith("res-") && !resumeId.startsWith("resume-") && !resumeId.startsWith("65f")) {
+  if (
+    !isValidObjectId(resumeId) &&
+    !resumeId.startsWith("res-") &&
+    !resumeId.startsWith("resume-") &&
+    !resumeId.startsWith("65f")
+  ) {
     throw new BadRequestError(`Invalid resume ID format: ${resumeId}`);
   }
 
@@ -244,11 +263,43 @@ export async function handleParseResume(req: Request, resumeId: string): Promise
         (app) => app.resumeId === resumeId || app.applicantId === resume.applicantId,
       );
       if (!hasAccess) {
-        throw new ForbiddenError("You are not authorized to parse resumes for candidates not applied to your jobs.");
+        throw new ForbiddenError(
+          "You are not authorized to parse resumes for candidates not applied to your jobs.",
+        );
       }
     } else {
       throw new ForbiddenError("You are not authorized to parse this resume.");
     }
+  }
+
+  const url = new URL(req.url);
+  const isAsyncRequested =
+    url.searchParams.get("async") === "true" ||
+    req.headers.get("prefer")?.includes("respond-async");
+
+  if (isAsyncRequested) {
+    // Enqueue durable background job
+    const job = await jobQueueService.enqueue({
+      type: "RESUME_PARSE",
+      payload: { resumeId, applicantId: resume.applicantId },
+      createdById: user.id,
+    });
+
+    // Proactively kick background worker loop in non-blocking way
+    resumeBackgroundWorker.processNextAvailableJob().catch(() => {});
+
+    return successResponse(
+      {
+        resumeId: resume.id,
+        jobId: job.jobId,
+        status: job.status,
+        parsingStatus: "PROCESSING",
+        retryCount: job.retryCount,
+        message: "Resume parsing queued for durable background processing.",
+      },
+      "Resume parsing job scheduled successfully.",
+      202,
+    );
   }
 
   const parsedResume = await resumeParserService.parseResume(resumeId);
@@ -269,6 +320,87 @@ export async function handleParseResume(req: Request, resumeId: string): Promise
 }
 
 /**
+ * Handle GET /api/resumes/:id/status (Inspect Resume Analysis & Background Job Status)
+ */
+export async function handleGetResumeStatus(req: Request, resumeId: string): Promise<Response> {
+  const user = await authenticate(req);
+
+  const resume = await resumeRepository.findById(resumeId);
+  if (!resume) {
+    throw new NotFoundError(`Resume with ID ${resumeId} not found.`);
+  }
+
+  const isOwner = resume.applicantId === user.id;
+  const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+  const isRecruiter = user.role === "RECRUITER" || user.role === "HIRING_MANAGER";
+
+  if (!isOwner && !isAdmin && !isRecruiter) {
+    throw new ForbiddenError("You are not authorized to view this resume status.");
+  }
+
+  const bgJob = await jobQueueService.getJobByResumeId(resumeId);
+
+  return successResponse(
+    {
+      resumeId: resume.id,
+      parsingStatus: resume.parsingStatus,
+      parsedAt: resume.parsedAt,
+      parsingError: resume.parsingError,
+      atsScore: resume.atsScore,
+      job: bgJob || null,
+    },
+    "Resume status retrieved successfully.",
+  );
+}
+
+/**
+ * Handle POST /api/resumes/:id/retry (Retry Failed Background Processing)
+ */
+export async function handleRetryResume(req: Request, resumeId: string): Promise<Response> {
+  const user = await authenticate(req);
+
+  const resume = await resumeRepository.findById(resumeId);
+  if (!resume) {
+    throw new NotFoundError(`Resume with ID ${resumeId} not found.`);
+  }
+
+  const isOwner = resume.applicantId === user.id;
+  const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+  const isRecruiter = user.role === "RECRUITER" || user.role === "HIRING_MANAGER";
+
+  if (!isOwner && !isAdmin && !isRecruiter) {
+    throw new ForbiddenError("You are not authorized to retry this resume analysis.");
+  }
+
+  // Reset parsing status in repository
+  await resumeRepository.update(resumeId, {
+    parsingStatus: "NOT_STARTED",
+    parsingError: null,
+  });
+
+  // Re-enqueue background job
+  const job = await jobQueueService.enqueue({
+    type: "RESUME_PARSE",
+    payload: { resumeId, applicantId: resume.applicantId },
+    createdById: user.id,
+    priority: 1, // Higher priority for retries
+  });
+
+  resumeBackgroundWorker.processNextAvailableJob().catch(() => {});
+
+  return successResponse(
+    {
+      resumeId: resume.id,
+      jobId: job.jobId,
+      status: job.status,
+      parsingStatus: "PROCESSING",
+    },
+    "Resume re-processing job scheduled.",
+    202,
+  );
+}
+
+/**
  * Universal dispatcher for /api/resumes/* routes
  */
 export async function handleResumeApiRequest(req: Request): Promise<Response | null> {
@@ -281,7 +413,10 @@ export async function handleResumeApiRequest(req: Request): Promise<Response | n
 
   try {
     // 1. POST /api/resumes (or /api/resumes/upload)
-    if ((pathname === "/api/resumes" || pathname === "/api/resumes/upload") && req.method === "POST") {
+    if (
+      (pathname === "/api/resumes" || pathname === "/api/resumes/upload") &&
+      req.method === "POST"
+    ) {
       return await handleUploadResume(req);
     }
 
@@ -291,13 +426,25 @@ export async function handleResumeApiRequest(req: Request): Promise<Response | n
       return await handleParseResume(req, parseMatch[1]);
     }
 
-    // 3. GET /api/resumes/:id/download or /api/resumes/:id/url
+    // 3. GET /api/resumes/:id/status
+    const statusMatch = pathname.match(/^\/api\/resumes\/([a-zA-Z0-9_-]+)\/status$/);
+    if (statusMatch && statusMatch[1] && req.method === "GET") {
+      return await handleGetResumeStatus(req, statusMatch[1]);
+    }
+
+    // 4. POST /api/resumes/:id/retry
+    const retryMatch = pathname.match(/^\/api\/resumes\/([a-zA-Z0-9_-]+)\/retry$/);
+    if (retryMatch && retryMatch[1] && req.method === "POST") {
+      return await handleRetryResume(req, retryMatch[1]);
+    }
+
+    // 5. GET /api/resumes/:id/download or /api/resumes/:id/url
     const downloadMatch = pathname.match(/^\/api\/resumes\/([a-zA-Z0-9_-]+)\/(download|url)$/);
     if (downloadMatch && downloadMatch[1] && req.method === "GET") {
       return await handleGetResumeDownloadUrl(req, downloadMatch[1]);
     }
 
-    // 4. Match /api/resumes/:id
+    // 6. Match /api/resumes/:id
     const match = pathname.match(/^\/api\/resumes\/([a-zA-Z0-9_-]+)$/);
     if (match && match[1]) {
       const resumeId = match[1];
@@ -314,4 +461,3 @@ export async function handleResumeApiRequest(req: Request): Promise<Response | n
     return errorResponse(err);
   }
 }
-

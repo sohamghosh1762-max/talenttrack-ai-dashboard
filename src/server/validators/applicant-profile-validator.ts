@@ -58,4 +58,3 @@ export function validateUpdateApplicantProfile(raw: unknown): UpdateApplicantPro
 export function parseApplicantProfileInput(raw: unknown) {
   return updateApplicantProfileSchema.safeParse(raw);
 }
-

@@ -388,9 +388,7 @@ function ApplicantMessagesPage() {
                         <div className="flex items-center justify-between gap-2">
                           <p
                             className={`text-[11px] truncate leading-tight ${
-                              hasUnread
-                                ? "text-foreground font-medium"
-                                : "text-muted-foreground"
+                              hasUnread ? "text-foreground font-medium" : "text-muted-foreground"
                             }`}
                           >
                             {conv.lastMessageText || "Started a new conversation"}
@@ -447,7 +445,10 @@ function ApplicantMessagesPage() {
                         <strong className="text-xs font-semibold text-foreground truncate">
                           {activeConversation.participant?.name || "Recruiter"}
                         </strong>
-                        <Badge variant="outline" className="text-[10px] h-4.5 px-1.5 py-0 font-medium">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] h-4.5 px-1.5 py-0 font-medium"
+                        >
                           {activeConversation.participant?.role || "Recruiter"}
                         </Badge>
                       </div>
@@ -472,8 +473,16 @@ function ApplicantMessagesPage() {
                   </div>
 
                   {activeConversation.job?.id && (
-                    <Button asChild variant="outline" size="sm" className="hidden sm:flex h-7 px-2.5 text-[11px] gap-1">
-                      <Link to="/applicant/jobs/$jobId" params={{ jobId: activeConversation.job.id }}>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="hidden sm:flex h-7 px-2.5 text-[11px] gap-1"
+                    >
+                      <Link
+                        to="/applicant/jobs/$jobId"
+                        params={{ jobId: activeConversation.job.id }}
+                      >
                         Job Details
                       </Link>
                     </Button>
@@ -514,7 +523,8 @@ function ApplicantMessagesPage() {
                       <MessageSquare className="size-8 text-muted-foreground/60" />
                       <p className="text-xs font-medium text-foreground">No messages yet</p>
                       <p className="text-[11px] max-w-[260px] leading-relaxed">
-                        Send a message below to connect with {activeConversation.participant?.name || "the hiring team"}.
+                        Send a message below to connect with{" "}
+                        {activeConversation.participant?.name || "the hiring team"}.
                       </p>
                     </div>
                   ) : (
@@ -523,12 +533,14 @@ function ApplicantMessagesPage() {
                       return (
                         <div
                           key={m.id}
-                          className={`flex flex-col ${
-                            isMe ? "items-end" : "items-start"
-                          }`}
+                          className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                         >
                           <span className="text-[10px] text-muted-foreground mb-1 px-1.5 font-medium">
-                            {isMe ? "You" : m.sender?.name || activeConversation.participant?.name || "Recruiter"}
+                            {isMe
+                              ? "You"
+                              : m.sender?.name ||
+                                activeConversation.participant?.name ||
+                                "Recruiter"}
                           </span>
 
                           <div
@@ -603,7 +615,8 @@ function ApplicantMessagesPage() {
                 </div>
                 <h3 className="text-sm font-bold text-foreground">Select a conversation</h3>
                 <p className="text-xs text-muted-foreground mt-1 max-w-[280px] leading-relaxed">
-                  Choose a conversation from the left sidebar to view message history and send replies.
+                  Choose a conversation from the left sidebar to view message history and send
+                  replies.
                 </p>
               </div>
             )}

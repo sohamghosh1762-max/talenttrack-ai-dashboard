@@ -80,11 +80,14 @@ function AtsScoreBadge({ score }: { score: number | null | undefined }) {
     );
   }
 
-  let colorCls = "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800";
+  let colorCls =
+    "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800";
   if (score < 60) {
-    colorCls = "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800";
+    colorCls =
+      "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800";
   } else if (score < 80) {
-    colorCls = "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
+    colorCls =
+      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
   }
 
   return (
@@ -225,12 +228,7 @@ export function AdminApplicantsTable({
           No candidate applicant records matched the specified search and filter criteria.
         </p>
         {onClearFilters && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClearFilters}
-            className="text-xs mt-2"
-          >
+          <Button variant="outline" size="sm" onClick={onClearFilters} className="text-xs mt-2">
             Clear Filters & View All
           </Button>
         )}
@@ -412,9 +410,11 @@ export function AdminApplicantsTable({
       {/* Pagination Controls Footer */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200/80 bg-slate-50/50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/50 text-xs text-slate-500 dark:text-slate-400">
         <div>
-          Showing <span className="font-semibold text-slate-900 dark:text-slate-100">{startRange}</span> to{" "}
+          Showing{" "}
+          <span className="font-semibold text-slate-900 dark:text-slate-100">{startRange}</span> to{" "}
           <span className="font-semibold text-slate-900 dark:text-slate-100">{endRange}</span> of{" "}
-          <span className="font-semibold text-slate-900 dark:text-slate-100">{total}</span> applicants
+          <span className="font-semibold text-slate-900 dark:text-slate-100">{total}</span>{" "}
+          applicants
         </div>
 
         {totalPages > 1 && (

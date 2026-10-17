@@ -125,7 +125,6 @@ describe("AI RESUME PARSING & STRUCTURED EXTRACTION SUITE", () => {
       recruiterId: recruiterUser.id,
     });
 
-
     // Sample resume text stored as buffer in mock S3
     const sampleResumeText = `Aarav Mehta
 aarav.mehta@example.com | (555) 019-2831 | San Francisco, CA
@@ -187,7 +186,10 @@ ACHIEVEMENTS
 
     const s3Result2 = await s3Service.uploadFile({
       applicantId: applicant2User.id,
-      fileBuffer: Buffer.from("Unrelated applicant resume buffer with minimal content text here.", "utf-8"),
+      fileBuffer: Buffer.from(
+        "Unrelated applicant resume buffer with minimal content text here.",
+        "utf-8",
+      ),
       originalFileName: "John_Resume.docx",
       mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       fileSize: 100,
@@ -211,7 +213,6 @@ ACHIEVEMENTS
       resumeId: testResume1.id,
     });
 
-
     // Mock Gemini generateStructured client
     (geminiService as any).client = {
       models: {
@@ -226,8 +227,19 @@ ACHIEVEMENTS
               github: "https://github.com/aaravmehta",
               portfolio: "",
             },
-            summary: "Senior Software Engineer with 5+ years of experience specializing in React, TypeScript, Node.js, and distributed backend systems.",
-            skills: ["React", "TypeScript", "Node.js", "Express", "MongoDB", "PostgreSQL", "Docker", "AWS", "Tailwind CSS"],
+            summary:
+              "Senior Software Engineer with 5+ years of experience specializing in React, TypeScript, Node.js, and distributed backend systems.",
+            skills: [
+              "React",
+              "TypeScript",
+              "Node.js",
+              "Express",
+              "MongoDB",
+              "PostgreSQL",
+              "Docker",
+              "AWS",
+              "Tailwind CSS",
+            ],
             education: [
               {
                 degree: "B.S. in Computer Science",
@@ -267,7 +279,8 @@ ACHIEVEMENTS
             projects: [
               {
                 name: "OpenSource ATS",
-                description: "Automated candidate ranking system built with TypeScript and MongoDB.",
+                description:
+                  "Automated candidate ranking system built with TypeScript and MongoDB.",
                 technologies: ["TypeScript", "MongoDB"],
                 url: "https://github.com/aaravmehta/ats",
               },
@@ -289,7 +302,8 @@ ACHIEVEMENTS
 
   describe("1. Text Extraction & Normalization", () => {
     it("normalizes excessive whitespace while preserving structure", () => {
-      const dirty = "  Aarav   Mehta  \r\n\r\n\r\n\r\n  Software   Engineer  \n\n\nSkills:   React,   TypeScript  ";
+      const dirty =
+        "  Aarav   Mehta  \r\n\r\n\r\n\r\n  Software   Engineer  \n\n\nSkills:   React,   TypeScript  ";
       const normalized = resumeTextExtractor.normalizeText(dirty);
 
       assert.equal(normalized.isTruncated, false);
@@ -315,7 +329,10 @@ ACHIEVEMENTS
           await resumeTextExtractor.extractText(Buffer.from("   \n\n  "), "application/pdf");
         },
         (err: any) => {
-          return err instanceof BadRequestError && err.message.includes("Unable to extract readable text");
+          return (
+            err instanceof BadRequestError &&
+            err.message.includes("Unable to extract readable text")
+          );
         },
       );
     });
@@ -493,10 +510,13 @@ ACHIEVEMENTS
     });
 
     it("returns 404 for non-existent resume ID", async () => {
-      const req = createJsonRequest(`http://localhost:3000/api/resumes/65f1a2b3c4d5e6f7a8b9c999/parse`, {
-        method: "POST",
-        token: adminToken,
-      });
+      const req = createJsonRequest(
+        `http://localhost:3000/api/resumes/65f1a2b3c4d5e6f7a8b9c999/parse`,
+        {
+          method: "POST",
+          token: adminToken,
+        },
+      );
 
       const res = await handleApiRequest(req);
       assert.ok(res);

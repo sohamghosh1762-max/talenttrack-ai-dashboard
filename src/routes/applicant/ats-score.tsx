@@ -179,7 +179,11 @@ export function ApplicantAtsScorePage() {
       } else if (rawMsg.includes("validation") || rawMsg.includes("schema")) {
         console.error("[ATS-DEBUG] Error Stage: VALIDATION_FAILED", err);
         setCustomError("Resume analysis failed. You can try again.");
-      } else if (rawMsg.includes("gemini") || rawMsg.includes("AI") || rawMsg.includes("rate limit")) {
+      } else if (
+        rawMsg.includes("gemini") ||
+        rawMsg.includes("AI") ||
+        rawMsg.includes("rate limit")
+      ) {
         console.error("[ATS-DEBUG] Error Stage: GEMINI_FAILED", err);
         setCustomError("Resume analysis failed. You can try again.");
       } else {
@@ -322,9 +326,11 @@ export function ApplicantAtsScorePage() {
                 {uploadPhase === "analyzing" && "Generating ATS analysis..."}
               </h2>
               <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                {uploadPhase === "uploading" && "Securely transferring your resume file to storage..."}
+                {uploadPhase === "uploading" &&
+                  "Securely transferring your resume file to storage..."}
                 {uploadPhase === "parsing" && "Analyzing your resume... This may take a moment."}
-                {uploadPhase === "analyzing" && "Calculating deterministic scores, keyword coverage, and recommendations..."}
+                {uploadPhase === "analyzing" &&
+                  "Calculating deterministic scores, keyword coverage, and recommendations..."}
               </p>
             </div>
 
@@ -332,7 +338,9 @@ export function ApplicantAtsScorePage() {
             <div className="flex items-center justify-center gap-2 pt-2 max-w-xs mx-auto">
               <div
                 className={`h-1.5 flex-1 rounded-full ${
-                  uploadPhase === "uploading" || uploadPhase === "parsing" || uploadPhase === "analyzing"
+                  uploadPhase === "uploading" ||
+                  uploadPhase === "parsing" ||
+                  uploadPhase === "analyzing"
                     ? "bg-brand-blue animate-pulse"
                     : "bg-muted"
                 }`}
@@ -358,7 +366,10 @@ export function ApplicantAtsScorePage() {
           <div className="dashboard-card p-8 text-center space-y-3 border-destructive/20 bg-destructive/5">
             <AlertCircle className="size-8 text-destructive mx-auto" />
             <h2 className="text-sm font-bold text-foreground">
-              {customError || (error instanceof Error ? error.message : "Unable to analyze your resume right now.")}
+              {customError ||
+                (error instanceof Error
+                  ? error.message
+                  : "Unable to analyze your resume right now.")}
             </h2>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
               Please check your file and network connection, then try again.
@@ -549,8 +560,8 @@ export function ApplicantAtsScorePage() {
               <div className="space-y-1">
                 <h2 className="text-base font-bold text-foreground">Resume Analysis Pending</h2>
                 <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                  Your resume has been uploaded but is still being processed. The ATS score will become
-                  available after resume parsing is complete.
+                  Your resume has been uploaded but is still being processed. The ATS score will
+                  become available after resume parsing is complete.
                 </p>
               </div>
               <Button
@@ -758,7 +769,9 @@ export function ApplicantAtsScorePage() {
                           <div className="flex items-baseline justify-between pt-1">
                             <span className="text-2xl font-extrabold text-foreground">
                               {cat.score}
-                              <span className="text-xs font-normal text-muted-foreground">/100</span>
+                              <span className="text-xs font-normal text-muted-foreground">
+                                /100
+                              </span>
                             </span>
                             <span
                               className={`text-[10.5px] font-bold ${
@@ -817,7 +830,9 @@ export function ApplicantAtsScorePage() {
                     <CheckCircle2 className="size-4" />
                   </span>
                   <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-foreground">Resume Strengths</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-foreground">
+                      Resume Strengths
+                    </h3>
                     <p className="text-[10.5px] text-muted-foreground">
                       High-impact elements identified by ATS analysis
                     </p>
@@ -827,7 +842,10 @@ export function ApplicantAtsScorePage() {
                 <div className="space-y-2.5">
                   {analysis.strengths && analysis.strengths.length > 0 ? (
                     analysis.strengths.map((str, idx) => (
-                      <div key={idx} className="flex items-start gap-2.5 text-xs text-foreground/90">
+                      <div
+                        key={idx}
+                        className="flex items-start gap-2.5 text-xs text-foreground/90"
+                      >
                         <span className="grid size-4 shrink-0 place-items-center rounded-full bg-brand-green/15 text-brand-green mt-0.5">
                           <Check className="size-2.5 stroke-[3]" />
                         </span>
@@ -847,7 +865,9 @@ export function ApplicantAtsScorePage() {
                     <Lightbulb className="size-4" />
                   </span>
                   <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-foreground">Areas to Improve</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-foreground">
+                      Areas to Improve
+                    </h3>
                     <p className="text-[10.5px] text-muted-foreground">
                       Targeted recommendations to increase your ATS compatibility
                     </p>
@@ -857,7 +877,10 @@ export function ApplicantAtsScorePage() {
                 <div className="space-y-2.5">
                   {analysis.improvements && analysis.improvements.length > 0 ? (
                     analysis.improvements.map((imp, idx) => (
-                      <div key={idx} className="flex items-start gap-2.5 text-xs text-foreground/90">
+                      <div
+                        key={idx}
+                        className="flex items-start gap-2.5 text-xs text-foreground/90"
+                      >
                         <span className="grid size-4 shrink-0 place-items-center rounded-full bg-brand-orange/15 text-brand-orange font-bold text-[9.5px] mt-0.5">
                           {idx + 1}
                         </span>
@@ -865,7 +888,9 @@ export function ApplicantAtsScorePage() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-muted-foreground">No immediate improvements needed.</p>
+                    <p className="text-xs text-muted-foreground">
+                      No immediate improvements needed.
+                    </p>
                   )}
                 </div>
               </div>
@@ -880,7 +905,9 @@ export function ApplicantAtsScorePage() {
                     <Key className="size-4" />
                   </span>
                   <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-foreground">Keyword Analysis</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-foreground">
+                      Keyword Analysis
+                    </h3>
                     <p className="text-[10.5px] text-muted-foreground">
                       Key technical and domain keywords found in your resume
                     </p>
@@ -938,7 +965,9 @@ export function ApplicantAtsScorePage() {
                     <Sparkles className="size-4" />
                   </span>
                   <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-foreground">ATS Recommendations</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-foreground">
+                      ATS Recommendations
+                    </h3>
                     <p className="text-[10.5px] text-muted-foreground">
                       Actionable steps to maximize recruiter search matches
                     </p>

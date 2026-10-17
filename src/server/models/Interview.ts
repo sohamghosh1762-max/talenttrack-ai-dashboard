@@ -126,7 +126,11 @@ const InterviewSchema = new Schema<IInterviewDocument>(
       virtuals: true,
       transform: (_doc, ret: Record<string, any>) => {
         ret["id"] = ret["_id"] ? ret["_id"].toString() : ret["id"];
-        if (ret["applicationId"] && typeof ret["applicationId"] === "object" && "_id" in ret["applicationId"]) {
+        if (
+          ret["applicationId"] &&
+          typeof ret["applicationId"] === "object" &&
+          "_id" in ret["applicationId"]
+        ) {
           ret["applicationId"] = ret["applicationId"]._id.toString();
         } else if (ret["applicationId"]) {
           ret["applicationId"] = ret["applicationId"].toString();
@@ -136,17 +140,29 @@ const InterviewSchema = new Schema<IInterviewDocument>(
         } else if (ret["jobId"]) {
           ret["jobId"] = ret["jobId"].toString();
         }
-        if (ret["applicantId"] && typeof ret["applicantId"] === "object" && "_id" in ret["applicantId"]) {
+        if (
+          ret["applicantId"] &&
+          typeof ret["applicantId"] === "object" &&
+          "_id" in ret["applicantId"]
+        ) {
           ret["applicantId"] = ret["applicantId"]._id.toString();
         } else if (ret["applicantId"]) {
           ret["applicantId"] = ret["applicantId"].toString();
         }
-        if (ret["recruiterId"] && typeof ret["recruiterId"] === "object" && "_id" in ret["recruiterId"]) {
+        if (
+          ret["recruiterId"] &&
+          typeof ret["recruiterId"] === "object" &&
+          "_id" in ret["recruiterId"]
+        ) {
           ret["recruiterId"] = ret["recruiterId"]._id.toString();
         } else if (ret["recruiterId"]) {
           ret["recruiterId"] = ret["recruiterId"].toString();
         }
-        if (ret["hiringManagerId"] && typeof ret["hiringManagerId"] === "object" && "_id" in ret["hiringManagerId"]) {
+        if (
+          ret["hiringManagerId"] &&
+          typeof ret["hiringManagerId"] === "object" &&
+          "_id" in ret["hiringManagerId"]
+        ) {
           ret["hiringManagerId"] = ret["hiringManagerId"]._id.toString();
         } else if (ret["hiringManagerId"]) {
           ret["hiringManagerId"] = ret["hiringManagerId"].toString();
@@ -158,7 +174,9 @@ const InterviewSchema = new Schema<IInterviewDocument>(
         }
         if (Array.isArray(ret["interviewerIds"])) {
           ret["interviewerIds"] = ret["interviewerIds"].map((item: any) =>
-            typeof item === "object" && item && "_id" in item ? item._id.toString() : item.toString(),
+            typeof item === "object" && item && "_id" in item
+              ? item._id.toString()
+              : item.toString(),
           );
         }
         if (ret["scheduledAt"] instanceof Date) {
@@ -173,7 +191,11 @@ const InterviewSchema = new Schema<IInterviewDocument>(
       virtuals: true,
       transform: (_doc, ret: Record<string, any>) => {
         ret["id"] = ret["_id"] ? ret["_id"].toString() : ret["id"];
-        if (ret["applicationId"] && typeof ret["applicationId"] === "object" && "_id" in ret["applicationId"]) {
+        if (
+          ret["applicationId"] &&
+          typeof ret["applicationId"] === "object" &&
+          "_id" in ret["applicationId"]
+        ) {
           ret["applicationId"] = ret["applicationId"]._id.toString();
         } else if (ret["applicationId"]) {
           ret["applicationId"] = ret["applicationId"].toString();
@@ -183,17 +205,29 @@ const InterviewSchema = new Schema<IInterviewDocument>(
         } else if (ret["jobId"]) {
           ret["jobId"] = ret["jobId"].toString();
         }
-        if (ret["applicantId"] && typeof ret["applicantId"] === "object" && "_id" in ret["applicantId"]) {
+        if (
+          ret["applicantId"] &&
+          typeof ret["applicantId"] === "object" &&
+          "_id" in ret["applicantId"]
+        ) {
           ret["applicantId"] = ret["applicantId"]._id.toString();
         } else if (ret["applicantId"]) {
           ret["applicantId"] = ret["applicantId"].toString();
         }
-        if (ret["recruiterId"] && typeof ret["recruiterId"] === "object" && "_id" in ret["recruiterId"]) {
+        if (
+          ret["recruiterId"] &&
+          typeof ret["recruiterId"] === "object" &&
+          "_id" in ret["recruiterId"]
+        ) {
           ret["recruiterId"] = ret["recruiterId"]._id.toString();
         } else if (ret["recruiterId"]) {
           ret["recruiterId"] = ret["recruiterId"].toString();
         }
-        if (ret["hiringManagerId"] && typeof ret["hiringManagerId"] === "object" && "_id" in ret["hiringManagerId"]) {
+        if (
+          ret["hiringManagerId"] &&
+          typeof ret["hiringManagerId"] === "object" &&
+          "_id" in ret["hiringManagerId"]
+        ) {
           ret["hiringManagerId"] = ret["hiringManagerId"]._id.toString();
         } else if (ret["hiringManagerId"]) {
           ret["hiringManagerId"] = ret["hiringManagerId"].toString();
@@ -205,7 +239,9 @@ const InterviewSchema = new Schema<IInterviewDocument>(
         }
         if (Array.isArray(ret["interviewerIds"])) {
           ret["interviewerIds"] = ret["interviewerIds"].map((item: any) =>
-            typeof item === "object" && item && "_id" in item ? item._id.toString() : item.toString(),
+            typeof item === "object" && item && "_id" in item
+              ? item._id.toString()
+              : item.toString(),
           );
         }
         if (ret["scheduledAt"] instanceof Date) {
@@ -219,6 +255,7 @@ const InterviewSchema = new Schema<IInterviewDocument>(
   },
 );
 
+InterviewSchema.index({ applicationId: 1, scheduledAt: 1 });
 InterviewSchema.index({ applicantId: 1, scheduledAt: -1 });
 InterviewSchema.index({ recruiterId: 1, scheduledAt: -1 });
 InterviewSchema.index({ hiringManagerId: 1, scheduledAt: -1 });

@@ -1,13 +1,7 @@
 "use client";
 
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Building2,
-  CheckCircle2,
-  Mail,
-  ShieldCheck,
-  User,
-} from "lucide-react";
+import { Building2, CheckCircle2, Mail, ShieldCheck, User } from "lucide-react";
 import { HiringManagerLayout } from "@/components/hiring-manager/HiringManagerLayout";
 import { useAuth } from "@/auth/AuthProvider";
 
@@ -43,7 +37,9 @@ function HiringManagerProfilePage() {
               {user?.name ? user.name.charAt(0).toUpperCase() : "M"}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">{user?.name || "Hiring Manager"}</h2>
+              <h2 className="text-lg font-bold text-foreground">
+                {user?.name || "Hiring Manager"}
+              </h2>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                 <span>{user?.email}</span>
                 <span>•</span>
@@ -60,7 +56,9 @@ function HiringManagerProfilePage() {
                 Department / Team
               </span>
               <p className="text-sm font-bold text-foreground">
-                {user?.recruiterProfile?.department || user?.recruiterProfile?.companyName || "Engineering"}
+                {user?.recruiterProfile?.department ||
+                  user?.recruiterProfile?.companyName ||
+                  "Engineering"}
               </p>
             </div>
 

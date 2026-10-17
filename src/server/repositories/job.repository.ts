@@ -13,7 +13,8 @@ const DEFAULT_SEED_JOBS: IJob[] = [
   {
     id: "65f1a2b3c4d5e6f7a8b9c101",
     title: "Senior Frontend Developer",
-    description: "Build high-performance web applications using React, TypeScript, and modern CSS architecture.",
+    description:
+      "Build high-performance web applications using React, TypeScript, and modern CSS architecture.",
     department: "Engineering",
     location: "San Francisco, CA (Hybrid)",
     employmentType: "Full-Time",
@@ -34,7 +35,8 @@ const DEFAULT_SEED_JOBS: IJob[] = [
   {
     id: "65f1a2b3c4d5e6f7a8b9c102",
     title: "Lead Backend Developer",
-    description: "Design scalable REST & GraphQL APIs, microservices, and high-throughput data processing systems.",
+    description:
+      "Design scalable REST & GraphQL APIs, microservices, and high-throughput data processing systems.",
     department: "Engineering",
     location: "Austin, TX (Remote)",
     employmentType: "Full-Time",
@@ -55,7 +57,8 @@ const DEFAULT_SEED_JOBS: IJob[] = [
   {
     id: "65f1a2b3c4d5e6f7a8b9c103",
     title: "AI/ML Systems Engineer",
-    description: "Implement transformer models, embeddings pipelines, and semantic search algorithms.",
+    description:
+      "Implement transformer models, embeddings pipelines, and semantic search algorithms.",
     department: "Research",
     location: "New York, NY (Hybrid)",
     employmentType: "Full-Time",
@@ -162,7 +165,8 @@ class JobRepository {
       ]);
 
       const jobs: IJob[] = docs.map((doc: any) => {
-        const companyName = doc.company || this.resolveRecruiterCompany(doc.recruiterId?.toString());
+        const companyName =
+          doc.company || this.resolveRecruiterCompany(doc.recruiterId?.toString());
         return {
           id: doc._id ? doc._id.toString() : doc.id,
           title: doc.title,
@@ -177,12 +181,18 @@ class JobRepository {
           company: companyName,
           companyName: companyName,
           hiringManagerId: doc.hiringManagerId?.toString() || undefined,
-          hiringManagerIds: doc.hiringManagerIds ? doc.hiringManagerIds.map((id: any) => id.toString()) : undefined,
+          hiringManagerIds: doc.hiringManagerIds
+            ? doc.hiringManagerIds.map((id: any) => id.toString())
+            : undefined,
           status: doc.status,
           applicationsCount: doc.applicationsCount || 0,
           deadline: doc.deadline || undefined,
-          createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
-          updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
+          createdAt: doc.createdAt
+            ? new Date(doc.createdAt).toISOString()
+            : new Date().toISOString(),
+          updatedAt: doc.updatedAt
+            ? new Date(doc.updatedAt).toISOString()
+            : new Date().toISOString(),
         };
       });
 
@@ -217,7 +227,11 @@ class JobRepository {
         return false;
       }
 
-      if (params.department && params.department !== "All" && job.department !== params.department) {
+      if (
+        params.department &&
+        params.department !== "All" &&
+        job.department !== params.department
+      ) {
         return false;
       }
 
@@ -291,7 +305,9 @@ class JobRepository {
         company,
         companyName: company,
         hiringManagerId: doc.hiringManagerId?.toString() || undefined,
-        hiringManagerIds: doc.hiringManagerIds ? doc.hiringManagerIds.map((id: any) => id.toString()) : undefined,
+        hiringManagerIds: doc.hiringManagerIds
+          ? doc.hiringManagerIds.map((id: any) => id.toString())
+          : undefined,
         status: doc.status,
         applicationsCount: doc.applicationsCount || 0,
         deadline: doc.deadline || undefined,
@@ -313,7 +329,8 @@ class JobRepository {
   public async create(input: CreateJobInput): Promise<IJob> {
     const now = new Date().toISOString();
     const id = generateObjectId();
-    const company = input.company || input.companyName || this.resolveRecruiterCompany(input.recruiterId);
+    const company =
+      input.company || input.companyName || this.resolveRecruiterCompany(input.recruiterId);
 
     const jobData: IJob = {
       id,
@@ -376,12 +393,13 @@ class JobRepository {
             updatedAt: new Date(),
           },
         },
-        { new: true },
+        { new: true, runValidators: true },
       ).lean<any>();
 
       if (!updatedDoc) return null;
 
-      const company = updatedDoc.company || this.resolveRecruiterCompany(updatedDoc.recruiterId?.toString());
+      const company =
+        updatedDoc.company || this.resolveRecruiterCompany(updatedDoc.recruiterId?.toString());
       const job: IJob = {
         id: updatedDoc._id ? updatedDoc._id.toString() : id,
         title: updatedDoc.title,
@@ -396,7 +414,9 @@ class JobRepository {
         company,
         companyName: company,
         hiringManagerId: updatedDoc.hiringManagerId?.toString() || undefined,
-        hiringManagerIds: updatedDoc.hiringManagerIds ? updatedDoc.hiringManagerIds.map((id: any) => id.toString()) : undefined,
+        hiringManagerIds: updatedDoc.hiringManagerIds
+          ? updatedDoc.hiringManagerIds.map((id: any) => id.toString())
+          : undefined,
         status: updatedDoc.status,
         applicationsCount: updatedDoc.applicationsCount || 0,
         deadline: updatedDoc.deadline || undefined,

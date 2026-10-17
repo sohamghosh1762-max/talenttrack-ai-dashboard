@@ -56,14 +56,7 @@ const ApplicationSchema = new Schema<IApplicationDocument>(
     },
     currentStage: {
       type: String,
-      enum: [
-        "APPLIED",
-        "SCREENING",
-        "INTERVIEW",
-        "OFFERED",
-        "REJECTED",
-        "WITHDRAWN",
-      ],
+      enum: ["APPLIED", "SCREENING", "INTERVIEW", "OFFERED", "REJECTED", "WITHDRAWN"],
       default: "APPLIED",
       index: true,
     },
@@ -74,6 +67,18 @@ const ApplicationSchema = new Schema<IApplicationDocument>(
     },
     notes: {
       type: String,
+    },
+    notesList: {
+      type: Schema.Types.Mixed,
+      default: [],
+    },
+    stageHistory: {
+      type: Schema.Types.Mixed,
+      default: [],
+    },
+    recruiterFeedback: {
+      type: Schema.Types.Mixed,
+      default: [],
     },
     hiringManagerFeedback: {
       type: Schema.Types.Mixed,
@@ -101,14 +106,22 @@ const ApplicationSchema = new Schema<IApplicationDocument>(
         } else if (ret["jobId"]) {
           ret["jobId"] = ret["jobId"].toString();
         }
-        if (ret["applicantId"] && typeof ret["applicantId"] === "object" && "_id" in ret["applicantId"]) {
+        if (
+          ret["applicantId"] &&
+          typeof ret["applicantId"] === "object" &&
+          "_id" in ret["applicantId"]
+        ) {
           ret["applicantName"] = ret["applicantId"].name;
           ret["applicantEmail"] = ret["applicantId"].email;
           ret["applicantId"] = ret["applicantId"]._id.toString();
         } else if (ret["applicantId"]) {
           ret["applicantId"] = ret["applicantId"].toString();
         }
-        if (ret["recruiterId"] && typeof ret["recruiterId"] === "object" && "_id" in ret["recruiterId"]) {
+        if (
+          ret["recruiterId"] &&
+          typeof ret["recruiterId"] === "object" &&
+          "_id" in ret["recruiterId"]
+        ) {
           ret["recruiterId"] = ret["recruiterId"]._id.toString();
         } else if (ret["recruiterId"]) {
           ret["recruiterId"] = ret["recruiterId"].toString();
@@ -134,6 +147,8 @@ const ApplicationSchema = new Schema<IApplicationDocument>(
 ApplicationSchema.index({ jobId: 1, applicantId: 1 }, { unique: true });
 ApplicationSchema.index({ recruiterId: 1, status: 1 });
 ApplicationSchema.index({ currentStage: 1, appliedAt: -1 });
+ApplicationSchema.index({ applicantId: 1, appliedAt: -1 });
+ApplicationSchema.index({ jobId: 1, currentStage: 1 });
 
 export const Application: Model<IApplicationDocument> =
   (mongoose.models["Application"] as Model<IApplicationDocument>) ||

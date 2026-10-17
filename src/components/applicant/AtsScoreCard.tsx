@@ -1,7 +1,16 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
-import { AlertCircle, ArrowRight, CheckCircle2, FileText, Loader2, RefreshCw, Sparkles, Upload } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  Upload,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAtsScore } from "@/hooks/api/useAtsScore";
@@ -38,7 +47,8 @@ export function AtsScoreCard() {
 
   // 2. Error State
   if (isError) {
-    const errorMsg = error instanceof Error ? error.message : "Unable to analyze your resume right now.";
+    const errorMsg =
+      error instanceof Error ? error.message : "Unable to analyze your resume right now.";
     return (
       <div className="dashboard-card p-4 sm:p-5 flex flex-col justify-between border-destructive/20 bg-destructive/5">
         <div className="flex items-center gap-2 pb-3 border-b border-destructive/15">
@@ -47,7 +57,9 @@ export function AtsScoreCard() {
         </div>
 
         <div className="py-4 text-center space-y-2">
-          <p className="text-xs font-semibold text-foreground">Unable to analyze your resume right now.</p>
+          <p className="text-xs font-semibold text-foreground">
+            Unable to analyze your resume right now.
+          </p>
           <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">{errorMsg}</p>
         </div>
 
@@ -88,7 +100,8 @@ export function AtsScoreCard() {
           </div>
           <h3 className="text-xs font-bold text-foreground">No ATS Score Yet</h3>
           <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
-            Your resume has not been uploaded yet. Upload a resume when applying for jobs to generate your ATS analysis.
+            Your resume has not been uploaded yet. Upload a resume when applying for jobs to
+            generate your ATS analysis.
           </p>
         </div>
 
@@ -137,9 +150,7 @@ export function AtsScoreCard() {
           size="sm"
           className="h-8 text-xs font-semibold w-full cursor-pointer"
         >
-          <Link to="/applicant/ats-score">
-            View ATS Score
-          </Link>
+          <Link to="/applicant/ats-score">View ATS Score</Link>
         </Button>
       </div>
     );
@@ -186,23 +197,25 @@ export function AtsScoreCard() {
             </span>
             <h2 className="text-xs font-bold text-foreground">ATS Resume Score</h2>
           </div>
-          <span className={`rounded px-2 py-0.5 text-[10px] font-bold border ${badgeStyle.badgeBg}`}>
+          <span
+            className={`rounded px-2 py-0.5 text-[10px] font-bold border ${badgeStyle.badgeBg}`}
+          >
             {compatibilityLabel}
           </span>
         </div>
 
         <div className="py-4 text-center space-y-1">
           <div className="flex items-baseline justify-center gap-1.5">
-            <span className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${badgeStyle.scoreColor}`}>
+            <span
+              className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${badgeStyle.scoreColor}`}
+            >
               {score}
             </span>
             <span className="text-sm font-semibold text-muted-foreground">/ 100</span>
           </div>
 
           <p className="text-xs font-bold text-foreground pt-1">{compatibilityLabel}</p>
-          <p className="text-[11px] text-muted-foreground">
-            Based on your resume and profile
-          </p>
+          <p className="text-[11px] text-muted-foreground">Based on your resume and profile</p>
         </div>
 
         {/* Quick highlight bar */}
@@ -210,7 +223,13 @@ export function AtsScoreCard() {
           <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
             <div
               className={`h-full transition-all duration-500 rounded-full ${
-                score >= 85 ? "bg-brand-green" : score >= 70 ? "bg-brand-blue" : score >= 55 ? "bg-brand-orange" : "bg-destructive"
+                score >= 85
+                  ? "bg-brand-green"
+                  : score >= 70
+                    ? "bg-brand-blue"
+                    : score >= 55
+                      ? "bg-brand-orange"
+                      : "bg-destructive"
               }`}
               style={{ width: `${Math.min(100, Math.max(5, score))}%` }}
             />

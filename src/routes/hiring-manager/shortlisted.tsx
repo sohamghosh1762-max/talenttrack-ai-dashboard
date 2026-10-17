@@ -26,7 +26,10 @@ export const Route = createFileRoute("/hiring-manager/shortlisted")({
   head: () => ({
     meta: [
       { title: "Shortlisted Candidates — Hiring Manager" },
-      { name: "description", content: "Review top shortlisted candidates for your open positions." },
+      {
+        name: "description",
+        content: "Review top shortlisted candidates for your open positions.",
+      },
     ],
   }),
   component: HiringManagerShortlistedPage,
@@ -117,7 +120,8 @@ function HiringManagerShortlistedPage() {
             </div>
             <h3 className="text-sm font-bold text-foreground">No shortlisted candidates yet</h3>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              When recruiters or AI screening advance applicants to the Shortlisted stage for your assigned roles, they will appear here.
+              When recruiters or AI screening advance applicants to the Shortlisted stage for your
+              assigned roles, they will appear here.
             </p>
           </div>
         ) : (
@@ -146,13 +150,15 @@ function HiringManagerShortlistedPage() {
                         SHORTLISTED
                       </span>
 
-                      {(cand.decision?.status === "APPROVED" || (cand.decision as any) === "APPROVED") && (
+                      {(cand.decision?.status === "APPROVED" ||
+                        (cand.decision as any) === "APPROVED") && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
                           <ThumbsUp className="size-3" /> Approved
                         </span>
                       )}
 
-                      {(cand.decision?.status === "REJECTED" || (cand.decision as any) === "REJECTED") && (
+                      {(cand.decision?.status === "REJECTED" ||
+                        (cand.decision as any) === "REJECTED") && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
                           <ThumbsDown className="size-3" /> Rejected
                         </span>
@@ -160,7 +166,8 @@ function HiringManagerShortlistedPage() {
                     </div>
 
                     <p className="text-xs text-muted-foreground font-medium">
-                      Applied for <strong className="text-foreground">{cand.jobTitle}</strong> • {cand.department}
+                      Applied for <strong className="text-foreground">{cand.jobTitle}</strong> •{" "}
+                      {cand.department}
                     </p>
 
                     {/* Key skills */}

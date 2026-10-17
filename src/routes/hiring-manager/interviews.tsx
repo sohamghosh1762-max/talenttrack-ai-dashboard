@@ -22,7 +22,10 @@ export const Route = createFileRoute("/hiring-manager/interviews")({
   head: () => ({
     meta: [
       { title: "Interviews — Hiring Manager" },
-      { name: "description", content: "Review scheduled candidate interviews and feedback for your assigned roles." },
+      {
+        name: "description",
+        content: "Review scheduled candidate interviews and feedback for your assigned roles.",
+      },
     ],
   }),
   component: HiringManagerInterviewsPage,
@@ -96,7 +99,8 @@ function HiringManagerInterviewsPage() {
             </div>
             <h3 className="text-sm font-bold text-foreground">No interviews currently scheduled</h3>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              When candidates for your assigned roles are invited to technical rounds or hiring manager syncs, they will appear here.
+              When candidates for your assigned roles are invited to technical rounds or hiring
+              manager syncs, they will appear here.
             </p>
           </div>
         ) : (
@@ -120,7 +124,8 @@ function HiringManagerInterviewsPage() {
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      {iv.interviewType} for <strong className="text-foreground">{iv.jobTitle}</strong> ({iv.department})
+                      {iv.interviewType} for{" "}
+                      <strong className="text-foreground">{iv.jobTitle}</strong> ({iv.department})
                     </p>
 
                     <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">

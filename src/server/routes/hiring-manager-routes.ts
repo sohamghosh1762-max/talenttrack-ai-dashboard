@@ -1,16 +1,14 @@
 import { authenticate } from "../middleware/auth-middleware.ts";
 import { jobRepository } from "../repositories/job.repository.ts";
 import { applicationRepository } from "../repositories/application.repository.ts";
+import { interviewRepository } from "../repositories/interview.repository.ts";
 import { resumeRepository } from "../repositories/resume.repository.ts";
 import { atsService } from "../services/ats-service.ts";
 import { successResponse, errorResponse } from "../utils/response.ts";
 import { ForbiddenError, NotFoundError, ValidationError } from "../utils/errors.ts";
 import { generateObjectId } from "../db/user-repository.ts";
 import { z } from "zod";
-import type {
-  HiringManagerFeedbackItem,
-  HiringDecision,
-} from "../types/application-types.ts";
+import type { HiringManagerFeedbackItem, HiringDecision } from "../types/application-types.ts";
 
 const feedbackSchema = z.object({
   overallFeedback: z.string().trim().min(3, "Overall feedback must be at least 3 characters."),
@@ -20,7 +18,14 @@ const feedbackSchema = z.object({
   roleFitRating: z.number().min(1).max(5).optional(),
   strengths: z.union([z.array(z.string()), z.string()]).optional(),
   concerns: z.union([z.array(z.string()), z.string()]).optional(),
-  recommendation: z.enum(["Recommend", "Maybe", "Do Not Recommend", "RECOMMEND", "MAYBE", "DO_NOT_RECOMMEND"]),
+  recommendation: z.enum([
+    "Recommend",
+    "Maybe",
+    "Do Not Recommend",
+    "RECOMMEND",
+    "MAYBE",
+    "DO_NOT_RECOMMEND",
+  ]),
 });
 
 const decisionSchema = z.object({
@@ -34,9 +39,7 @@ const decisionSchema = z.object({
 async function requireHiringManagerUser(req: Request) {
   const user = await authenticate(req);
   const isHiringManagerOrAdmin =
-    user.role === "HIRING_MANAGER" ||
-    user.role === "ADMIN" ||
-    user.role === "SUPER_ADMIN";
+    user.role === "HIRING_MANAGER" || user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 
   if (!isHiringManagerOrAdmin) {
     throw new ForbiddenError("Access restricted to Hiring Managers and Administrators.");
@@ -56,8 +59,7 @@ async function getAssignedJobIds(userId: string, userRole: string): Promise<stri
   // Fallback: If no jobs explicitly assigned, allow jobs in manager's department
   const assigned = allJobs.jobs.filter(
     (j) =>
-      j.hiringManagerId === userId ||
-      (j.hiringManagerIds && j.hiringManagerIds.includes(userId))
+      j.hiringManagerId === userId || (j.hiringManagerIds && j.hiringManagerIds.includes(userId)),
   );
 
   if (assigned.length > 0) {
@@ -81,21 +83,28 @@ export async function handleGetHiringManagerDashboard(req: Request): Promise<Res
   ]);
 
   const assignedJobs = jobsRes.jobs.filter((j) => assignedJobIds.includes(j.id));
-  const openPositions = assignedJobs.filter((j) => j.status === "PUBLISHED" || j.status === "Active").length;
+  const openPositions = assignedJobs.filter(
+    (j) => j.status === "PUBLISHED" || j.status === "Active",
+  ).length;
 
   const applications = applicationsRes.applications;
   const candidatesToReview = applications.filter(
-    (a) => (!a.hiringDecision || a.hiringDecision.status === "PENDING") && (a.currentStage === "APPLIED" || a.currentStage === "SCREENING")
+    (a) =>
+      (!a.hiringDecision || a.hiringDecision.status === "PENDING") &&
+      (a.currentStage === "APPLIED" || a.currentStage === "SCREENING"),
   ).length;
 
   const shortlistedCandidates = applications.filter(
-    (a) => a.currentStage === "INTERVIEW" || a.status === "Shortlisted" || a.currentStage === "SCREENING"
+    (a) =>
+      a.currentStage === "INTERVIEW" ||
+      a.status === "Shortlisted" ||
+      a.currentStage === "SCREENING",
   ).length;
 
   const interviewsScheduled = applications.filter((a) => a.currentStage === "INTERVIEW").length;
 
   const pendingDecisions = applications.filter(
-    (a) => !a.hiringDecision || a.hiringDecision.status === "PENDING"
+    (a) => !a.hiringDecision || a.hiringDecision.status === "PENDING",
   ).length;
 
   // Recent candidates requiring decision
@@ -121,7 +130,7 @@ export async function handleGetHiringManagerDashboard(req: Request): Promise<Res
       assignedJobs,
       recentCandidates,
     },
-    "Hiring manager dashboard retrieved successfully."
+    "Hiring manager dashboard retrieved successfully.",
   );
 }
 
@@ -153,7 +162,12 @@ export async function handleGetHiringManagerCandidates(req: Request): Promise<Re
   const shortlistedOnly = url.searchParams.get("shortlisted") === "true";
 
   // If a specific jobId was requested, verify it is in assignedJobIds
-  if (jobId && !assignedJobIds.includes(jobId) && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+  if (
+    jobId &&
+    !assignedJobIds.includes(jobId) &&
+    user.role !== "ADMIN" &&
+    user.role !== "SUPER_ADMIN"
+  ) {
     throw new ForbiddenError("You are not authorized to view candidates for this job opening.");
   }
 
@@ -170,7 +184,10 @@ export async function handleGetHiringManagerCandidates(req: Request): Promise<Re
   let candidates = result.applications;
   if (shortlistedOnly) {
     candidates = candidates.filter(
-      (c) => c.status === "Shortlisted" || c.currentStage === "INTERVIEW" || c.currentStage === "OFFERED"
+      (c) =>
+        c.status === "Shortlisted" ||
+        c.currentStage === "INTERVIEW" ||
+        c.currentStage === "OFFERED",
     );
   }
 
@@ -182,7 +199,7 @@ export async function handleGetHiringManagerCandidates(req: Request): Promise<Re
  */
 export async function handleGetHiringManagerCandidateDetail(
   req: Request,
-  applicationId: string
+  applicationId: string,
 ): Promise<Response> {
   const user = await requireHiringManagerUser(req);
   const assignedJobIds = await getAssignedJobIds(user.id, user.role);
@@ -193,7 +210,11 @@ export async function handleGetHiringManagerCandidateDetail(
   }
 
   // Verify resource-level access
-  if (!assignedJobIds.includes(application.jobId) && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+  if (
+    !assignedJobIds.includes(application.jobId) &&
+    user.role !== "ADMIN" &&
+    user.role !== "SUPER_ADMIN"
+  ) {
     throw new ForbiddenError("You are not authorized to review this candidate application.");
   }
 
@@ -239,7 +260,7 @@ export async function handleGetHiringManagerCandidateDetail(
       feedback: application.hiringManagerFeedback || [],
       decision: application.hiringDecision || { status: "PENDING" },
     },
-    "Candidate application detail retrieved successfully."
+    "Candidate application detail retrieved successfully.",
   );
 }
 
@@ -248,7 +269,7 @@ export async function handleGetHiringManagerCandidateDetail(
  */
 export async function handlePostHiringManagerFeedback(
   req: Request,
-  applicationId: string
+  applicationId: string,
 ): Promise<Response> {
   const user = await requireHiringManagerUser(req);
   const assignedJobIds = await getAssignedJobIds(user.id, user.role);
@@ -259,7 +280,11 @@ export async function handlePostHiringManagerFeedback(
   }
 
   // Verify resource-level access
-  if (!assignedJobIds.includes(application.jobId) && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+  if (
+    !assignedJobIds.includes(application.jobId) &&
+    user.role !== "ADMIN" &&
+    user.role !== "SUPER_ADMIN"
+  ) {
     throw new ForbiddenError("You are not authorized to submit feedback for this candidate.");
   }
 
@@ -272,9 +297,7 @@ export async function handlePostHiringManagerFeedback(
 
   const parseResult = feedbackSchema.safeParse(body);
   if (!parseResult.success) {
-    throw new ValidationError(
-      parseResult.error.errors.map((e) => e.message).join(", ")
-    );
+    throw new ValidationError(parseResult.error.errors.map((e) => e.message).join(", "));
   }
 
   const validated = parseResult.data;
@@ -295,7 +318,7 @@ export async function handlePostHiringManagerFeedback(
 
   const updatedApplication = await applicationRepository.addHiringManagerFeedback(
     applicationId,
-    feedbackItem
+    feedbackItem,
   );
 
   return successResponse(
@@ -303,7 +326,7 @@ export async function handlePostHiringManagerFeedback(
       application: updatedApplication,
       feedback: feedbackItem,
     },
-    "Hiring manager feedback submitted successfully."
+    "Hiring manager feedback submitted successfully.",
   );
 }
 
@@ -312,7 +335,7 @@ export async function handlePostHiringManagerFeedback(
  */
 export async function handlePostHiringManagerDecision(
   req: Request,
-  applicationId: string
+  applicationId: string,
 ): Promise<Response> {
   const user = await requireHiringManagerUser(req);
   const assignedJobIds = await getAssignedJobIds(user.id, user.role);
@@ -323,8 +346,14 @@ export async function handlePostHiringManagerDecision(
   }
 
   // Verify resource-level access
-  if (!assignedJobIds.includes(application.jobId) && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
-    throw new ForbiddenError("You are not authorized to make a hiring decision for this candidate.");
+  if (
+    !assignedJobIds.includes(application.jobId) &&
+    user.role !== "ADMIN" &&
+    user.role !== "SUPER_ADMIN"
+  ) {
+    throw new ForbiddenError(
+      "You are not authorized to make a hiring decision for this candidate.",
+    );
   }
 
   let body: unknown;
@@ -336,9 +365,7 @@ export async function handlePostHiringManagerDecision(
 
   const parseResult = decisionSchema.safeParse(body);
   if (!parseResult.success) {
-    throw new ValidationError(
-      parseResult.error.errors.map((e) => e.message).join(", ")
-    );
+    throw new ValidationError(parseResult.error.errors.map((e) => e.message).join(", "));
   }
 
   const { decision, notes } = parseResult.data;
@@ -359,7 +386,7 @@ export async function handlePostHiringManagerDecision(
       application: updated,
       decision: decisionRecord,
     },
-    `Candidate application successfully marked as ${canonicalDecision}.`
+    `Candidate application successfully marked as ${canonicalDecision}.`,
   );
 }
 
@@ -381,15 +408,24 @@ export async function handleGetHiringManagerAnalytics(req: Request): Promise<Res
   const totalApplicants = applications.length;
   const approvedCount = applications.filter((a) => a.hiringDecision?.status === "APPROVED").length;
   const rejectedCount = applications.filter((a) => a.hiringDecision?.status === "REJECTED").length;
-  const pendingCount = applications.filter((a) => !a.hiringDecision || a.hiringDecision.status === "PENDING").length;
+  const pendingCount = applications.filter(
+    (a) => !a.hiringDecision || a.hiringDecision.status === "PENDING",
+  ).length;
   const shortlistedCount = applications.filter(
-    (a) => a.currentStage === "INTERVIEW" || a.status === "Shortlisted"
+    (a) => a.currentStage === "INTERVIEW" || a.status === "Shortlisted",
   ).length;
 
   const atsScores = applications
-    .map((a) => (typeof a.aiScore === "number" ? a.aiScore : typeof (a as any).atsScore === "number" ? ((a as any).atsScore as number) : undefined))
+    .map((a) =>
+      typeof a.aiScore === "number"
+        ? a.aiScore
+        : typeof (a as any).atsScore === "number"
+          ? ((a as any).atsScore as number)
+          : undefined,
+    )
     .filter((s): s is number => typeof s === "number");
-  const averageAtsScore = atsScores.length > 0 ? Math.round(atsScores.reduce((a, b) => a + b, 0) / atsScores.length) : 85;
+  const averageAtsScore =
+    atsScores.length > 0 ? Math.round(atsScores.reduce((a, b) => a + b, 0) / atsScores.length) : 85;
 
   const stageCounts: Record<string, number> = {
     APPLIED: 0,
@@ -431,7 +467,7 @@ export async function handleGetHiringManagerAnalytics(req: Request): Promise<Res
       pipelineDistribution,
       decisionDistribution,
     },
-    "Hiring manager analytics retrieved successfully."
+    "Hiring manager analytics retrieved successfully.",
   );
 }
 
@@ -442,23 +478,27 @@ export async function handleGetHiringManagerInterviews(req: Request): Promise<Re
   const user = await requireHiringManagerUser(req);
   const assignedJobIds = await getAssignedJobIds(user.id, user.role);
 
-  const applicationsRes = await applicationRepository.findAll({
-    jobIds: assignedJobIds,
-    stage: "INTERVIEW",
-    limit: 100,
+  if (assignedJobIds.length === 0) {
+    return successResponse([], "No assigned jobs found for hiring manager.");
+  }
+
+  // Retrieve actual interviews scheduled for the hiring manager's assigned applications/jobs
+  const dbInterviews = await interviewRepository.findAll({
+    hiringManagerId: user.id,
   });
 
-  const interviews = applicationsRes.applications.map((app) => ({
-    id: `int-${app.id}`,
-    applicationId: app.id,
-    candidateName: app.applicantName || app.applicant?.name || "Candidate",
-    candidateEmail: app.applicantEmail || app.applicant?.email || "",
-    jobTitle: app.jobTitle || app.job?.title || "Position",
-    stage: app.currentStage,
-    aiScore: app.aiScore,
-    appliedAt: app.appliedAt,
-    interviewDate: new Date(Date.now() + 86400000 * 2).toISOString(), // Mock upcoming schedule
-    status: "SCHEDULED",
+  const interviews = dbInterviews.map((iv) => ({
+    id: iv.id,
+    applicationId: iv.applicationId,
+    candidateName: iv.applicant?.name || "Candidate",
+    candidateEmail: iv.applicant?.email || "",
+    jobTitle: iv.job?.title || "Position",
+    stage: "INTERVIEW",
+    interviewDate: iv.scheduledAt,
+    type: iv.type,
+    durationMinutes: iv.durationMinutes,
+    meetingUrl: iv.meetingUrl,
+    status: iv.status,
   }));
 
   return successResponse(interviews, "Assigned interviews retrieved successfully.");

@@ -1,13 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  Search,
-  X,
-  RotateCcw,
-  RefreshCw,
-  Filter,
-  MapPin,
-  Code2,
-} from "lucide-react";
+import { Search, X, RotateCcw, RefreshCw, Filter, MapPin, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {

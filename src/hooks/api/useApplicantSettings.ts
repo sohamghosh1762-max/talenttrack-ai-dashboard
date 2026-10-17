@@ -52,10 +52,14 @@ export function useUpdateApplicantSettings() {
       });
     },
     onSuccess: (updated) => {
-      queryClient.setQueryData<ApplicantPreferencesData>(applicantSettingsKeys.detail(), (old) => ({
-        ...(old || {}),
-        ...updated,
-      } as ApplicantPreferencesData));
+      queryClient.setQueryData<ApplicantPreferencesData>(
+        applicantSettingsKeys.detail(),
+        (old) =>
+          ({
+            ...(old || {}),
+            ...updated,
+          }) as ApplicantPreferencesData,
+      );
       queryClient.invalidateQueries({ queryKey: applicantSettingsKeys.all });
     },
   });

@@ -9,6 +9,20 @@ import { applicantPreferencesRepository } from "../repositories/applicant-prefer
 import { handleGetAdminDashboard } from "./admin-dashboard-handler.ts";
 import { auditService } from "../services/audit-service.ts";
 import { authenticate, requireRole, AuthError } from "../middleware/auth-middleware.ts";
+import { hashPassword } from "../auth/password.ts";
+import {
+  handleGetOrganizations,
+  handleCreateOrganization,
+  handleGetOrganizationById,
+  handleUpdateOrganization,
+  handleDeleteOrganization,
+  handleGetDepartments,
+  handleCreateDepartment,
+  handleUpdateDepartment,
+  handleDeleteDepartment,
+  handleAssignOrganizationMember,
+} from "./admin-org-handler.ts";
+import { handleGetAuditLogs, handleGetRoles, handleGetPermissions } from "./admin-audit-handler.ts";
 import type { UserRole, UserStatus, AdminApplicantItem } from "../types/user-types.ts";
 
 // Standard JSON response helper
@@ -22,8 +36,23 @@ function jsonResponse(data: unknown, status: number = 200, headers?: HeadersInit
   });
 }
 
-const ALLOWED_ROLES: UserRole[] = ["ADMIN", "RECRUITER", "APPLICANT"];
-const ALLOWED_STATUSES: UserStatus[] = ["ACTIVE", "SUSPENDED", "INACTIVE"];
+const ALLOWED_ROLES: UserRole[] = [
+  "ADMIN",
+  "SUPER_ADMIN",
+  "ORG_ADMIN",
+  "RECRUITER",
+  "HIRING_MANAGER",
+  "INTERVIEWER",
+  "APPLICANT",
+];
+const ALLOWED_STATUSES: UserStatus[] = [
+  "ACTIVE",
+  "SUSPENDED",
+  "INACTIVE",
+  "PENDING_VERIFICATION",
+  "LOCKED",
+  "DEACTIVATED",
+];
 const ALLOWED_SORT_FIELDS = ["createdAt", "name", "email", "role", "status"];
 
 /**
@@ -32,7 +61,7 @@ const ALLOWED_SORT_FIELDS = ["createdAt", "name", "email", "role", "status"];
 export async function handleGetUsers(req: Request): Promise<Response> {
   // 1. Authorization
   const admin = await authenticate(req);
-  requireRole("ADMIN")(admin);
+  requireRole("ADMIN", "ORG_ADMIN")(admin);
 
   // 2. Query parameter extraction & validation
   const url = new URL(req.url);
@@ -46,6 +75,14 @@ export async function handleGetUsers(req: Request): Promise<Response> {
   const sortOrderParam = url.searchParams.get("sortOrder");
   const dateFromParam = url.searchParams.get("dateFrom");
   const dateToParam = url.searchParams.get("dateTo");
+  const departmentParam = url.searchParams.get("departmentId") || undefined;
+
+  // Tenant Isolation: Force organizationId to caller's org if caller is ORG_ADMIN
+  const normalizedCallerRole = admin.role.toUpperCase();
+  let organizationParam = url.searchParams.get("organizationId") || undefined;
+  if (normalizedCallerRole === "ORG_ADMIN") {
+    organizationParam = admin.organizationId;
+  }
 
   const page = pageParam ? parseInt(pageParam, 10) : 1;
   if (isNaN(page) || page < 1) {
@@ -130,11 +167,13 @@ export async function handleGetUsers(req: Request): Promise<Response> {
     emailVerified,
     sortBy,
     sortOrder,
+    organizationId: organizationParam,
+    departmentId: departmentParam,
     dateFrom: dateFromParam || undefined,
     dateTo: dateToParam || undefined,
   });
 
-  return jsonResponse(result, 200);
+  return jsonResponse({ success: true, ...result }, 200);
 }
 
 /**
@@ -327,6 +366,228 @@ export async function handleUpdateUserStatus(req: Request, id: string): Promise<
       return jsonResponse({ error: "User not found" }, 404);
     }
     return jsonResponse({ error: "Failed to update user status" }, 500);
+  }
+}
+
+/**
+ * POST /api/admin/users
+ */
+export async function handleCreateUser(req: Request): Promise<Response> {
+  const admin = await authenticate(req);
+  requireRole("ADMIN", "ORG_ADMIN")(admin);
+
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return jsonResponse({ error: "Invalid JSON in request body" }, 400);
+  }
+
+  if (!body || typeof body !== "object") {
+    return jsonResponse({ error: "Request body must be a JSON object" }, 400);
+  }
+
+  // Validation
+  if (!body.name || typeof body.name !== "string" || body.name.trim().length < 2) {
+    return jsonResponse({ error: "User name must be at least 2 characters long." }, 400);
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!body.email || typeof body.email !== "string" || !emailRegex.test(body.email.trim())) {
+    return jsonResponse({ error: "A valid email address is required." }, 400);
+  }
+
+  const requestedRole = (body.role || "APPLICANT").toUpperCase() as UserRole;
+  if (!ALLOWED_ROLES.includes(requestedRole)) {
+    return jsonResponse(
+      { error: `Invalid role parameter. Allowed values: ${ALLOWED_ROLES.join(", ")}` },
+      400,
+    );
+  }
+
+  const requestedStatus = (body.status || "ACTIVE").toUpperCase() as UserStatus;
+  if (!ALLOWED_STATUSES.includes(requestedStatus)) {
+    return jsonResponse(
+      { error: `Invalid status parameter. Allowed values: ${ALLOWED_STATUSES.join(", ")}` },
+      400,
+    );
+  }
+
+  // Privilege escalation check & Tenant isolation
+  const normalizedAdminRole = admin.role.toUpperCase();
+  if (normalizedAdminRole === "ORG_ADMIN") {
+    if (requestedRole === "ADMIN" || requestedRole === "SUPER_ADMIN") {
+      return jsonResponse(
+        { error: "Organization administrators cannot grant platform administrative privileges." },
+        403,
+      );
+    }
+    body.organizationId = admin.organizationId;
+  }
+
+  try {
+    const rawPassword = body.password || "Temporary123!";
+    const passwordHash = hashPassword(rawPassword);
+
+    const created = userRepository.createUser({
+      name: body.name.trim(),
+      email: body.email.trim().toLowerCase(),
+      passwordHash,
+      role: requestedRole,
+      status: requestedStatus,
+      emailVerified: body.emailVerified ?? true,
+      organizationId: body.organizationId || undefined,
+      departmentId: body.departmentId || undefined,
+    } as any);
+
+    auditService.recordEvent({
+      action: "USER_CREATED",
+      category: "user",
+      actorId: admin.id,
+      actorName: admin.name,
+      actorEmail: admin.email,
+      actorRole: admin.role,
+      targetId: created.id,
+      targetType: "USER",
+      targetName: created.name,
+      organizationId: created.organizationId,
+      details: `Created new user account for ${created.name} (${created.email}) with role ${created.role}`,
+      status: "Success",
+      metadata: { role: created.role, organizationId: created.organizationId },
+    });
+
+    const { passwordHash: _hash, ...safe } = created;
+    return jsonResponse(
+      {
+        success: true,
+        user: safe,
+        message: `User account for ${created.name} successfully created.`,
+      },
+      201,
+    );
+  } catch (err: any) {
+    return jsonResponse({ error: err.message || "Failed to create user account" }, 400);
+  }
+}
+
+/**
+ * PATCH /api/admin/users/:id
+ */
+export async function handleUpdateUser(req: Request, id: string): Promise<Response> {
+  const admin = await authenticate(req);
+  requireRole("ADMIN", "ORG_ADMIN")(admin);
+
+  if (!isValidObjectId(id)) {
+    return jsonResponse(
+      { error: "Invalid user ID format. Must be a 24-character hexadecimal ObjectId." },
+      400,
+    );
+  }
+
+  const existingUser = userRepository.findFullUserById(id);
+  if (!existingUser) {
+    return jsonResponse({ error: "User not found" }, 404);
+  }
+
+  // Tenant isolation check
+  const normalizedAdminRole = admin.role.toUpperCase();
+  if (normalizedAdminRole === "ORG_ADMIN") {
+    if (!existingUser.organizationId || existingUser.organizationId !== admin.organizationId) {
+      throw new AuthError(
+        "Cross-organization access forbidden: tenant isolation boundary enforced.",
+        403,
+      );
+    }
+  }
+
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return jsonResponse({ error: "Invalid JSON in request body" }, 400);
+  }
+
+  if (body.role) {
+    const normRole = body.role.toUpperCase() as UserRole;
+    if (!ALLOWED_ROLES.includes(normRole)) {
+      return jsonResponse(
+        { error: `Invalid role parameter. Allowed values: ${ALLOWED_ROLES.join(", ")}` },
+        400,
+      );
+    }
+    if (
+      normalizedAdminRole === "ORG_ADMIN" &&
+      (normRole === "ADMIN" || normRole === "SUPER_ADMIN")
+    ) {
+      return jsonResponse(
+        { error: "Organization administrators cannot grant platform administrative privileges." },
+        403,
+      );
+    }
+    body.role = normRole;
+  }
+
+  if (body.status) {
+    const normStatus = body.status.toUpperCase() as UserStatus;
+    if (!ALLOWED_STATUSES.includes(normStatus)) {
+      return jsonResponse(
+        { error: `Invalid status parameter. Allowed values: ${ALLOWED_STATUSES.join(", ")}` },
+        400,
+      );
+    }
+    body.status = normStatus;
+  }
+
+  try {
+    const updated = userRepository.updateUser(id, body, admin.id);
+    return jsonResponse(
+      {
+        success: true,
+        user: updated,
+        message: `User profile for ${updated.name} successfully updated.`,
+      },
+      200,
+    );
+  } catch (err: any) {
+    return jsonResponse({ error: err.message || "Failed to update user" }, 400);
+  }
+}
+
+/**
+ * DELETE /api/admin/users/:id
+ */
+export async function handleDeleteUser(req: Request, id: string): Promise<Response> {
+  const admin = await authenticate(req);
+  requireRole("ADMIN", "ORG_ADMIN")(admin);
+
+  if (!isValidObjectId(id)) {
+    return jsonResponse(
+      { error: "Invalid user ID format. Must be a 24-character hexadecimal ObjectId." },
+      400,
+    );
+  }
+
+  const existingUser = userRepository.findFullUserById(id);
+  if (!existingUser) {
+    return jsonResponse({ error: "User not found" }, 404);
+  }
+
+  // Tenant isolation check
+  const normalizedAdminRole = admin.role.toUpperCase();
+  if (normalizedAdminRole === "ORG_ADMIN") {
+    if (!existingUser.organizationId || existingUser.organizationId !== admin.organizationId) {
+      throw new AuthError(
+        "Cross-organization access forbidden: tenant isolation boundary enforced.",
+        403,
+      );
+    }
+  }
+
+  try {
+    const result = userRepository.deleteUser(id, admin.id);
+    return jsonResponse(result, 200);
+  } catch (err: any) {
+    return jsonResponse({ error: err.message || "Failed to remove user account" }, 400);
   }
 }
 
@@ -576,10 +837,7 @@ export async function handleGetApplicantById(req: Request, id: string): Promise<
         } else {
           resume = {
             id: appWithScore.resume?.id || "",
-            fileName:
-              appWithScore.resume?.originalFileName ||
-              p.resumeFileName ||
-              "Resume.pdf",
+            fileName: appWithScore.resume?.originalFileName || p.resumeFileName || "Resume.pdf",
             fileSize: 0,
             mimeType: "application/pdf",
             uploadedAt: appWithScore.appliedAt || user.createdAt,
@@ -612,21 +870,21 @@ export async function handleGetApplicantById(req: Request, id: string): Promise<
       participantIds: c.participantIds,
       participant: c.participant
         ? {
-          id: c.participant.id,
-          name: c.participant.name,
-          email: c.participant.email,
-          role: c.participant.role,
-        }
+            id: c.participant.id,
+            name: c.participant.name,
+            email: c.participant.email,
+            role: c.participant.role,
+          }
         : undefined,
       jobId: c.jobId,
       job: c.job
         ? {
-          id: c.job.id,
-          title: c.job.title,
-          company: c.job.company,
-          department: c.job.department,
-          location: c.job.location,
-        }
+            id: c.job.id,
+            title: c.job.title,
+            company: c.job.company,
+            department: c.job.department,
+            location: c.job.location,
+          }
         : undefined,
       applicationId: c.applicationId,
       unreadCount: c.unreadCount || 0,
@@ -806,21 +1064,21 @@ export async function handleGetApplicantConversations(req: Request, id: string):
     participantIds: c.participantIds,
     participant: c.participant
       ? {
-        id: c.participant.id,
-        name: c.participant.name,
-        email: c.participant.email,
-        role: c.participant.role,
-      }
+          id: c.participant.id,
+          name: c.participant.name,
+          email: c.participant.email,
+          role: c.participant.role,
+        }
       : undefined,
     jobId: c.jobId,
     job: c.job
       ? {
-        id: c.job.id,
-        title: c.job.title,
-        company: c.job.company,
-        department: c.job.department,
-        location: c.job.location,
-      }
+          id: c.job.id,
+          title: c.job.title,
+          company: c.job.company,
+          department: c.job.department,
+          location: c.job.location,
+        }
       : undefined,
     applicationId: c.applicationId,
     unreadCount: c.unreadCount || 0,
@@ -956,30 +1214,109 @@ export async function handleAdminApiRequest(req: Request): Promise<Response | nu
       return await handleGetApplicantById(req, id);
     }
 
-    // 9. GET /api/admin/users
+    // 9. POST /api/admin/users (Create User)
+    if (pathname === "/api/admin/users" && req.method === "POST") {
+      return await handleCreateUser(req);
+    }
+
+    // 10. GET /api/admin/users
     if (pathname === "/api/admin/users" && req.method === "GET") {
       return await handleGetUsers(req);
     }
 
-    // 10. GET /api/admin/users/:id/activity
+    // 11. GET /api/admin/users/:id/activity
     const activityMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)\/activity$/);
     if (activityMatch && req.method === "GET") {
       const id = activityMatch[1]!;
       return await handleGetUserActivity(req, id);
     }
 
-    // 11. PATCH /api/admin/users/:id/status
+    // 12. PATCH /api/admin/users/:id/status
     const statusMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)\/status$/);
     if (statusMatch && req.method === "PATCH") {
       const id = statusMatch[1]!;
       return await handleUpdateUserStatus(req, id);
     }
 
-    // 12. GET /api/admin/users/:id
+    // 13. PATCH / PUT /api/admin/users/:id (Profile/Role update)
+    const updateUserMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)$/);
+    if (updateUserMatch && (req.method === "PATCH" || req.method === "PUT")) {
+      const id = updateUserMatch[1]!;
+      return await handleUpdateUser(req, id);
+    }
+
+    // 14. DELETE /api/admin/users/:id (Delete user)
+    const deleteUserMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)$/);
+    if (deleteUserMatch && req.method === "DELETE") {
+      const id = deleteUserMatch[1]!;
+      return await handleDeleteUser(req, id);
+    }
+
+    // 15. GET /api/admin/users/:id
     const userMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)$/);
     if (userMatch && req.method === "GET") {
       const id = userMatch[1]!;
       return await handleGetUserById(req, id);
+    }
+
+    // 16. Organizations & Departments API
+    const orgDeptNestedMatch = pathname.match(
+      /^\/api\/admin\/organizations\/([^/]+)\/departments\/([^/]+)$/,
+    );
+    if (orgDeptNestedMatch) {
+      const deptId = orgDeptNestedMatch[2]!;
+      if (req.method === "PATCH" || req.method === "PUT")
+        return await handleUpdateDepartment(req, deptId);
+      if (req.method === "DELETE") return await handleDeleteDepartment(req, deptId);
+    }
+
+    const orgDeptMatch = pathname.match(/^\/api\/admin\/organizations\/([^/]+)\/departments$/);
+    if (orgDeptMatch) {
+      const orgId = orgDeptMatch[1]!;
+      if (req.method === "GET") return await handleGetDepartments(req, orgId);
+      if (req.method === "POST") return await handleCreateDepartment(req, orgId);
+    }
+
+    const orgMemberMatch = pathname.match(/^\/api\/admin\/organizations\/([^/]+)\/members$/);
+    if (orgMemberMatch && req.method === "POST") {
+      const orgId = orgMemberMatch[1]!;
+      return await handleAssignOrganizationMember(req, orgId);
+    }
+
+    const orgIdMatch = pathname.match(/^\/api\/admin\/organizations\/([^/]+)$/);
+    if (orgIdMatch) {
+      const orgId = orgIdMatch[1]!;
+      if (req.method === "GET") return await handleGetOrganizationById(req, orgId);
+      if (req.method === "PATCH" || req.method === "PUT")
+        return await handleUpdateOrganization(req, orgId);
+      if (req.method === "DELETE") return await handleDeleteOrganization(req, orgId);
+    }
+
+    if (pathname === "/api/admin/organizations") {
+      if (req.method === "GET") return await handleGetOrganizations(req);
+      if (req.method === "POST") return await handleCreateOrganization(req);
+    }
+
+    const deptIdMatch = pathname.match(/^\/api\/admin\/departments\/([^/]+)$/);
+    if (deptIdMatch) {
+      const deptId = deptIdMatch[1]!;
+      if (req.method === "PATCH" || req.method === "PUT")
+        return await handleUpdateDepartment(req, deptId);
+      if (req.method === "DELETE") return await handleDeleteDepartment(req, deptId);
+    }
+
+    // 17. Audit Logs API
+    if (pathname === "/api/admin/audit-logs" && req.method === "GET") {
+      return await handleGetAuditLogs(req);
+    }
+
+    // 18. Roles & Permissions API
+    if (pathname === "/api/admin/roles" && req.method === "GET") {
+      return await handleGetRoles(req);
+    }
+
+    if (pathname === "/api/admin/permissions" && req.method === "GET") {
+      return await handleGetPermissions(req);
     }
 
     // Fallthrough for unmatched /api/admin/* route
@@ -992,4 +1329,3 @@ export async function handleAdminApiRequest(req: Request): Promise<Response | nu
     return jsonResponse({ error: "Internal server error occurred." }, 500);
   }
 }
-

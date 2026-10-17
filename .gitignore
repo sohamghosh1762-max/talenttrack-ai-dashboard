@@ -54,6 +54,9 @@ lerna-debug.log*
 *.tsbuildinfo
 
 # Local backup & temporary copy files and folders
+backups/
+*.gz
+*.zip
 *- Copy*
 * - Copy*
 *- Copy/

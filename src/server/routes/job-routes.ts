@@ -11,7 +11,12 @@ import {
 } from "../validators/job.ts";
 import { validateSchema } from "../validators/common.ts";
 import { isValidObjectId } from "../db/user-repository.ts";
-import type { CreateJobInput, UpdateJobInput, JobQueryParams, JobStatus } from "../types/job-types.ts";
+import type {
+  CreateJobInput,
+  UpdateJobInput,
+  JobQueryParams,
+  JobStatus,
+} from "../types/job-types.ts";
 
 /**
  * Handle GET /api/jobs
@@ -60,7 +65,11 @@ export async function handleGetJobs(req: Request): Promise<Response> {
       authUser.role === "HIRING_MANAGER");
 
   if (isRecruiterOrAdmin) {
-    if (authUser.role === "RECRUITER" && !filters.recruiterId && !searchParams.has("allRecruiters")) {
+    if (
+      authUser.role === "RECRUITER" &&
+      !filters.recruiterId &&
+      !searchParams.has("allRecruiters")
+    ) {
       // By default recruiter sees their jobs if not explicitly querying all
       filters.recruiterId = authUser.id;
     }
@@ -130,7 +139,10 @@ export async function handleCreateJob(req: Request): Promise<Response> {
   const normalizedSkills: string[] = Array.isArray(validated.skills)
     ? validated.skills
     : typeof validated.skills === "string"
-      ? (validated.skills as string).split(",").map((s) => s.trim()).filter(Boolean)
+      ? (validated.skills as string)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
       : [];
 
   const createdJob = await jobRepository.create({
@@ -147,7 +159,11 @@ export async function handleCreateJob(req: Request): Promise<Response> {
     deadline: validated.deadline || undefined,
   });
 
-  return successResponse({ ...createdJob, job: createdJob }, "Job opening created successfully.", 201);
+  return successResponse(
+    { ...createdJob, job: createdJob },
+    "Job opening created successfully.",
+    201,
+  );
 }
 
 /**
@@ -184,7 +200,10 @@ export async function handleUpdateJob(req: Request, jobId: string): Promise<Resp
       ? Array.isArray(validated.skills)
         ? validated.skills
         : typeof validated.skills === "string"
-          ? (validated.skills as string).split(",").map((s) => s.trim()).filter(Boolean)
+          ? (validated.skills as string)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
           : undefined
       : undefined;
 

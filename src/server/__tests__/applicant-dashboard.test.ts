@@ -75,7 +75,8 @@ describe("APPLICANT DASHBOARD DYNAMICS & UTILITY SUITE", () => {
     const job: IJob = {
       id: "job-101",
       title: "Senior Frontend Engineer",
-      description: "Looking for an expert with React, TypeScript, and modern front-end architectures.",
+      description:
+        "Looking for an expert with React, TypeScript, and modern front-end architectures.",
       department: "Engineering",
       location: "San Francisco, CA",
       employmentType: "Full-Time",

@@ -235,7 +235,9 @@ export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantH
               {/* Error State */}
               {!isNotificationsLoading && isNotificationsError && (
                 <div className="p-4 text-center space-y-2">
-                  <p className="text-xs text-destructive font-medium">Unable to load notifications.</p>
+                  <p className="text-xs text-destructive font-medium">
+                    Unable to load notifications.
+                  </p>
                   <Button
                     size="sm"
                     variant="outline"
@@ -286,7 +288,9 @@ export function ApplicantHeader({ searchQuery = "", onSearchChange }: ApplicantH
                         <div className="flex items-center justify-between gap-1">
                           <span
                             className={`text-xs truncate ${
-                              isUnread ? "font-bold text-foreground" : "font-medium text-foreground/90"
+                              isUnread
+                                ? "font-bold text-foreground"
+                                : "font-medium text-foreground/90"
                             }`}
                           >
                             {notif.title}

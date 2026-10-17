@@ -2,44 +2,44 @@ export type ResumeParsingStatus = "NOT_STARTED" | "PROCESSING" | "COMPLETED" | "
 
 export interface IParsedResumePersonal {
   fullName: string;
-  email: string;
-  phone: string;
-  location: string;
-  linkedin: string;
-  github: string;
-  portfolio: string;
+  email?: string | undefined;
+  phone?: string | undefined;
+  location?: string | undefined;
+  linkedin?: string | undefined;
+  github?: string | undefined;
+  portfolio?: string | undefined;
 }
 
 export interface IParsedResumeEducation {
   degree: string;
   institution: string;
-  fieldOfStudy: string;
-  startDate: string;
-  endDate: string;
-  grade: string;
+  fieldOfStudy?: string | undefined;
+  startDate?: string | undefined;
+  endDate?: string | undefined;
+  grade?: string | undefined;
 }
 
 export interface IParsedResumeExperience {
   company: string;
   role: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-  description: string[];
-  technologies: string[];
+  location?: string | undefined;
+  startDate?: string | undefined;
+  endDate?: string | undefined;
+  description?: string[] | undefined;
+  technologies?: string[] | undefined;
 }
 
 export interface IParsedResumeProject {
   name: string;
   description: string;
-  technologies: string[];
-  url: string;
+  technologies?: string[] | undefined;
+  url?: string | undefined;
 }
 
 export interface IParsedResumeCertification {
   name: string;
-  issuer: string;
-  date: string;
+  issuer?: string | undefined;
+  date?: string | undefined;
 }
 
 export interface IParsedResumeProfile {
@@ -50,8 +50,8 @@ export interface IParsedResumeProfile {
   experience: IParsedResumeExperience[];
   projects: IParsedResumeProject[];
   certifications: IParsedResumeCertification[];
-  languages: string[];
-  achievements: string[];
+  languages?: string[] | undefined;
+  achievements?: string[] | undefined;
 }
 
 export interface IResume {
@@ -102,4 +102,3 @@ export interface ParseResumeResponse {
   parsedAt: string | null;
   parsingError?: string | null;
 }
-

@@ -3,9 +3,12 @@ import { User, type IUserDocument } from "../models/User.ts";
 import { Recruiter } from "../models/Recruiter.ts";
 import { Applicant } from "../models/Applicant.ts";
 import { isDatabaseConnected } from "./mongodb.ts";
+import { hashPassword } from "../auth/password.ts";
 import type {
   IUser,
   SafeUser,
+  CreateUserInput,
+  UpdateUserInput,
   UserQueryParams,
   PaginatedUsersResponse,
   UserStatus,
@@ -45,6 +48,37 @@ export function toSafeUser(user: IUser): SafeUser {
   return safe;
 }
 
+// Convert Mongoose User document to internal IUser entity
+export function docToUser(doc: any): IUser {
+  const obj = doc.toObject ? doc.toObject() : doc;
+  const idStr = doc._id ? doc._id.toString() : obj.id || doc.id;
+  return {
+    id: String(idStr),
+    name: obj.name,
+    email: (obj.email || "").toLowerCase().trim(),
+    passwordHash: obj.passwordHash,
+    role: obj.role,
+    status: obj.status || "ACTIVE",
+    emailVerified: obj.emailVerified ?? false,
+    emailVerifiedAt: obj.emailVerifiedAt,
+    avatarUrl: obj.avatarUrl,
+    failedLoginAttempts: obj.failedLoginAttempts ?? 0,
+    lockedUntil: obj.lockedUntil ?? null,
+    createdAt: obj.createdAt ? new Date(obj.createdAt).toISOString() : new Date().toISOString(),
+    updatedAt: obj.updatedAt ? new Date(obj.updatedAt).toISOString() : new Date().toISOString(),
+    lastActive:
+      obj.lastActive || (obj.updatedAt ? new Date(obj.updatedAt).toISOString() : undefined),
+    recruiterProfile: obj.recruiterProfile,
+    applicantProfile: obj.applicantProfile,
+    adminProfile: obj.adminProfile,
+    organizationId: obj.organizationId,
+    departmentId: obj.departmentId,
+    organizationName: obj.organizationName,
+    departmentName: obj.departmentName,
+    firebaseUid: obj.firebaseUid,
+  };
+}
+
 // Pre-seeded database records with genuine 24-hex MongoDB ObjectIds
 export const DEFAULT_SEED_USERS: IUser[] = [
   // Administrators
@@ -59,6 +93,8 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     createdAt: "2025-01-01T08:00:00.000Z",
     updatedAt: "2025-01-01T08:00:00.000Z",
     lastActive: "2026-09-20T08:00:00.000Z",
+    organizationId: "org-1",
+    organizationName: "TalentTrack Technologies Inc.",
     adminProfile: {
       platformRole: "Super Administrator",
       permissions: ["all"],
@@ -76,6 +112,8 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     createdAt: "2025-01-15T10:00:00.000Z",
     updatedAt: "2025-01-15T10:00:00.000Z",
     lastActive: "2026-09-18T14:30:00.000Z",
+    organizationId: "org-1",
+    organizationName: "TalentTrack Technologies Inc.",
     adminProfile: {
       platformRole: "Security & Compliance Admin",
       permissions: ["user_management", "audit_logs", "compliance"],
@@ -94,6 +132,10 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     createdAt: "2025-02-01T09:30:00.000Z",
     updatedAt: "2025-02-01T09:30:00.000Z",
     lastActive: "2026-09-20T10:00:00.000Z",
+    organizationId: "org-1",
+    organizationName: "TalentTrack Technologies Inc.",
+    departmentId: "dept-1",
+    departmentName: "Engineering",
     recruiterProfile: {
       companyName: "TalentTrack Technologies",
       jobTitle: "VP of Engineering",
@@ -112,6 +154,10 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     createdAt: "2025-02-01T09:30:00.000Z",
     updatedAt: "2025-02-01T09:30:00.000Z",
     lastActive: "2026-09-19T16:15:00.000Z",
+    organizationId: "org-1",
+    organizationName: "TalentTrack Technologies Inc.",
+    departmentId: "dept-3",
+    departmentName: "Talent Acquisition",
     recruiterProfile: {
       companyName: "TalentTrack Technologies",
       jobTitle: "Principal Talent Acquisition Lead",
@@ -129,10 +175,14 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     createdAt: "2025-02-14T11:20:00.000Z",
     updatedAt: "2025-02-14T11:20:00.000Z",
     lastActive: "2026-09-15T12:00:00.000Z",
+    organizationId: "org-2",
+    organizationName: "CloudScale Systems",
+    departmentId: "dept-7",
+    departmentName: "Recruitment",
     recruiterProfile: {
-      companyName: "Stripe",
+      companyName: "CloudScale Systems",
       jobTitle: "Senior Technical Recruiter",
-      department: "Infrastructure & Platform Hiring",
+      department: "Recruitment",
     },
   },
   {
@@ -508,6 +558,16 @@ class UserRepository {
         return false;
       }
 
+      // Filter by organization (tenant isolation)
+      if (params.organizationId && u.organizationId !== params.organizationId) {
+        return false;
+      }
+
+      // Filter by department
+      if (params.departmentId && u.departmentId !== params.departmentId) {
+        return false;
+      }
+
       // Filter by date range (createdAt)
       if (dateFrom !== undefined && !isNaN(dateFrom)) {
         const createdTime = new Date(u.createdAt).getTime();
@@ -564,9 +624,7 @@ class UserRepository {
   /**
    * Query applicants with search, status/verification/skill/location/date filtering, custom sorting, and pagination
    */
-  public findApplicants(
-    params: AdminApplicantQueryParams = {},
-  ): PaginatedAdminApplicantsResponse {
+  public findApplicants(params: AdminApplicantQueryParams = {}): PaginatedAdminApplicantsResponse {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(params.limit) || 20));
     const search = params.search ? params.search.trim().toLowerCase() : "";
@@ -589,22 +647,19 @@ class UserRepository {
     const sortOrder = params.sortOrder || (sortBy === "createdAt" ? "desc" : "asc");
 
     // All registered users with role APPLICANT
-    const allApplicants = Array.from(this.users.values()).filter(
-      (u) => u.role === "APPLICANT",
-    );
+    const allApplicants = Array.from(this.users.values()).filter((u) => u.role === "APPLICANT");
 
     // Summary metrics across all applicants
     const summary: AdminApplicantSummaryStats = {
       totalApplicants: allApplicants.length,
       active: allApplicants.filter((u) => u.status === "ACTIVE").length,
       suspended: allApplicants.filter((u) => u.status === "SUSPENDED").length,
-      inactive: allApplicants.filter((u) => u.status === "INACTIVE" || u.status === "DEACTIVATED").length,
+      inactive: allApplicants.filter((u) => u.status === "INACTIVE" || u.status === "DEACTIVATED")
+        .length,
       verified: allApplicants.filter((u) => u.emailVerified).length,
       unverified: allApplicants.filter((u) => !u.emailVerified).length,
       withResume: allApplicants.filter(
-        (u) =>
-          !!u.applicantProfile?.resumeId ||
-          !!u.applicantProfile?.resumeFileName,
+        (u) => !!u.applicantProfile?.resumeId || !!u.applicantProfile?.resumeFileName,
       ).length,
     };
 
@@ -619,7 +674,9 @@ class UserRepository {
         const matchesEmail = u.email.toLowerCase().includes(search);
         const matchesHeadline = (profile.headline || "").toLowerCase().includes(search);
         const matchesLocation = (profile.location || "").toLowerCase().includes(search);
-        const matchesSummary = (profile.summary || profile.bio || "").toLowerCase().includes(search);
+        const matchesSummary = (profile.summary || profile.bio || "")
+          .toLowerCase()
+          .includes(search);
         const matchesSkills = skills.some((s) => s.toLowerCase().includes(search));
 
         if (
@@ -800,6 +857,82 @@ class UserRepository {
   }
 
   /**
+   * Async find full user by ID with MongoDB fallback and caching
+   */
+  public async findFullUserByIdAsync(id: string): Promise<IUser | null> {
+    const cached = this.findFullUserById(id);
+    if (cached) return cached;
+
+    if (isValidObjectId(id) && isDatabaseConnected()) {
+      try {
+        const doc = await User.findById(id).exec();
+        if (doc) {
+          const user = docToUser(doc);
+          this.users.set(user.id, user);
+          return user;
+        }
+      } catch (err) {
+        console.warn(`[UserRepository] MongoDB findFullUserByIdAsync error:`, err);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Async find safe user by ID with MongoDB fallback and caching
+   */
+  public async findByIdAsync(id: string): Promise<SafeUser | null> {
+    const full = await this.findFullUserByIdAsync(id);
+    return full ? toSafeUser(full) : null;
+  }
+
+  /**
+   * Async find user by email with MongoDB fallback and caching
+   */
+  public async findByEmailAsync(email: string): Promise<IUser | null> {
+    const normalized = email.trim().toLowerCase();
+    const cached = this.findByEmail(normalized);
+    if (cached) return cached;
+
+    if (isDatabaseConnected()) {
+      try {
+        const doc = await User.findOne({ email: normalized }).exec();
+        if (doc) {
+          const user = docToUser(doc);
+          this.users.set(user.id, user);
+          return user;
+        }
+      } catch (err) {
+        console.warn(`[UserRepository] MongoDB findByEmailAsync error:`, err);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Async find user by Firebase UID with MongoDB fallback and caching
+   */
+  public async findByFirebaseUidAsync(firebaseUid: string): Promise<IUser | null> {
+    if (!firebaseUid) return null;
+    const cached = this.findByFirebaseUid(firebaseUid);
+    if (cached) return cached;
+
+    if (isDatabaseConnected()) {
+      try {
+        const doc = await User.findOne({ firebaseUid }).exec();
+        if (doc) {
+          const user = docToUser(doc);
+          this.users.set(user.id, user);
+          return user;
+        }
+      } catch (err) {
+        console.warn(`[UserRepository] MongoDB findByFirebaseUidAsync error:`, err);
+      }
+    }
+    return null;
+  }
+
+  /**
    * Link Firebase UID to existing user (and associated Applicant document if applicable)
    */
   public linkFirebaseUid(userId: string, firebaseUid: string): boolean {
@@ -910,7 +1043,7 @@ class UserRepository {
   public countActiveAdmins(): number {
     let count = 0;
     for (const u of this.users.values()) {
-      if (u.role === "ADMIN" && u.status === "ACTIVE") {
+      if ((u.role === "ADMIN" || u.role === "SUPER_ADMIN") && u.status === "ACTIVE") {
         count++;
       }
     }
@@ -933,7 +1066,11 @@ class UserRepository {
     const previousStatus = user.status;
 
     // Safeguard: do not allow deactivating or suspending the only active admin account
-    if (user.role === "ADMIN" && user.status === "ACTIVE" && newStatus !== "ACTIVE") {
+    if (
+      (user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
+      user.status === "ACTIVE" &&
+      newStatus !== "ACTIVE"
+    ) {
       const activeAdmins = this.countActiveAdmins();
       if (activeAdmins <= 1) {
         throw new Error("Cannot deactivate or suspend the only active administrator account.");
@@ -945,9 +1082,11 @@ class UserRepository {
     user.updatedAt = new Date().toISOString();
 
     if (isDatabaseConnected() && isValidObjectId(id)) {
-      User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch((err) => {
-        console.error(`[MongoDB] Error updating status for user ${id}:`, err);
-      });
+      User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch(
+        (err) => {
+          console.error(`[MongoDB] Error updating status for user ${id}:`, err);
+        },
+      );
     }
 
     return {
@@ -974,7 +1113,12 @@ class UserRepository {
     // First check: check if any active admins in the batch are being changed to non-active
     const activeAdminsTargeted = uniqueIds.filter((id) => {
       const u = this.users.get(id);
-      return u && u.role === "ADMIN" && u.status === "ACTIVE" && newStatus !== "ACTIVE";
+      return (
+        u &&
+        (u.role === "ADMIN" || u.role === "SUPER_ADMIN") &&
+        u.status === "ACTIVE" &&
+        newStatus !== "ACTIVE"
+      );
     });
 
     if (activeAdminsTargeted.length > 0) {
@@ -994,7 +1138,11 @@ class UserRepository {
             continue;
           }
 
-          if (u.role === "ADMIN" && u.status === "ACTIVE" && newStatus !== "ACTIVE") {
+          if (
+            (u.role === "ADMIN" || u.role === "SUPER_ADMIN") &&
+            u.status === "ACTIVE" &&
+            newStatus !== "ACTIVE"
+          ) {
             if (adminSkipCount >= remainingAllowed) {
               failedCount++;
               failedUserIds.push(id);
@@ -1009,7 +1157,9 @@ class UserRepository {
           updatedCount++;
 
           if (isDatabaseConnected() && isValidObjectId(id)) {
-            User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch(console.error);
+            User.findByIdAndUpdate(id, {
+              $set: { status: newStatus, updatedAt: new Date() },
+            }).catch(console.error);
           }
 
           auditService.recordStatusChange({
@@ -1048,7 +1198,9 @@ class UserRepository {
       updatedCount++;
 
       if (isDatabaseConnected() && isValidObjectId(id)) {
-        User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch(console.error);
+        User.findByIdAndUpdate(id, { $set: { status: newStatus, updatedAt: new Date() } }).catch(
+          console.error,
+        );
       }
 
       auditService.recordStatusChange({
@@ -1119,6 +1271,10 @@ class UserRepository {
     role: UserRole;
     status?: UserStatus;
     emailVerified?: boolean;
+    organizationId?: string;
+    departmentId?: string;
+    organizationName?: string;
+    departmentName?: string;
     recruiterProfile?: RecruiterProfileInfo;
     applicantProfile?: ApplicantProfileInfo;
     adminProfile?: AdminProfileInfo;
@@ -1145,6 +1301,10 @@ class UserRepository {
       createdAt: now,
       updatedAt: now,
       lastActive: now,
+      organizationId: (userData as any).organizationId || undefined,
+      departmentId: (userData as any).departmentId || undefined,
+      organizationName: (userData as any).organizationName || undefined,
+      departmentName: (userData as any).departmentName || undefined,
       ...(userData.recruiterProfile ? { recruiterProfile: userData.recruiterProfile } : {}),
       ...(userData.applicantProfile ? { applicantProfile: userData.applicantProfile } : {}),
       ...(userData.adminProfile ? { adminProfile: userData.adminProfile } : {}),
@@ -1189,6 +1349,242 @@ class UserRepository {
         .catch((err) => {
           console.error(`[MongoDB] Error saving user ${newUser.email}:`, err);
         });
+    }
+
+    this.users.set(id, newUser);
+    return { ...newUser };
+  }
+
+  public updateUser(id: string, updateData: UpdateUserInput, actorId?: string): SafeUser {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (updateData.email && updateData.email.trim().toLowerCase() !== user.email) {
+      const normalizedNewEmail = updateData.email.trim().toLowerCase();
+      const existing = this.findByEmail(normalizedNewEmail);
+      if (existing && existing.id !== id) {
+        throw new Error("An account with this email address already exists.");
+      }
+      user.email = normalizedNewEmail;
+    }
+
+    if (updateData.name && updateData.name.trim().length >= 2) {
+      user.name = updateData.name.trim();
+    }
+
+    // Role update with last active administrator safeguard
+    if (updateData.role && updateData.role !== user.role) {
+      if (
+        (user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
+        user.status === "ACTIVE" &&
+        updateData.role !== "ADMIN" &&
+        updateData.role !== "SUPER_ADMIN"
+      ) {
+        if (this.countActiveAdmins() <= 1) {
+          throw new Error("Cannot demote the only active administrator account.");
+        }
+      }
+      const prevRole = user.role;
+      user.role = updateData.role;
+
+      auditService.recordEvent({
+        action: "USER_ROLE_CHANGED",
+        category: "role",
+        actorId: actorId || "admin",
+        actorName: "Administrator",
+        actorEmail: "admin@talenttrack.ai",
+        actorRole: "ADMIN",
+        targetId: user.id,
+        targetType: "USER",
+        targetName: user.name,
+        organizationId: user.organizationId,
+        details: `Updated role for ${user.name} from ${prevRole} to ${user.role}`,
+        status: "Success",
+        metadata: { previousRole: prevRole, newRole: user.role },
+      });
+    }
+
+    // Status update with last active administrator safeguard
+    if (updateData.status && updateData.status !== user.status) {
+      if (
+        (user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
+        user.status === "ACTIVE" &&
+        updateData.status !== "ACTIVE"
+      ) {
+        if (this.countActiveAdmins() <= 1) {
+          throw new Error("Cannot deactivate or suspend the only active administrator account.");
+        }
+      }
+      const prevStatus = user.status;
+      user.status = updateData.status;
+
+      auditService.recordStatusChange({
+        adminId: actorId || "admin",
+        targetUserId: user.id,
+        previousStatus: prevStatus,
+        newStatus: user.status,
+      });
+    }
+
+    if (updateData.organizationId !== undefined) {
+      user.organizationId = updateData.organizationId || undefined;
+    }
+    if (updateData.departmentId !== undefined) {
+      user.departmentId = updateData.departmentId || undefined;
+    }
+    if (updateData.emailVerified !== undefined) {
+      user.emailVerified = updateData.emailVerified;
+    }
+    if (updateData.avatarUrl !== undefined) {
+      user.avatarUrl = updateData.avatarUrl;
+    }
+    if (updateData.password) {
+      user.passwordHash = hashPassword(updateData.password);
+    }
+
+    user.updatedAt = new Date().toISOString();
+    this.users.set(id, user);
+
+    auditService.recordEvent({
+      action: "USER_UPDATED",
+      category: "user",
+      actorId: actorId || "admin",
+      actorName: "Administrator",
+      actorEmail: "admin@talenttrack.ai",
+      actorRole: "ADMIN",
+      targetId: user.id,
+      targetType: "USER",
+      targetName: user.name,
+      organizationId: user.organizationId,
+      details: `Updated user profile for ${user.name} (${user.email})`,
+      status: "Success",
+    });
+
+    return toSafeUser(user);
+  }
+
+  public deleteUser(id: string, actorId?: string): { success: boolean; message: string } {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if ((user.role === "ADMIN" || user.role === "SUPER_ADMIN") && user.status === "ACTIVE") {
+      if (this.countActiveAdmins() <= 1) {
+        throw new Error("Cannot delete the only active administrator account.");
+      }
+    }
+
+    this.users.delete(id);
+
+    auditService.recordEvent({
+      action: "USER_DELETED",
+      category: "user",
+      actorId: actorId || "admin",
+      actorName: "Administrator",
+      actorEmail: "admin@talenttrack.ai",
+      actorRole: "ADMIN",
+      targetId: id,
+      targetType: "USER",
+      targetName: user.name,
+      organizationId: user.organizationId,
+      details: `Deleted user account ${user.name} (${user.email})`,
+      status: "Warning",
+    });
+
+    return { success: true, message: `User ${user.name} was successfully removed.` };
+  }
+
+  public findAllInternalUsers(): IUser[] {
+    return Array.from(this.users.values());
+  }
+
+  /**
+   * Create and persist a new user entity asynchronously in MongoDB Atlas
+   */
+  public async createUserAsync(userData: {
+    name: string;
+    email: string;
+    passwordHash: string;
+    role: UserRole;
+    status?: UserStatus;
+    emailVerified?: boolean;
+    recruiterProfile?: RecruiterProfileInfo;
+    applicantProfile?: ApplicantProfileInfo;
+    adminProfile?: AdminProfileInfo;
+  }): Promise<IUser> {
+    const normalizedEmail = userData.email.trim().toLowerCase();
+    const existing = await this.findByEmailAsync(normalizedEmail);
+    if (existing) {
+      throw new Error("An account with this email address already exists.");
+    }
+
+    const id = generateObjectId();
+    const now = new Date().toISOString();
+    const newUser: IUser = {
+      id,
+      name: userData.name.trim(),
+      email: normalizedEmail,
+      passwordHash: userData.passwordHash,
+      role: userData.role,
+      status: userData.status || "ACTIVE",
+      emailVerified: userData.emailVerified ?? false,
+      emailVerifiedAt: userData.emailVerified ? now : undefined,
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      createdAt: now,
+      updatedAt: now,
+      lastActive: now,
+      ...(userData.recruiterProfile ? { recruiterProfile: userData.recruiterProfile } : {}),
+      ...(userData.applicantProfile ? { applicantProfile: userData.applicantProfile } : {}),
+      ...(userData.adminProfile ? { adminProfile: userData.adminProfile } : {}),
+    };
+
+    if (isDatabaseConnected()) {
+      try {
+        const createdUserDoc = await User.create({
+          _id: id,
+          name: newUser.name,
+          email: newUser.email,
+          passwordHash: newUser.passwordHash,
+          role: newUser.role,
+          status: newUser.status,
+          emailVerified: newUser.emailVerified,
+          emailVerifiedAt: newUser.emailVerifiedAt,
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          recruiterProfile: newUser.recruiterProfile,
+          applicantProfile: newUser.applicantProfile,
+          adminProfile: newUser.adminProfile,
+        });
+
+        if (newUser.role === "RECRUITER" && newUser.recruiterProfile) {
+          await Recruiter.create({
+            userId: createdUserDoc._id,
+            companyName: newUser.recruiterProfile.companyName,
+            designation: newUser.recruiterProfile.jobTitle,
+            department: newUser.recruiterProfile.department || "Talent Acquisition",
+          } as any).catch(console.error);
+        } else if (newUser.role === "APPLICANT" && newUser.applicantProfile) {
+          await Applicant.create({
+            userId: createdUserDoc._id,
+            headline: newUser.applicantProfile.headline,
+            location: newUser.applicantProfile.location,
+            phone: newUser.applicantProfile.phone,
+            skills: newUser.applicantProfile.skills || [],
+            experience: newUser.applicantProfile.experienceYears,
+            resume: newUser.applicantProfile.resumeFileName,
+          } as any).catch(console.error);
+        }
+      } catch (err: any) {
+        if (err.code === 11000) {
+          throw new Error("An account with this email address already exists.");
+        }
+        console.error(`[UserRepository] MongoDB error persisting user ${newUser.email}:`, err);
+        throw err;
+      }
     }
 
     this.users.set(id, newUser);
@@ -1335,6 +1731,82 @@ class UserRepository {
   }
 
   /**
+   * Async record login success in both cache and MongoDB
+   */
+  public async recordLoginSuccessAsync(userId: string): Promise<void> {
+    this.recordLoginSuccess(userId);
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      const now = new Date().toISOString();
+      await User.findByIdAndUpdate(userId, {
+        $set: {
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          status: "ACTIVE",
+          lastLoginAt: now,
+          lastActive: now,
+        },
+      }).catch(() => {});
+    }
+  }
+
+  /**
+   * Async record login failure in both cache and MongoDB
+   */
+  public async recordLoginFailureAsync(
+    userId: string,
+  ): Promise<{ locked: boolean; lockedUntil?: string | undefined }> {
+    const res = this.recordLoginFailure(userId);
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      const user = this.users.get(userId);
+      if (user) {
+        await User.findByIdAndUpdate(userId, {
+          $set: {
+            failedLoginAttempts: user.failedLoginAttempts,
+            lockedUntil: user.lockedUntil,
+            status: user.status,
+          },
+        }).catch(() => {});
+      }
+    }
+    return res;
+  }
+
+  /**
+   * Async unlock account in both cache and MongoDB
+   */
+  public async unlockAccountAsync(userId: string): Promise<boolean> {
+    const res = this.unlockAccount(userId);
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      await User.findByIdAndUpdate(userId, {
+        $set: {
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          status: "ACTIVE",
+        },
+      }).catch(() => {});
+    }
+    return res;
+  }
+
+  /**
+   * Sync all persisted users from MongoDB Atlas into in-memory cache
+   */
+  public async syncFromDatabase(): Promise<number> {
+    if (!isDatabaseConnected()) return 0;
+    try {
+      const docs = await User.find({}).exec();
+      for (const doc of docs) {
+        const user = docToUser(doc);
+        this.users.set(user.id, user);
+      }
+      return docs.length;
+    } catch (err) {
+      console.warn("[UserRepository] Failed to sync users from database:", err);
+      return 0;
+    }
+  }
+
+  /**
    * Update and persist Applicant profile (User + Applicant models)
    */
   public async updateApplicantProfile(
@@ -1399,7 +1871,8 @@ class UserRepository {
       if (data.skills !== undefined) applicantDocFields["skills"] = data.skills;
       if (data.experiences !== undefined) applicantDocFields["experience"] = data.experiences;
       if (data.education !== undefined) applicantDocFields["education"] = data.education;
-      if (data.certifications !== undefined) applicantDocFields["certifications"] = data.certifications;
+      if (data.certifications !== undefined)
+        applicantDocFields["certifications"] = data.certifications;
       if (data.projects !== undefined) applicantDocFields["projects"] = data.projects;
 
       await Applicant.findOneAndUpdate(
@@ -1432,7 +1905,9 @@ class UserRepository {
       company: exp.company || "Company",
       location: exp.location || "",
       period: `${exp.startDate || ""} - ${exp.endDate || "Present"}`.trim(),
-      description: Array.isArray(exp.description) ? exp.description.join(". ") : String(exp.description || ""),
+      description: Array.isArray(exp.description)
+        ? exp.description.join(". ")
+        : String(exp.description || ""),
     }));
 
     const mappedEducation = (profile.education || []).map((edu, i) => ({
@@ -1470,7 +1945,8 @@ class UserRepository {
       skills: mergedSkills,
       experiences: mappedExperiences.length > 0 ? mappedExperiences : currentProfile.experiences,
       education: mappedEducation.length > 0 ? mappedEducation : currentProfile.education,
-      certifications: mappedCertifications.length > 0 ? mappedCertifications : currentProfile.certifications,
+      certifications:
+        mappedCertifications.length > 0 ? mappedCertifications : currentProfile.certifications,
       projects: mappedProjects.length > 0 ? mappedProjects : currentProfile.projects,
       resumeFileName: resumeFileName || currentProfile.resumeFileName,
       resumeId: resumeId || currentProfile.resumeId,

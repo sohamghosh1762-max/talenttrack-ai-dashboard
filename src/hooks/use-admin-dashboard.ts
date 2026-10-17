@@ -152,4 +152,3 @@ export function useAdminDashboardData() {
     systemStatusData: query.data?.systemStatus ?? [],
   };
 }
-

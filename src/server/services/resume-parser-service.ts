@@ -41,9 +41,19 @@ ${normalizedResumeText}
   /**
    * Syncs extracted skills and summary to the applicant document if connected to DB
    */
-  private async syncApplicantProfile(applicantId: string, profile: IParsedResumeProfile, resumeId?: string, resumeFileName?: string): Promise<void> {
+  private async syncApplicantProfile(
+    applicantId: string,
+    profile: IParsedResumeProfile,
+    resumeId?: string,
+    resumeFileName?: string,
+  ): Promise<void> {
     try {
-      await userRepository.syncApplicantFromParsedResume(applicantId, profile, resumeId, resumeFileName);
+      await userRepository.syncApplicantFromParsedResume(
+        applicantId,
+        profile,
+        resumeId,
+        resumeFileName,
+      );
     } catch {
       // Non-fatal sync failure, does not invalidate resume parsing result
     }
@@ -103,11 +113,14 @@ ${normalizedResumeText}
       // 3. Build prompt & invoke Gemini structured generation
       const prompt = this.buildPrompt(extraction.normalizedText);
 
-      const rawAiResponse = await geminiService.generateStructured<Record<string, unknown>>(prompt, {
-        systemInstruction: RESUME_PARSER_SYSTEM_INSTRUCTION,
-        responseSchema: GEMINI_RESUME_PARSER_SCHEMA,
-        temperature: 0.1, // Low temperature for high extraction fidelity
-      });
+      const rawAiResponse = await geminiService.generateStructured<Record<string, unknown>>(
+        prompt,
+        {
+          systemInstruction: RESUME_PARSER_SYSTEM_INSTRUCTION,
+          responseSchema: GEMINI_RESUME_PARSER_SCHEMA,
+          temperature: 0.1, // Low temperature for high extraction fidelity
+        },
+      );
 
       // 4. Runtime Zod Schema Validation
       const validatedProfile = validateParsedResumeProfile(rawAiResponse);
@@ -121,7 +134,9 @@ ${normalizedResumeText}
           skillsCount: validatedProfile.skills?.length || 0,
           experienceCount: validatedProfile.experience?.length || 0,
           educationCount: validatedProfile.education?.length || 0,
-          summaryPresent: Boolean(validatedProfile.summary && validatedProfile.summary.trim().length > 0),
+          summaryPresent: Boolean(
+            validatedProfile.summary && validatedProfile.summary.trim().length > 0,
+          ),
         }),
       );
 
@@ -137,7 +152,12 @@ ${normalizedResumeText}
       });
 
       // 6. Sync applicant profile
-      await this.syncApplicantProfile(resume.applicantId, validatedProfile, resume.id, resume.originalFileName);
+      await this.syncApplicantProfile(
+        resume.applicantId,
+        validatedProfile,
+        resume.id,
+        resume.originalFileName,
+      );
 
       return updatedResume || resume;
     } catch (err: unknown) {
@@ -157,7 +177,11 @@ ${normalizedResumeText}
         parsingError: safeError,
       });
 
-      if (err instanceof BadRequestError || err instanceof NotFoundError || err instanceof AIServiceError) {
+      if (
+        err instanceof BadRequestError ||
+        err instanceof NotFoundError ||
+        err instanceof AIServiceError
+      ) {
         throw err;
       }
 

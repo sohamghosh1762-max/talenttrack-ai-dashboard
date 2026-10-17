@@ -82,14 +82,35 @@ describe("PROMPT 7: ADMIN SECURITY, AUTHORIZATION & INTEGRATION TEST SUITE", () 
       { name: "Dashboard", url: "http://localhost:3000/api/admin/dashboard" },
       { name: "Users List", url: "http://localhost:3000/api/admin/users" },
       { name: "User Detail", url: `http://localhost:3000/api/admin/users/${TEST_APPLICANT_ID}` },
-      { name: "User Activity", url: `http://localhost:3000/api/admin/users/${TEST_APPLICANT_ID}/activity` },
+      {
+        name: "User Activity",
+        url: `http://localhost:3000/api/admin/users/${TEST_APPLICANT_ID}/activity`,
+      },
       { name: "Applicants List", url: "http://localhost:3000/api/admin/applicants" },
-      { name: "Applicant Detail", url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}` },
-      { name: "Applicant Applications", url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}/applications` },
-      { name: "Applicant Interviews", url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}/interviews` },
-      { name: "Applicant Conversations", url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}/conversations` },
-      { name: "Applicant Notifications", url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}/notifications` },
-      { name: "Applicant Preferences", url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}/preferences` },
+      {
+        name: "Applicant Detail",
+        url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}`,
+      },
+      {
+        name: "Applicant Applications",
+        url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}/applications`,
+      },
+      {
+        name: "Applicant Interviews",
+        url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}/interviews`,
+      },
+      {
+        name: "Applicant Conversations",
+        url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}/conversations`,
+      },
+      {
+        name: "Applicant Notifications",
+        url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}/notifications`,
+      },
+      {
+        name: "Applicant Preferences",
+        url: `http://localhost:3000/api/admin/applicants/${TEST_APPLICANT_ID}/preferences`,
+      },
       {
         name: "User Status Update",
         url: `http://localhost:3000/api/admin/users/${TEST_APPLICANT_ID}/status`,
@@ -248,7 +269,10 @@ describe("PROMPT 7: ADMIN SECURITY, AUTHORIZATION & INTEGRATION TEST SUITE", () 
       assert.ok(createdAppInAdmin, "Created application must be found in Admin applications list");
       assert.strictEqual(createdAppInAdmin.jobTitle, "Lead Backend Developer");
       assert.strictEqual(createdAppInAdmin.job?.company, "TalentTrack AI");
-      assert.strictEqual(createdAppInAdmin.coverLetter, "Excited to apply for the Lead Backend Developer position.");
+      assert.strictEqual(
+        createdAppInAdmin.coverLetter,
+        "Excited to apply for the Lead Backend Developer position.",
+      );
     });
 
     it("Test C (Interview Creation): Admin Applicant Detail reflects new interview scheduled by recruiter", async () => {
@@ -289,9 +313,15 @@ describe("PROMPT 7: ADMIN SECURITY, AUTHORIZATION & INTEGRATION TEST SUITE", () 
     it("Test D (Notifications Read-Only Guarantee): Admin viewing notifications does NOT mark them as read", async () => {
       // 1. Verify unread notification exists for candidate
       const beforeNotifs = await notificationRepository.findUserNotifications(TEST_APPLICANT_ID);
-      const unreadBefore = beforeNotifs.notifications.find((n) => n.id === "65f1a2b3c4d5e6f7a8b9c701");
+      const unreadBefore = beforeNotifs.notifications.find(
+        (n) => n.id === "65f1a2b3c4d5e6f7a8b9c701",
+      );
       assert.ok(unreadBefore);
-      assert.strictEqual(unreadBefore.readAt, null, "Notification must start unread (readAt === null)");
+      assert.strictEqual(
+        unreadBefore.readAt,
+        null,
+        "Notification must start unread (readAt === null)",
+      );
 
       // 2. Admin fetches /api/admin/applicants/:id/notifications
       const req = createRequest(
@@ -313,9 +343,15 @@ describe("PROMPT 7: ADMIN SECURITY, AUTHORIZATION & INTEGRATION TEST SUITE", () 
 
       // 4. Verify notification in repository remains unread
       const afterNotifs = await notificationRepository.findUserNotifications(TEST_APPLICANT_ID);
-      const unreadAfter = afterNotifs.notifications.find((n) => n.id === "65f1a2b3c4d5e6f7a8b9c701");
+      const unreadAfter = afterNotifs.notifications.find(
+        (n) => n.id === "65f1a2b3c4d5e6f7a8b9c701",
+      );
       assert.ok(unreadAfter);
-      assert.strictEqual(unreadAfter.readAt, null, "Notification must remain unread after Admin inspection");
+      assert.strictEqual(
+        unreadAfter.readAt,
+        null,
+        "Notification must remain unread after Admin inspection",
+      );
     });
 
     it("Test E (Preferences Read-Only Guarantee): Admin viewing preferences retrieves stored values without mutation", async () => {
@@ -353,10 +389,26 @@ describe("PROMPT 7: ADMIN SECURITY, AUTHORIZATION & INTEGRATION TEST SUITE", () 
         assert.ok(res);
         const text = await res.text();
 
-        assert.strictEqual(text.includes("passwordHash"), false, `URL ${url} must not include passwordHash`);
-        assert.strictEqual(text.includes("password123"), false, `URL ${url} must not include raw passwords`);
-        assert.strictEqual(text.includes("sessionToken"), false, `URL ${url} must not include sessionToken`);
-        assert.strictEqual(text.includes("tokenHash"), false, `URL ${url} must not include tokenHash`);
+        assert.strictEqual(
+          text.includes("passwordHash"),
+          false,
+          `URL ${url} must not include passwordHash`,
+        );
+        assert.strictEqual(
+          text.includes("password123"),
+          false,
+          `URL ${url} must not include raw passwords`,
+        );
+        assert.strictEqual(
+          text.includes("sessionToken"),
+          false,
+          `URL ${url} must not include sessionToken`,
+        );
+        assert.strictEqual(
+          text.includes("tokenHash"),
+          false,
+          `URL ${url} must not include tokenHash`,
+        );
       }
     });
 
@@ -394,7 +446,11 @@ describe("PROMPT 7: ADMIN SECURITY, AUTHORIZATION & INTEGRATION TEST SUITE", () 
         const req = createRequest(url, { token: ADMIN_TOKEN });
         const res = await handleAdminApiRequest(req);
         assert.ok(res);
-        assert.strictEqual(res.status, 400, `URL ${url} should return 400 for invalid ObjectId format`);
+        assert.strictEqual(
+          res.status,
+          400,
+          `URL ${url} should return 400 for invalid ObjectId format`,
+        );
         const json = await res.json();
         assert.ok(json.error);
       }
@@ -413,14 +469,7 @@ describe("PROMPT 7: ADMIN SECURITY, AUTHORIZATION & INTEGRATION TEST SUITE", () 
     });
 
     it("rejects invalid pagination parameters (page=0, negative, limit>100) with 400", async () => {
-      const badParams = [
-        "page=0",
-        "page=-5",
-        "page=abc",
-        "limit=0",
-        "limit=101",
-        "limit=-10",
-      ];
+      const badParams = ["page=0", "page=-5", "page=abc", "limit=0", "limit=101", "limit=-10"];
 
       for (const param of badParams) {
         const req = createRequest(`http://localhost:3000/api/admin/applicants?${param}`, {

@@ -1,9 +1,11 @@
 import { useState, useCallback } from "react";
-import { Users } from "lucide-react";
+import { Users, Plus } from "lucide-react";
 import { UserSummaryCards } from "./UserSummaryCards";
 import { UsersFilterBar, type FilterState } from "./UsersFilterBar";
 import { AdminUsersTable } from "./AdminUsersTable";
 import { UserDetailDrawer } from "./UserDetailDrawer";
+import { CreateUserModal } from "./CreateUserModal";
+import { Button } from "@/components/ui/button";
 import { useAdminUsers } from "@/hooks/use-admin-users";
 import type { UserRole, UserStatus } from "@/server/types/user-types";
 import { exportUsersToCsv, exportUsersToJson } from "@/lib/export-utils";
@@ -25,6 +27,7 @@ export function AdminUsersView() {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // When any filter changes, reset to page 1
   const handleFiltersChange = useCallback((next: FilterState) => {
@@ -108,6 +111,15 @@ export function AdminUsersView() {
             Manage platform accounts, roles, bulk operations, and account status.
           </p>
         </div>
+
+        <Button
+          size="sm"
+          onClick={() => setIsCreateOpen(true)}
+          className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs"
+        >
+          <Plus className="size-3.5" />
+          Add User
+        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -144,6 +156,13 @@ export function AdminUsersView() {
 
       {/* User Detail Drawer */}
       <UserDetailDrawer userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
+
+      {/* Create User Modal */}
+      <CreateUserModal
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        onSuccess={() => void refetch()}
+      />
     </div>
   );
 }

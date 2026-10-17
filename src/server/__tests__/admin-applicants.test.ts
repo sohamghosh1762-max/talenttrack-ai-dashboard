@@ -43,8 +43,7 @@ const ADMIN_TOKEN = "mock_admin_token"; // Admin user 65f1a2b3c4d5e6f7a8b9c001
 const adminApplicantsKeys = {
   all: ["admin", "applicants"] as const,
   lists: () => [...adminApplicantsKeys.all, "list"] as const,
-  list: (params?: Record<string, unknown>) =>
-    [...adminApplicantsKeys.lists(), params] as const,
+  list: (params?: Record<string, unknown>) => [...adminApplicantsKeys.lists(), params] as const,
   details: () => [...adminApplicantsKeys.all, "detail"] as const,
   detail: (id: string) => [...adminApplicantsKeys.details(), id] as const,
 };
@@ -154,11 +153,14 @@ describe("ADMIN APPLICANT API SUITE: GET /api/admin/applicants", () => {
     const resSkill = await handleGetApplicants(reqSkill);
     const dataSkill = await resSkill.json();
     assert.ok(dataSkill.applicants.length >= 1);
-    assert.ok(dataSkill.applicants.every((a: any) => 
-      a.skills.some((s: string) => s.toLowerCase().includes("kubernetes")) ||
-      a.headline.toLowerCase().includes("kubernetes") ||
-      a.name.toLowerCase().includes("kubernetes")
-    ));
+    assert.ok(
+      dataSkill.applicants.every(
+        (a: any) =>
+          a.skills.some((s: string) => s.toLowerCase().includes("kubernetes")) ||
+          a.headline.toLowerCase().includes("kubernetes") ||
+          a.name.toLowerCase().includes("kubernetes"),
+      ),
+    );
   });
 
   // 4. Supported filters work
@@ -197,9 +199,12 @@ describe("ADMIN APPLICANT API SUITE: GET /api/admin/applicants", () => {
     }
 
     // Sorting by name asc
-    const reqSort = createRequest("http://localhost/api/admin/applicants?sortBy=name&sortOrder=asc", {
-      token: ADMIN_TOKEN,
-    });
+    const reqSort = createRequest(
+      "http://localhost/api/admin/applicants?sortBy=name&sortOrder=asc",
+      {
+        token: ADMIN_TOKEN,
+      },
+    );
     const resSort = await handleGetApplicants(reqSort);
     const dataSort = await resSort.json();
     assert.ok(dataSort.applicants.length > 1);
@@ -370,7 +375,10 @@ describe("ADMIN APPLICANT API SUITE: GET /api/admin/applicants", () => {
     assert.ok(data.applicants.length > 0);
     for (const app of data.applicants) {
       assert.ok(app.id && typeof app.id === "string");
-      assert.ok(/^[0-9a-fA-F]{24}$/.test(app.id), "Applicant ID must be valid 24-hex ObjectId for router navigation");
+      assert.ok(
+        /^[0-9a-fA-F]{24}$/.test(app.id),
+        "Applicant ID must be valid 24-hex ObjectId for router navigation",
+      );
     }
   });
 
@@ -530,9 +538,12 @@ describe("ADMIN APPLICANT API SUITE: GET /api/admin/applicants", () => {
   // 24. Missing / deleted Job is handled gracefully without crash
   it("24. Missing or deleted Job reference is handled gracefully", async () => {
     const nonExistentApplicantId = "65f1a2b3c4d5e6f7a8b9c009"; // Sophia Chen
-    const req = createRequest(`http://localhost/api/admin/applicants/${nonExistentApplicantId}/applications`, {
-      token: ADMIN_TOKEN,
-    });
+    const req = createRequest(
+      `http://localhost/api/admin/applicants/${nonExistentApplicantId}/applications`,
+      {
+        token: ADMIN_TOKEN,
+      },
+    );
     const res = await handleAdminApiRequest(req);
     assert.ok(res);
     assert.equal(res.status, 200);
@@ -545,21 +556,29 @@ describe("ADMIN APPLICANT API SUITE: GET /api/admin/applicants", () => {
     const targetId = "65f1a2b3c4d5e6f7a8b9c008";
 
     // Unauthenticated
-    const unauthReq = createRequest(`http://localhost/api/admin/applicants/${targetId}/applications`);
+    const unauthReq = createRequest(
+      `http://localhost/api/admin/applicants/${targetId}/applications`,
+    );
     const unauthRes = await handleAdminApiRequest(unauthReq);
     assert.equal(unauthRes?.status, 401);
 
     // Recruiter (non-admin)
-    const recruiterReq = createRequest(`http://localhost/api/admin/applicants/${targetId}/applications`, {
-      token: RECRUITER_TOKEN,
-    });
+    const recruiterReq = createRequest(
+      `http://localhost/api/admin/applicants/${targetId}/applications`,
+      {
+        token: RECRUITER_TOKEN,
+      },
+    );
     const recruiterRes = await handleAdminApiRequest(recruiterReq);
     assert.equal(recruiterRes?.status, 403);
 
     // Applicant (non-admin)
-    const applicantReq = createRequest(`http://localhost/api/admin/applicants/${targetId}/applications`, {
-      token: APPLICANT_TOKEN,
-    });
+    const applicantReq = createRequest(
+      `http://localhost/api/admin/applicants/${targetId}/applications`,
+      {
+        token: APPLICANT_TOKEN,
+      },
+    );
     const applicantRes = await handleAdminApiRequest(applicantReq);
     assert.equal(applicantRes?.status, 403);
   });
@@ -700,15 +719,25 @@ describe("ADMIN APPLICANT API SUITE: GET /api/admin/applicants", () => {
     assert.ok(conv.id);
     assert.ok(conv.participantIds);
     assert.equal(typeof conv.unreadCount, "number");
-    assert.equal(conv.lastMessageText, undefined, "Message body text must NOT be exposed to Admin by default");
-    assert.equal(conv.messages, undefined, "Private message thread must NOT be exposed to Admin by default");
+    assert.equal(
+      conv.lastMessageText,
+      undefined,
+      "Message body text must NOT be exposed to Admin by default",
+    );
+    assert.equal(
+      conv.messages,
+      undefined,
+      "Private message thread must NOT be exposed to Admin by default",
+    );
   });
 
   // 34. Conversation endpoint authorization check
   it("34. Conversation endpoint enforces RBAC (401 unauth, 403 non-admin)", async () => {
     const targetId = "65f1a2b3c4d5e6f7a8b9c008";
 
-    const unauthReq = createRequest(`http://localhost/api/admin/applicants/${targetId}/conversations`);
+    const unauthReq = createRequest(
+      `http://localhost/api/admin/applicants/${targetId}/conversations`,
+    );
     const unauthRes = await handleAdminApiRequest(unauthReq);
     assert.equal(unauthRes?.status, 401);
 
@@ -746,7 +775,9 @@ describe("ADMIN APPLICANT API SUITE: GET /api/admin/applicants", () => {
   it("36. Notification endpoint enforces RBAC (401 unauth, 403 non-admin)", async () => {
     const targetId = "65f1a2b3c4d5e6f7a8b9c008";
 
-    const unauthReq = createRequest(`http://localhost/api/admin/applicants/${targetId}/notifications`);
+    const unauthReq = createRequest(
+      `http://localhost/api/admin/applicants/${targetId}/notifications`,
+    );
     const unauthRes = await handleAdminApiRequest(unauthReq);
     assert.equal(unauthRes?.status, 401);
 
@@ -785,7 +816,9 @@ describe("ADMIN APPLICANT API SUITE: GET /api/admin/applicants", () => {
   it("38. Preferences endpoint enforces RBAC (401 unauth, 403 non-admin)", async () => {
     const targetId = "65f1a2b3c4d5e6f7a8b9c008";
 
-    const unauthReq = createRequest(`http://localhost/api/admin/applicants/${targetId}/preferences`);
+    const unauthReq = createRequest(
+      `http://localhost/api/admin/applicants/${targetId}/preferences`,
+    );
     const unauthRes = await handleAdminApiRequest(unauthReq);
     assert.equal(unauthRes?.status, 401);
 
@@ -819,4 +852,3 @@ describe("ADMIN APPLICANT API SUITE: GET /api/admin/applicants", () => {
     assert.ok(data.preferences);
   });
 });
-

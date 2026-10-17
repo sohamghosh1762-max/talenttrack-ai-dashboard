@@ -2,13 +2,35 @@
 
 import { useNavigate } from "@tanstack/react-router";
 import { pipelineStagesData, type PipelineStage } from "@/data/mockData";
+import { useRecruiterAnalytics } from "@/hooks/api/useAnalytics";
 
 interface HiringPipelineProps {
   onStageSelect?: (stage: PipelineStage) => void;
+  dateRange?: string;
+  jobId?: string;
 }
 
-export function HiringPipeline({ onStageSelect }: HiringPipelineProps) {
+export function HiringPipeline({ onStageSelect, dateRange = "30d", jobId }: HiringPipelineProps) {
   const navigate = useNavigate();
+  const { data: analytics, isLoading } = useRecruiterAnalytics({ range: dateRange, jobId });
+
+  const funnel = analytics?.funnel || [];
+
+  const stagesWithCounts: PipelineStage[] = pipelineStagesData.map((stage) => {
+    let stageKey = "APPLIED";
+    if (stage.id === "screened") stageKey = "SCREENING";
+    else if (stage.id === "interview") stageKey = "INTERVIEW";
+    else if (stage.id === "offered") stageKey = "OFFERED";
+    else if (stage.id === "hired") stageKey = "HIRED";
+
+    const funnelItem = funnel.find((f) => f.stage === stageKey);
+    const countVal = funnelItem ? funnelItem.count : 0;
+
+    return {
+      ...stage,
+      count: isLoading ? "..." : String(countVal),
+    };
+  });
 
   return (
     <section className="dashboard-card min-w-0 p-3.5">
@@ -24,7 +46,7 @@ export function HiringPipeline({ onStageSelect }: HiringPipelineProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5 pt-1">
-        {pipelineStagesData.map((stage) => {
+        {stagesWithCounts.map((stage) => {
           const { id, label, count, icon: StageIcon, bgClass, toneClass } = stage;
 
           return (

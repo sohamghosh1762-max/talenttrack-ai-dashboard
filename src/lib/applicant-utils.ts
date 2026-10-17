@@ -11,7 +11,8 @@ export interface ProfileCompletionResult {
 }
 
 export function calculateProfileCompletion(
-  user: User | SafeUser | ApplicantProfileResponse | (SafeUser & { resume?: any }) | null | undefined,
+  user:
+    User | SafeUser | ApplicantProfileResponse | (SafeUser & { resume?: any }) | null | undefined,
 ): ProfileCompletionResult {
   if (!user) {
     return {
@@ -23,8 +24,7 @@ export function calculateProfileCompletion(
     };
   }
 
-  const profile: any =
-    (user as any).applicantProfile || (user as any);
+  const profile: any = (user as any).applicantProfile || (user as any);
 
   const checks = [
     {
@@ -55,20 +55,26 @@ export function calculateProfileCompletion(
     },
     {
       name: "Skills",
-      completed: Boolean(profile.skills && Array.isArray(profile.skills) && profile.skills.length > 0),
+      completed: Boolean(
+        profile.skills && Array.isArray(profile.skills) && profile.skills.length > 0,
+      ),
       suggestion: "Add skills to your profile",
     },
     {
       name: "Experience",
       completed: Boolean(
-        (profile.experiences && Array.isArray(profile.experiences) && profile.experiences.length > 0) ||
-        (profile.experience && Array.isArray(profile.experience) && profile.experience.length > 0)
+        (profile.experiences &&
+          Array.isArray(profile.experiences) &&
+          profile.experiences.length > 0) ||
+        (profile.experience && Array.isArray(profile.experience) && profile.experience.length > 0),
       ),
       suggestion: "Add your work experience",
     },
     {
       name: "Education",
-      completed: Boolean(profile.education && Array.isArray(profile.education) && profile.education.length > 0),
+      completed: Boolean(
+        profile.education && Array.isArray(profile.education) && profile.education.length > 0,
+      ),
       suggestion: "Add your education history",
     },
   ];
@@ -125,7 +131,7 @@ export interface JobMatchResult {
 
 export function calculateJobMatch(job: IJob, userSkills: string[] = []): JobMatchResult {
   const normalizedUserSkills = userSkills.map((s) => s.trim().toLowerCase()).filter(Boolean);
-  
+
   // Collect all job skill keywords
   const jobSkillPool: string[] = [];
   if (Array.isArray(job.skills)) {
@@ -166,7 +172,7 @@ export function calculateJobMatch(job: IJob, userSkills: string[] = []): JobMatc
   }
 
   // Calculate realistic deterministic score based on matched skills count
-  const ratio = matchedSkills.length / Math.max(1, Math.min(6, (job.skills?.length || 4)));
+  const ratio = matchedSkills.length / Math.max(1, Math.min(6, job.skills?.length || 4));
   const calculatedScore = Math.min(96, Math.max(72, Math.round(70 + ratio * 26)));
 
   const explanation =

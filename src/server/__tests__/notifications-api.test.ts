@@ -162,7 +162,10 @@ describe("PERSISTENT NOTIFICATION SYSTEM & RBAC SUITE", () => {
     for (let i = 0; i < notifs.length - 1; i++) {
       const current = new Date(notifs[i].createdAt).getTime();
       const next = new Date(notifs[i + 1].createdAt).getTime();
-      assert.ok(current >= next, `Notification ${i} is newer than or equal to notification ${i + 1}`);
+      assert.ok(
+        current >= next,
+        `Notification ${i} is newer than or equal to notification ${i + 1}`,
+      );
     }
   });
 
@@ -264,10 +267,13 @@ describe("PERSISTENT NOTIFICATION SYSTEM & RBAC SUITE", () => {
   });
 
   it("8. Invalid notification ID returns 404 Not Found", async () => {
-    const req = createJsonRequest("http://localhost:3000/api/notifications/65f1a2b3c4d5e6f7a8b9c999/read", {
-      method: "PATCH",
-      token: applicantAToken,
-    });
+    const req = createJsonRequest(
+      "http://localhost:3000/api/notifications/65f1a2b3c4d5e6f7a8b9c999/read",
+      {
+        method: "PATCH",
+        token: applicantAToken,
+      },
+    );
 
     const res = await handleApiRequest(req);
     assert.ok(res);
@@ -329,7 +335,10 @@ describe("PERSISTENT NOTIFICATION SYSTEM & RBAC SUITE", () => {
       (n) => n.type === "APPLICATION_SUBMITTED" && n.applicationId === applyData.data.id,
     );
 
-    assert.ok(submissionNotif, "Application submission notification must be created in MongoDB store");
+    assert.ok(
+      submissionNotif,
+      "Application submission notification must be created in MongoDB store",
+    );
     assert.ok(submissionNotif.message.includes(testJob.title));
   });
 
@@ -380,7 +389,9 @@ describe("PERSISTENT NOTIFICATION SYSTEM & RBAC SUITE", () => {
     );
 
     const initialNotifs = await notificationRepository.findUserNotifications(applicantB.id);
-    const initialCount = initialNotifs.notifications.filter((n) => n.applicationId === app.id).length;
+    const initialCount = initialNotifs.notifications.filter(
+      (n) => n.applicationId === app.id,
+    ).length;
 
     // Trigger same stage update again
     await handleApiRequest(
@@ -394,7 +405,11 @@ describe("PERSISTENT NOTIFICATION SYSTEM & RBAC SUITE", () => {
     const secondNotifs = await notificationRepository.findUserNotifications(applicantB.id);
     const secondCount = secondNotifs.notifications.filter((n) => n.applicationId === app.id).length;
 
-    assert.equal(secondCount, initialCount, "Repeated identical stage should not generate duplicate notification");
+    assert.equal(
+      secondCount,
+      initialCount,
+      "Repeated identical stage should not generate duplicate notification",
+    );
   });
 
   it("13. Real Event: Interview scheduled creates persistent notification", async () => {
@@ -487,13 +502,16 @@ describe("PERSISTENT NOTIFICATION SYSTEM & RBAC SUITE", () => {
       testJob.id,
     );
 
-    const msgReq = createJsonRequest(`http://localhost:3000/api/conversations/${conv.id}/messages`, {
-      method: "POST",
-      token: recruiterRToken,
-      body: {
-        text: "Hi Candidate B, when are you available for a quick chat?",
+    const msgReq = createJsonRequest(
+      `http://localhost:3000/api/conversations/${conv.id}/messages`,
+      {
+        method: "POST",
+        token: recruiterRToken,
+        body: {
+          text: "Hi Candidate B, when are you available for a quick chat?",
+        },
       },
-    });
+    );
 
     const res = await handleApiRequest(msgReq);
     assert.ok(res);

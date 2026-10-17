@@ -9,7 +9,9 @@ const safeDimensionSchema = z.object({
     .default(75),
   evidence: z
     .union([z.array(z.string()), z.string()])
-    .transform((val) => (Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean)))
+    .transform((val) =>
+      Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean),
+    )
     .default([]),
 });
 
@@ -22,7 +24,10 @@ export const geminiAtsAnalysisSchema = z.object({
   summary: z.string().default("ATS compatibility analysis evaluated against structured criteria."),
   categories: z
     .object({
-      completeness: legacyCategorySchema.default({ score: 75, feedback: "Completeness evaluated." }),
+      completeness: legacyCategorySchema.default({
+        score: 75,
+        feedback: "Completeness evaluated.",
+      }),
       skills: legacyCategorySchema.default({ score: 75, feedback: "Skills evaluated." }),
       experience: legacyCategorySchema.default({ score: 75, feedback: "Experience evaluated." }),
       keywords: legacyCategorySchema.default({ score: 75, feedback: "Keywords evaluated." }),
@@ -56,23 +61,33 @@ export const geminiAtsAnalysisSchema = z.object({
   }),
   strengths: z
     .union([z.array(z.string()), z.string()])
-    .transform((val) => (Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean)))
+    .transform((val) =>
+      Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean),
+    )
     .default([]),
   weaknesses: z
     .union([z.array(z.string()), z.string()])
-    .transform((val) => (Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean)))
+    .transform((val) =>
+      Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean),
+    )
     .default([]),
   improvements: z
     .union([z.array(z.string()), z.string()])
-    .transform((val) => (Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean)))
+    .transform((val) =>
+      Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean),
+    )
     .default([]),
   keywordInsights: z
     .union([z.array(z.string()), z.string()])
-    .transform((val) => (Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean)))
+    .transform((val) =>
+      Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean),
+    )
     .default([]),
   recommendations: z
     .union([z.array(z.string()), z.string()])
-    .transform((val) => (Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean)))
+    .transform((val) =>
+      Array.isArray(val) ? val.map(String).filter(Boolean) : [String(val)].filter(Boolean),
+    )
     .default([]),
 });
 
@@ -144,7 +159,10 @@ export function validateGeminiAtsAnalysis(raw: unknown): ValidatedGeminiAtsOutpu
       );
 
       return {
-        summary: typeof partialObj["summary"] === "string" ? partialObj["summary"] : "Resume evaluated for ATS compatibility.",
+        summary:
+          typeof partialObj["summary"] === "string"
+            ? partialObj["summary"]
+            : "Resume evaluated for ATS compatibility.",
         categories: {
           completeness: {
             score: completenessScore,
@@ -173,32 +191,52 @@ export function validateGeminiAtsAnalysis(raw: unknown): ValidatedGeminiAtsOutpu
         },
         skillsRelevance: {
           score: skillsScore,
-          evidence: parseEvidence(partialObj["skillsRelevance"]?.evidence ?? cats["skills"]?.feedback, "Skills relevance analyzed."),
+          evidence: parseEvidence(
+            partialObj["skillsRelevance"]?.evidence ?? cats["skills"]?.feedback,
+            "Skills relevance analyzed.",
+          ),
         },
         experienceQuality: {
           score: experienceScore,
-          evidence: parseEvidence(partialObj["experienceQuality"]?.evidence ?? cats["experience"]?.feedback, "Work experience quality analyzed."),
+          evidence: parseEvidence(
+            partialObj["experienceQuality"]?.evidence ?? cats["experience"]?.feedback,
+            "Work experience quality analyzed.",
+          ),
         },
         projectQuality: {
           score: structureScore,
-          evidence: parseEvidence(partialObj["projectQuality"]?.evidence ?? cats["structure"]?.feedback, "Project quality analyzed."),
+          evidence: parseEvidence(
+            partialObj["projectQuality"]?.evidence ?? cats["structure"]?.feedback,
+            "Project quality analyzed.",
+          ),
         },
         summaryQuality: {
           score: completenessScore,
-          evidence: parseEvidence(partialObj["summaryQuality"]?.evidence ?? cats["completeness"]?.feedback, "Professional summary analyzed."),
+          evidence: parseEvidence(
+            partialObj["summaryQuality"]?.evidence ?? cats["completeness"]?.feedback,
+            "Professional summary analyzed.",
+          ),
         },
         keywordRelevance: {
           score: keywordsScore,
-          evidence: parseEvidence(partialObj["keywordRelevance"]?.evidence ?? cats["keywords"]?.feedback, "ATS keyword coverage analyzed."),
+          evidence: parseEvidence(
+            partialObj["keywordRelevance"]?.evidence ?? cats["keywords"]?.feedback,
+            "ATS keyword coverage analyzed.",
+          ),
         },
         achievementQuality: {
           score: experienceScore,
-          evidence: parseEvidence(partialObj["achievementQuality"]?.evidence ?? cats["experience"]?.feedback, "Measurable achievements analyzed."),
+          evidence: parseEvidence(
+            partialObj["achievementQuality"]?.evidence ?? cats["experience"]?.feedback,
+            "Measurable achievements analyzed.",
+          ),
         },
         strengths,
         weaknesses,
         improvements: weaknesses,
-        keywordInsights: Array.isArray(partialObj["keywordInsights"]) ? partialObj["keywordInsights"].map(String).filter(Boolean) : [],
+        keywordInsights: Array.isArray(partialObj["keywordInsights"])
+          ? partialObj["keywordInsights"].map(String).filter(Boolean)
+          : [],
         recommendations,
       };
     }
@@ -234,53 +272,96 @@ export const GEMINI_ATS_ANALYSIS_SCHEMA = {
   properties: {
     summary: {
       type: "string",
-      description: "A concise 2-3 sentence executive overview of overall resume ATS compatibility and quality.",
+      description:
+        "A concise 2-3 sentence executive overview of overall resume ATS compatibility and quality.",
     },
     skillsRelevance: {
       type: "object",
       properties: {
-        score: { type: "number", description: "Score between 0 and 100 evaluating relevance and depth of skills" },
-        evidence: { type: "array", items: { type: "string" }, description: "Specific evidence found in resume" },
+        score: {
+          type: "number",
+          description: "Score between 0 and 100 evaluating relevance and depth of skills",
+        },
+        evidence: {
+          type: "array",
+          items: { type: "string" },
+          description: "Specific evidence found in resume",
+        },
       },
       required: ["score", "evidence"],
     },
     experienceQuality: {
       type: "object",
       properties: {
-        score: { type: "number", description: "Score between 0 and 100 evaluating role clarity and technical depth" },
-        evidence: { type: "array", items: { type: "string" }, description: "Specific evidence found in resume" },
+        score: {
+          type: "number",
+          description: "Score between 0 and 100 evaluating role clarity and technical depth",
+        },
+        evidence: {
+          type: "array",
+          items: { type: "string" },
+          description: "Specific evidence found in resume",
+        },
       },
       required: ["score", "evidence"],
     },
     projectQuality: {
       type: "object",
       properties: {
-        score: { type: "number", description: "Score between 0 and 100 evaluating project complexity and relevance" },
-        evidence: { type: "array", items: { type: "string" }, description: "Specific evidence found in resume" },
+        score: {
+          type: "number",
+          description: "Score between 0 and 100 evaluating project complexity and relevance",
+        },
+        evidence: {
+          type: "array",
+          items: { type: "string" },
+          description: "Specific evidence found in resume",
+        },
       },
       required: ["score", "evidence"],
     },
     summaryQuality: {
       type: "object",
       properties: {
-        score: { type: "number", description: "Score between 0 and 100 evaluating executive summary clarity" },
-        evidence: { type: "array", items: { type: "string" }, description: "Specific evidence found in resume" },
+        score: {
+          type: "number",
+          description: "Score between 0 and 100 evaluating executive summary clarity",
+        },
+        evidence: {
+          type: "array",
+          items: { type: "string" },
+          description: "Specific evidence found in resume",
+        },
       },
       required: ["score", "evidence"],
     },
     keywordRelevance: {
       type: "object",
       properties: {
-        score: { type: "number", description: "Score between 0 and 100 evaluating ATS industry keyword density" },
-        evidence: { type: "array", items: { type: "string" }, description: "Specific evidence found in resume" },
+        score: {
+          type: "number",
+          description: "Score between 0 and 100 evaluating ATS industry keyword density",
+        },
+        evidence: {
+          type: "array",
+          items: { type: "string" },
+          description: "Specific evidence found in resume",
+        },
       },
       required: ["score", "evidence"],
     },
     achievementQuality: {
       type: "object",
       properties: {
-        score: { type: "number", description: "Score between 0 and 100 evaluating quantifiable metrics and impact" },
-        evidence: { type: "array", items: { type: "string" }, description: "Specific evidence found in resume" },
+        score: {
+          type: "number",
+          description: "Score between 0 and 100 evaluating quantifiable metrics and impact",
+        },
+        evidence: {
+          type: "array",
+          items: { type: "string" },
+          description: "Specific evidence found in resume",
+        },
       },
       required: ["score", "evidence"],
     },

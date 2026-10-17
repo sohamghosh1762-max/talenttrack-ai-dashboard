@@ -2,6 +2,8 @@ import { useState } from "react";
 import {
   MoreHorizontal,
   Eye,
+  Edit,
+  Trash2,
   UserCheck2,
   UserX,
   PowerOff,
@@ -24,10 +26,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { UserStatusConfirmDialog } from "./UserStatusConfirmDialog";
 import { UserBulkStatusConfirmDialog } from "./UserBulkStatusConfirmDialog";
-import { useUpdateUserStatus, useBulkUpdateUserStatus } from "@/hooks/use-admin-users";
+import { EditUserModal } from "./EditUserModal";
+import {
+  useUpdateUserStatus,
+  useBulkUpdateUserStatus,
+  useDeleteAdminUser,
+} from "@/hooks/use-admin-users";
 import type { SafeUser, UserStatus } from "@/server/types/user-types";
 
 // ─── Badge helpers (using API's uppercase values) ─────────────────────────────
@@ -229,9 +246,16 @@ export function AdminUsersTable({
 }: AdminUsersTableProps) {
   const { mutate: updateStatus, isPending } = useUpdateUserStatus();
   const { mutate: bulkUpdateStatus, isPending: isBulkPending } = useBulkUpdateUserStatus();
+  const deleteUserMutation = useDeleteAdminUser();
 
   // Selected user IDs for bulk actions
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+
+  // User editing modal state
+  const [editingUser, setEditingUser] = useState<SafeUser | null>(null);
+
+  // User delete confirmation modal state
+  const [userToDelete, setUserToDelete] = useState<SafeUser | null>(null);
 
   // Single user confirmation modal state
   const [confirmState, setConfirmState] = useState<{
@@ -246,6 +270,17 @@ export function AdminUsersTable({
     open: boolean;
     targetStatus: UserStatus | null;
   }>({ open: false, targetStatus: null });
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    try {
+      await deleteUserMutation.mutateAsync(userToDelete.id);
+      toast.success(`User ${userToDelete.name} deleted successfully.`);
+      setUserToDelete(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete user.");
+    }
+  };
 
   const currentVisibleIds = users ? users.map((u) => u.id) : [];
   const isAllSelected =
@@ -570,6 +605,15 @@ export function AdminUsersTable({
                               View Details
                             </DropdownMenuItem>
 
+                            {/* Edit */}
+                            <DropdownMenuItem
+                              onClick={() => setEditingUser(user)}
+                              className="cursor-pointer gap-2"
+                            >
+                              <Edit className="size-3.5 text-slate-500" />
+                              Edit Profile
+                            </DropdownMenuItem>
+
                             <DropdownMenuSeparator />
 
                             {/* Activate */}
@@ -604,6 +648,17 @@ export function AdminUsersTable({
                                 Deactivate
                               </DropdownMenuItem>
                             )}
+
+                            <DropdownMenuSeparator />
+
+                            {/* Delete */}
+                            <DropdownMenuItem
+                              onClick={() => setUserToDelete(user)}
+                              className="cursor-pointer gap-2 text-rose-600 focus:text-rose-600 dark:text-rose-400"
+                            >
+                              <Trash2 className="size-3.5" />
+                              Delete Account
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -696,6 +751,38 @@ export function AdminUsersTable({
         isLoading={isBulkPending}
         onConfirm={handleConfirmBulkStatusChange}
       />
+
+      {/* Edit User Modal */}
+      <EditUserModal
+        user={editingUser}
+        open={!!editingUser}
+        onOpenChange={(open) => !open && setEditingUser(null)}
+      />
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100">
+              Delete User Account
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-slate-500 dark:text-slate-400">
+              Are you sure you want to permanently delete {userToDelete?.name}'s account? This
+              action cannot be undone. System administrator protection rules apply.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel disabled={deleteUserMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={deleteUserMutation.isPending}
+              className="bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete Account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

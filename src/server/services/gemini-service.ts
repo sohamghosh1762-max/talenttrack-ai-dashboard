@@ -136,7 +136,7 @@ export class GeminiService {
     // Scrub any general API key patterns (e.g., AIza..., AQ....)
     message = message.replace(/AIza[0-9A-Za-z-_]{35}/g, "[REDACTED_KEY]");
     message = message.replace(/AQ\.[0-9A-Za-z-_]{40,}/g, "[REDACTED_KEY]");
-    message = message.replace(/Bearer\s+[a-zA-Z0-9_\-\.]+/gi, "Bearer [REDACTED_TOKEN]");
+    message = message.replace(/Bearer\s+[a-zA-Z0-9_.-]+/gi, "Bearer [REDACTED_TOKEN]");
 
     return message;
   }
@@ -212,7 +212,9 @@ export class GeminiService {
         const rawMsg = err instanceof Error ? err.message : String(err);
         const currentIndex = candidateModels.indexOf(targetModel);
         if (currentIndex < candidateModels.length - 1) {
-          console.warn(`[ATS-DEBUG] Gemini model '${targetModel}' error: ${rawMsg.slice(0, 100)}, trying fallback '${candidateModels[currentIndex + 1]}'...`);
+          console.warn(
+            `[ATS-DEBUG] Gemini model '${targetModel}' error: ${rawMsg.slice(0, 100)}, trying fallback '${candidateModels[currentIndex + 1]}'...`,
+          );
           continue;
         }
         break;
@@ -227,7 +229,11 @@ export class GeminiService {
     const safeMsg = this.sanitizeErrorMessage(lastError);
 
     // Handle rate limits / 429
-    if (rawMsg.includes("429") || rawMsg.toLowerCase().includes("quota") || rawMsg.toLowerCase().includes("resource exhausted")) {
+    if (
+      rawMsg.includes("429") ||
+      rawMsg.toLowerCase().includes("quota") ||
+      rawMsg.toLowerCase().includes("resource exhausted")
+    ) {
       throw new AIServiceError(
         "AI service rate limit exceeded or quota exhausted. Please retry shortly.",
         429,
@@ -333,7 +339,9 @@ export class GeminiService {
         const rawMsg = err instanceof Error ? err.message : String(err);
         const currentIndex = candidateModels.indexOf(targetModel);
         if (currentIndex < candidateModels.length - 1) {
-          console.warn(`[ATS-DEBUG] Gemini structured model '${targetModel}' error: ${rawMsg.slice(0, 100)}, trying fallback '${candidateModels[currentIndex + 1]}'...`);
+          console.warn(
+            `[ATS-DEBUG] Gemini structured model '${targetModel}' error: ${rawMsg.slice(0, 100)}, trying fallback '${candidateModels[currentIndex + 1]}'...`,
+          );
           continue;
         }
         break;
@@ -374,7 +382,6 @@ export class GeminiService {
 
     throw new AIServiceError(`AI structured generation failed: ${safeMsg}`, 503);
   }
-
 
   /**
    * Safe status object suitable for health checks (NEVER leaks keys or credentials)

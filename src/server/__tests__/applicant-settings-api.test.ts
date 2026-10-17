@@ -184,7 +184,11 @@ describe("PERSISTENT APPLICANT SETTINGS & NOTIFICATION INTEGRATION SUITE", () =>
     assert.ok(resB);
     const dataB = await resB.json();
 
-    assert.equal(dataB.data.applicationStatusUpdates, true, "Applicant B settings must remain unchanged");
+    assert.equal(
+      dataB.data.applicationStatusUpdates,
+      true,
+      "Applicant B settings must remain unchanged",
+    );
   });
 
   it("6. Validation: Non-boolean values are rejected with 400 Bad Request", async () => {
@@ -239,7 +243,11 @@ describe("PERSISTENT APPLICANT SETTINGS & NOTIFICATION INTEGRATION SUITE", () =>
     // 5. Verify NO Notification was created for Applicant B because preference was false
     const notifs = await notificationRepository.findUserNotifications(applicantB.id);
     const stageNotif = notifs.notifications.find((n) => n.applicationId === app.id);
-    assert.equal(stageNotif, undefined, "Notification must NOT be created when applicationStatusUpdates is disabled");
+    assert.equal(
+      stageNotif,
+      undefined,
+      "Notification must NOT be created when applicationStatusUpdates is disabled",
+    );
   });
 
   it("8. Notification Integration: Re-enabling applicationStatusUpdates restores notification creation", async () => {
@@ -316,7 +324,9 @@ describe("PERSISTENT APPLICANT SETTINGS & NOTIFICATION INTEGRATION SUITE", () =>
 
     // 5. Verify NO Notification was created for Applicant B
     const notifs = await notificationRepository.findUserNotifications(applicantB.id);
-    const interviewNotif = notifs.notifications.find((n) => n.interviewId === interviewData.data.id);
+    const interviewNotif = notifs.notifications.find(
+      (n) => n.interviewId === interviewData.data.id,
+    );
     assert.equal(interviewNotif, undefined, "Interview notification suppressed by preference");
   });
 

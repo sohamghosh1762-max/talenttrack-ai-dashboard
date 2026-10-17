@@ -9,5 +9,9 @@ export * from "./Message.ts";
 export * from "./Interview.ts";
 export * from "./Notification.ts";
 export * from "./ApplicantPreferences.ts";
+export * from "./Session.ts";
+export * from "./AuthToken.ts";
+export * from "./BackgroundJob.ts";
+export * from "./Organization.ts";
+export * from "./Department.ts";
 export * from "../types/index.ts";
-
