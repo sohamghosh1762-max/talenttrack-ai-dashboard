@@ -1,7 +1,4 @@
-import type {
-  SkillEvidenceCategory,
-  SkillVerificationStatus,
-} from "../types/screening-types.ts";
+import type { SkillEvidenceCategory, SkillVerificationStatus } from "../types/screening-types.ts";
 import type { IParsedResumeProfile } from "../types/resume-types.ts";
 
 /**
@@ -277,7 +274,10 @@ export class SkillTaxonomyService {
         for (const t of techs) {
           const canonical = this.canonicalizeSkill(t);
           const key = canonical.toLowerCase();
-          if (canonical && (!evidenceMap.has(key) || evidenceMap.get(key)!.category !== "employment")) {
+          if (
+            canonical &&
+            (!evidenceMap.has(key) || evidenceMap.get(key)!.category !== "employment")
+          ) {
             evidenceMap.set(key, {
               canonical,
               original: t,
@@ -429,8 +429,7 @@ export const normalizeSkillList = (skills: string[]): string[] =>
 
 export const extractSkillsWithEvidence = (
   profile: IParsedResumeProfile,
-): Map<string, ExtractedSkillEvidence> =>
-  skillTaxonomyService.extractSkillsWithEvidence(profile);
+): Map<string, ExtractedSkillEvidence> => skillTaxonomyService.extractSkillsWithEvidence(profile);
 
 export const calculateExperienceYears = (
   experience: NonNullable<IParsedResumeProfile["experience"]>,

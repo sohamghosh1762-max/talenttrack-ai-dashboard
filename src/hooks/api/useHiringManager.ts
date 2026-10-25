@@ -108,7 +108,12 @@ export interface HiringManagerCandidateDetail {
     experienceSummary?: string;
     experienceYears?: number;
     education?: Array<{ degree?: string; institution?: string; year?: string | number }>;
-    workHistory?: Array<{ title?: string; company?: string; duration?: string; description?: string }>;
+    workHistory?: Array<{
+      title?: string;
+      company?: string;
+      duration?: string;
+      description?: string;
+    }>;
     projects?: Array<{ name?: string; description?: string; technologies?: string[] }>;
   };
   atsAnalysis?: {
@@ -190,9 +195,9 @@ export function useHiringManagerDashboard(options: { enabled?: boolean } = {}) {
   return useQuery<HiringManagerDashboardData>({
     queryKey: hiringManagerKeys.dashboard(),
     queryFn: async () => {
-      const res = await apiClient.get<{ dashboard: HiringManagerDashboardData } | HiringManagerDashboardData>(
-        "/api/hiring-manager/dashboard",
-      );
+      const res = await apiClient.get<
+        { dashboard: HiringManagerDashboardData } | HiringManagerDashboardData
+      >("/api/hiring-manager/dashboard");
       if (res && "dashboard" in res) {
         return res.dashboard;
       }
@@ -215,7 +220,11 @@ export function useHiringManagerJobs(options: { enabled?: boolean } = {}) {
 }
 
 export function useHiringManagerCandidates(
-  filters: { jobId?: string | undefined; stage?: string | undefined; search?: string | undefined } = {},
+  filters: {
+    jobId?: string | undefined;
+    stage?: string | undefined;
+    search?: string | undefined;
+  } = {},
   options: { enabled?: boolean | undefined } = {},
 ) {
   return useQuery<{ candidates: HiringManagerCandidateItem[]; total: number }>({

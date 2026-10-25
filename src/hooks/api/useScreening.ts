@@ -53,9 +53,7 @@ export function useCandidateExplanation(jobId?: string, candidateId?: string) {
     queryKey: ["screening-explanation", jobId, candidateId],
     queryFn: async () => {
       if (!jobId || !candidateId) throw new Error("jobId and candidateId are required");
-      const res = await fetch(
-        `/api/screening/jobs/${jobId}/candidates/${candidateId}/explanation`,
-      );
+      const res = await fetch(`/api/screening/jobs/${jobId}/candidates/${candidateId}/explanation`);
       if (!res.ok) {
         throw new Error("Failed to load candidate match explanation");
       }
@@ -73,9 +71,7 @@ export function useSemanticCandidateSearch(query: string) {
   return useQuery<SemanticSearchResponse>({
     queryKey: ["screening-semantic-search", query],
     queryFn: async () => {
-      const res = await fetch(
-        `/api/screening/search?q=${encodeURIComponent(query.trim())}`,
-      );
+      const res = await fetch(`/api/screening/search?q=${encodeURIComponent(query.trim())}`);
       if (!res.ok) {
         throw new Error("Failed to execute semantic candidate search");
       }

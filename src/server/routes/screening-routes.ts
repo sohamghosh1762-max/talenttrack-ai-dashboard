@@ -20,7 +20,9 @@ export async function handleGetRankedCandidates(req: Request, jobId: string): Pr
     user.role === "HIRING_MANAGER";
 
   if (!isStaff) {
-    throw new ForbiddenError("Only recruiters and staff can access ranked candidate screening results.");
+    throw new ForbiddenError(
+      "Only recruiters and staff can access ranked candidate screening results.",
+    );
   }
 
   const url = new URL(req.url);
@@ -58,7 +60,9 @@ export async function handleGetCandidateMatchExplanation(
     user.role === "HIRING_MANAGER";
 
   if (!isStaff) {
-    throw new ForbiddenError("Only recruiters and staff can view full candidate screening explanations.");
+    throw new ForbiddenError(
+      "Only recruiters and staff can view full candidate screening explanations.",
+    );
   }
 
   const job = await jobRepository.findById(jobId);
@@ -162,7 +166,9 @@ export async function handleGetApplicantJobRecommendations(
   const latestResume = resumes[0];
 
   if (!latestResume || !latestResume.parsedProfile) {
-    throw new BadRequestError("You must upload and parse your resume before generating recommendations.");
+    throw new BadRequestError(
+      "You must upload and parse your resume before generating recommendations.",
+    );
   }
 
   const recommendations = jobMatcherService.generateApplicantRecommendations(
@@ -206,7 +212,9 @@ export async function handleRecordHumanReviewOverride(req: Request): Promise<Res
   }
 
   if (!targetAppId || !decision) {
-    throw new BadRequestError("Missing required fields: applicationId (or candidateId + jobId) and decision.");
+    throw new BadRequestError(
+      "Missing required fields: applicationId (or candidateId + jobId) and decision.",
+    );
   }
 
   const application = await applicationRepository.findById(targetAppId);
@@ -265,7 +273,9 @@ export async function handleScreeningApiRequest(req: Request): Promise<Response 
     }
 
     // 3. Match /api/screening/jobs/:jobId/candidates/ranked
-    const rankedMatch = pathname.match(/^\/api\/screening\/jobs\/([a-zA-Z0-9_-]+)\/candidates\/ranked$/);
+    const rankedMatch = pathname.match(
+      /^\/api\/screening\/jobs\/([a-zA-Z0-9_-]+)\/candidates\/ranked$/,
+    );
     if (rankedMatch && rankedMatch[1] && req.method === "GET") {
       return await handleGetRankedCandidates(req, rankedMatch[1]);
     }
@@ -275,7 +285,11 @@ export async function handleScreeningApiRequest(req: Request): Promise<Response 
       /^\/api\/screening\/jobs\/([a-zA-Z0-9_-]+)\/candidates\/([a-zA-Z0-9_-]+)\/explanation$/,
     );
     if (explanationMatch && explanationMatch[1] && explanationMatch[2] && req.method === "GET") {
-      return await handleGetCandidateMatchExplanation(req, explanationMatch[1], explanationMatch[2]);
+      return await handleGetCandidateMatchExplanation(
+        req,
+        explanationMatch[1],
+        explanationMatch[2],
+      );
     }
 
     // 5. Match /api/screening/jobs/:jobId/recommendations

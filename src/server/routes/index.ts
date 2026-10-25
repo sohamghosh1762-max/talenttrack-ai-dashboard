@@ -69,7 +69,9 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
           readyState: dbStatus.readyState,
           timestamp: new Date().toISOString(),
         },
-        isReady ? "Service is ready to handle traffic" : "Database dependency not ready or unreachable",
+        isReady
+          ? "Service is ready to handle traffic"
+          : "Database dependency not ready or unreachable",
         statusCode,
       );
       requestLogger(req, startTime, statusCode);

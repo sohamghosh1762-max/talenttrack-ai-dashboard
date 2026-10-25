@@ -52,6 +52,15 @@ type CandidateTab =
 function RecruiterCandidateDetailPage() {
   const { candidateId } = useParams({ from: "/candidates/$candidateId" });
   const [activeTab, setActiveTab] = useState<CandidateTab>("overview");
+  const [notes, setNotes] = useState([
+    {
+      id: "note-1",
+      author: "Rahul Mehta (Recruiter)",
+      date: "Sep 15, 2025 at 2:30 PM",
+      text: "Candidate has strong communication skills and answered all architecture questions confidently. Recommended for final executive round.",
+    },
+  ]);
+  const [newNote, setNewNote] = useState("");
 
   const { data: candidateData, isLoading } = useCandidate(candidateId);
 
@@ -104,16 +113,6 @@ function RecruiterCandidateDetailPage() {
     skills: candidateData.skills || [],
     summary: candidateData.summary || candidateData.bio || "",
   };
-
-  const [notes, setNotes] = useState([
-    {
-      id: "note-1",
-      author: "Rahul Mehta (Recruiter)",
-      date: "Sep 15, 2025 at 2:30 PM",
-      text: "Candidate has strong communication skills and answered all architecture questions confidently. Recommended for final executive round.",
-    },
-  ]);
-  const [newNote, setNewNote] = useState("");
 
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();

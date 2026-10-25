@@ -463,7 +463,9 @@ export async function handleAddApplicationNote(req: Request, appId: string): Pro
     user.role === "HIRING_MANAGER";
 
   if (!isStaff) {
-    throw new ForbiddenError("Only recruiters and staff are authorized to add internal candidate notes.");
+    throw new ForbiddenError(
+      "Only recruiters and staff are authorized to add internal candidate notes.",
+    );
   }
 
   let body: unknown;
@@ -474,7 +476,9 @@ export async function handleAddApplicationNote(req: Request, appId: string): Pro
   }
 
   const raw = body as { content?: unknown; text?: unknown };
-  const content = (typeof raw.content === "string" ? raw.content : typeof raw.text === "string" ? raw.text : "").trim();
+  const content = (
+    typeof raw.content === "string" ? raw.content : typeof raw.text === "string" ? raw.text : ""
+  ).trim();
   if (!content) {
     throw new ValidationError("Note content is required.");
   }
@@ -551,7 +555,9 @@ export async function handleAddApplicationFeedback(req: Request, appId: string):
     user.role === "HIRING_MANAGER";
 
   if (!isStaff) {
-    throw new ForbiddenError("Only recruiters and hiring managers are authorized to record feedback.");
+    throw new ForbiddenError(
+      "Only recruiters and hiring managers are authorized to record feedback.",
+    );
   }
 
   let body: unknown;
@@ -584,15 +590,13 @@ export async function handleAddApplicationFeedback(req: Request, appId: string):
   ).trim();
 
   if (!recommendation) {
-    throw new ValidationError("Recommendation is required (e.g., 'Strong Hire', 'Hire', 'Hold', 'Reject').");
+    throw new ValidationError(
+      "Recommendation is required (e.g., 'Strong Hire', 'Hire', 'Hold', 'Reject').",
+    );
   }
 
   const comments = (
-    typeof raw.comments === "string"
-      ? raw.comments
-      : typeof raw.notes === "string"
-        ? raw.notes
-        : ""
+    typeof raw.comments === "string" ? raw.comments : typeof raw.notes === "string" ? raw.notes : ""
   ).trim();
 
   const updated = await applicationRepository.addRecruiterFeedback(appId, {
@@ -600,7 +604,8 @@ export async function handleAddApplicationFeedback(req: Request, appId: string):
     reviewerName: user.name,
     rating: typeof raw.rating === "number" ? raw.rating : undefined,
     technicalRating: typeof raw.technicalRating === "number" ? raw.technicalRating : undefined,
-    communicationRating: typeof raw.communicationRating === "number" ? raw.communicationRating : undefined,
+    communicationRating:
+      typeof raw.communicationRating === "number" ? raw.communicationRating : undefined,
     strengths: raw.strengths,
     weaknesses: raw.weaknesses || raw.concerns,
     recommendation,
@@ -611,7 +616,9 @@ export async function handleAddApplicationFeedback(req: Request, appId: string):
     throw new NotFoundError(`Application with ID ${appId} not found.`);
   }
 
-  const newFeedback = updated.recruiterFeedback ? updated.recruiterFeedback[updated.recruiterFeedback.length - 1] : null;
+  const newFeedback = updated.recruiterFeedback
+    ? updated.recruiterFeedback[updated.recruiterFeedback.length - 1]
+    : null;
 
   return successResponse(
     {
@@ -687,7 +694,9 @@ export async function handleBulkApplicationsAction(req: Request): Promise<Respon
   };
 
   if (!Array.isArray(raw.applicationIds) || raw.applicationIds.length === 0) {
-    throw new ValidationError("Field 'applicationIds' must be a non-empty array of application IDs.");
+    throw new ValidationError(
+      "Field 'applicationIds' must be a non-empty array of application IDs.",
+    );
   }
 
   if (raw.applicationIds.length > 100) {
@@ -724,12 +733,7 @@ export async function handleBulkApplicationsAction(req: Request): Promise<Respon
     if (typeof note !== "string" || !note.trim()) {
       throw new ValidationError("Note content is required for ADD_NOTE action.");
     }
-    const result = await applicationRepository.bulkAddNote(
-      appIds,
-      note.trim(),
-      user.id,
-      user.name,
-    );
+    const result = await applicationRepository.bulkAddNote(appIds, note.trim(), user.id, user.name);
     return successResponse(
       {
         action: actionStr,
@@ -789,12 +793,14 @@ export async function handleExportCandidatesCsv(req: Request): Promise<Response>
   const status = searchParams.get("status")?.trim();
   const idsParam = searchParams.get("ids")?.trim();
 
-  const recruiterId =
-    user.role === "ADMIN" || user.role === "SUPER_ADMIN" ? undefined : user.id;
+  const recruiterId = user.role === "ADMIN" || user.role === "SUPER_ADMIN" ? undefined : user.id;
 
   let applications: any[] = [];
   if (idsParam) {
-    const ids = idsParam.split(",").map((s) => s.trim()).filter(Boolean);
+    const ids = idsParam
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     const results = await Promise.all(ids.map((id) => applicationRepository.findById(id)));
     applications = results.filter(Boolean) as any[];
   } else {

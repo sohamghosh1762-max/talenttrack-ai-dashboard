@@ -155,7 +155,9 @@ export async function handleGetCandidates(req: Request): Promise<Response> {
 
     // Filter by stage, minScore, maxScore if provided
     if (stage && stage !== "ALL") {
-      candidates = candidates.filter((c) => c.currentStage === stage || c.status?.toUpperCase() === stage);
+      candidates = candidates.filter(
+        (c) => c.currentStage === stage || c.status?.toUpperCase() === stage,
+      );
     }
     if (minScore !== undefined && !Number.isNaN(minScore)) {
       candidates = candidates.filter((c) => c.score >= minScore);
@@ -166,16 +168,17 @@ export async function handleGetCandidates(req: Request): Promise<Response> {
 
     // If sorting by score / aiScore
     if (sortBy === "score" || sortBy === "aiScore") {
-      candidates.sort((a, b) =>
-        sortOrder === "asc" ? a.score - b.score : b.score - a.score,
-      );
+      candidates.sort((a, b) => (sortOrder === "asc" ? a.score - b.score : b.score - a.score));
     }
 
     const filteredTotal = candidates.length;
     const paginatedCandidates = candidates.slice(skip, skip + limit);
     const pagination = buildPaginationMetadata(filteredTotal, page, limit);
 
-    return successResponse({ candidates: paginatedCandidates, pagination }, "Candidates retrieved successfully.");
+    return successResponse(
+      { candidates: paginatedCandidates, pagination },
+      "Candidates retrieved successfully.",
+    );
   }
 
   // In-memory fallback

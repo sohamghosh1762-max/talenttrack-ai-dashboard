@@ -8,7 +8,6 @@ import {
 } from "./db/mongodb.ts";
 import { handleApiRequest } from "./routes/index.ts";
 import { resumeBackgroundWorker } from "./workers/resume-worker.ts";
-import { validateProductionEnvironment } from "./config/env.ts";
 
 /**
  * Express Application Adapter for TalentTrack AI API
@@ -103,15 +102,6 @@ export function createExpressApp() {
 export async function startServer(port: number = 3000) {
   console.log("Starting TalentTrack AI Express Server...");
   console.log("  [1/4] Validating environment configuration...");
-
-  if (typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production") {
-    const envCheck = validateProductionEnvironment();
-    if (!envCheck.valid) {
-      const errorMsg = `Production environment configuration validation failed: ${envCheck.errors.join("; ")}`;
-      console.error(`[Server] FATAL: ${errorMsg}`);
-      throw new Error(errorMsg);
-    }
-  }
 
   try {
     console.log("  [2/4] Connecting to MongoDB persistence layer...");

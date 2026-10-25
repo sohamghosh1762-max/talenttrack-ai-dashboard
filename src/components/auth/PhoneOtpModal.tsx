@@ -93,7 +93,9 @@ export function PhoneOtpModal({ open, onOpenChange, onSuccess }: PhoneOtpModalPr
       if (recaptchaVerifierRef.current) {
         try {
           recaptchaVerifierRef.current.clear();
-        } catch {}
+        } catch {
+          // Ignore cleanup error on recaptcha reset
+        }
         recaptchaVerifierRef.current = null;
       }
     } finally {

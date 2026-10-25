@@ -109,9 +109,7 @@ function ApplicationsPage() {
   };
 
   const toggleSelectRow = (id: string) => {
-    setSelectedAppIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setSelectedAppIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const handleBulkStageChange = async () => {
@@ -186,8 +184,7 @@ function ApplicationsPage() {
   };
 
   const isAllPageSelected =
-    pagedApplications.length > 0 &&
-    pagedApplications.every((a) => selectedAppIds.includes(a.id));
+    pagedApplications.length > 0 && pagedApplications.every((a) => selectedAppIds.includes(a.id));
 
   return (
     <DashboardLayout>

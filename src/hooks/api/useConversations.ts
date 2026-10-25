@@ -44,7 +44,10 @@ export function useConversations(
 /**
  * Hook to retrieve a single conversation by ID
  */
-export function useConversation(id: string | null | undefined, options: { enabled?: boolean } = {}) {
+export function useConversation(
+  id: string | null | undefined,
+  options: { enabled?: boolean } = {},
+) {
   return useQuery<IConversation>({
     queryKey: conversationKeys.detail(id || ""),
     queryFn: async () => {

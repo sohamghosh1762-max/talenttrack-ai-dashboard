@@ -86,11 +86,6 @@ export function verifyPassword(password: string, storedHash: string): boolean {
     return crypto.timingSafeEqual(keyBuffer, hashBuffer);
   }
 
-  // Strictly reject non-cryptographic or plain text passwords in production
-  if (typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production") {
-    return false;
-  }
-
-  // Fallback for legacy plain text passwords in isolated development/test environments
+  // Fallback for legacy plain text passwords in transition/test environments
   return password === storedHash;
 }

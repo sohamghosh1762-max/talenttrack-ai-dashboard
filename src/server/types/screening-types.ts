@@ -1,15 +1,8 @@
 export type SkillEvidenceCategory =
-  | "employment"
-  | "project"
-  | "certification"
-  | "summary"
-  | "education";
+  "employment" | "project" | "certification" | "summary" | "education";
 
 export type SkillVerificationStatus =
-  | "supported"
-  | "partially_supported"
-  | "unverified"
-  | "not_found";
+  "supported" | "partially_supported" | "unverified" | "not_found";
 
 export interface MatchedSkillItem {
   canonicalName: string;
@@ -125,7 +118,13 @@ export interface RankedCandidatesResponse {
 
 export interface ApplicantRecommendationItem {
   id: string;
-  category: "skills_evidence" | "projects" | "quantifiable_impact" | "structure" | "skill_gap" | "action_impact";
+  category:
+    | "skills_evidence"
+    | "projects"
+    | "quantifiable_impact"
+    | "structure"
+    | "skill_gap"
+    | "action_impact";
   title: string;
   recommendation: string;
   suggestion?: string | undefined;

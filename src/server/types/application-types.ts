@@ -137,7 +137,8 @@ export interface ApplicationQueryParams {
   maxScore?: number | undefined;
   startDate?: string | undefined;
   endDate?: string | undefined;
-  sortBy?: ("appliedAt" | "aiScore" | "status" | "applicantName" | "currentStage") | string | undefined;
+  sortBy?:
+    ("appliedAt" | "aiScore" | "status" | "applicantName" | "currentStage") | string | undefined;
   sortOrder?: ("asc" | "desc") | string | undefined;
 }
 
@@ -175,11 +176,13 @@ export interface UpdateApplicationStatusInput {
 export interface BulkApplicationActionInput {
   applicationIds: string[];
   action: "STAGE_CHANGE" | "ADD_NOTE" | "ARCHIVE";
-  data?: {
-    stage?: ApplicationStage | string | undefined;
-    note?: string | undefined;
-    reason?: string | undefined;
-  } | undefined;
+  data?:
+    | {
+        stage?: ApplicationStage | string | undefined;
+        note?: string | undefined;
+        reason?: string | undefined;
+      }
+    | undefined;
 }
 
 export interface BulkActionResultItem {

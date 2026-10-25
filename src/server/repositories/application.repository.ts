@@ -367,10 +367,23 @@ class ApplicationRepository {
         const matchesSkill = app.applicant?.skills?.some((s) => s.toLowerCase().includes(q));
         if (!matchesName && !matchesEmail && !matchesJob && !matchesSkill) return false;
       }
-      if (params.minScore !== undefined && (app.aiScore === undefined || app.aiScore < Number(params.minScore))) return false;
-      if (params.maxScore !== undefined && (app.aiScore === undefined || app.aiScore > Number(params.maxScore))) return false;
-      if (params.startDate && new Date(app.appliedAt).getTime() < new Date(params.startDate).getTime()) return false;
-      if (params.endDate && new Date(app.appliedAt).getTime() > new Date(params.endDate).getTime()) return false;
+      if (
+        params.minScore !== undefined &&
+        (app.aiScore === undefined || app.aiScore < Number(params.minScore))
+      )
+        return false;
+      if (
+        params.maxScore !== undefined &&
+        (app.aiScore === undefined || app.aiScore > Number(params.maxScore))
+      )
+        return false;
+      if (
+        params.startDate &&
+        new Date(app.appliedAt).getTime() < new Date(params.startDate).getTime()
+      )
+        return false;
+      if (params.endDate && new Date(app.appliedAt).getTime() > new Date(params.endDate).getTime())
+        return false;
       return true;
     });
 
@@ -610,7 +623,9 @@ class ApplicationRepository {
         applicationData.id = (created as any)._id?.toString() || id;
       } catch (err: any) {
         if (err.code === 11000) {
-          throw new ConflictError("Applicant has already submitted an application for this job opening.");
+          throw new ConflictError(
+            "Applicant has already submitted an application for this job opening.",
+          );
         }
         throw err;
       }
@@ -1016,8 +1031,12 @@ class ApplicationRepository {
             status: doc.status,
             currentStage: doc.currentStage,
             aiScore: doc.aiScore,
-            appliedAt: doc.appliedAt || (doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString()),
-            updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : new Date().toISOString(),
+            appliedAt:
+              doc.appliedAt ||
+              (doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString()),
+            updatedAt: doc.updatedAt
+              ? new Date(doc.updatedAt).toISOString()
+              : new Date().toISOString(),
             jobTitle: doc.jobId?.title,
             applicantName: doc.applicantId?.name,
             notesList: doc.notesList,
@@ -1045,10 +1064,13 @@ class ApplicationRepository {
       const jobs = await jobRepository.findAll({ recruiterId, status: "PUBLISHED" as any });
       activeJobsCount = jobs.pagination?.total ?? (jobs as any).total ?? jobs.jobs.length ?? 0;
 
-      const interviews = await interviewRepository.findAll({ recruiterId, status: "SCHEDULED" as any });
+      const interviews = await interviewRepository.findAll({
+        recruiterId,
+        status: "SCHEDULED" as any,
+      });
       scheduledInterviewsCount = Array.isArray(interviews)
         ? interviews.length
-        : (interviews as any).pagination?.total ?? 0;
+        : ((interviews as any).pagination?.total ?? 0);
     }
 
     const totalApplications = allApps.length;
@@ -1115,9 +1137,8 @@ class ApplicationRepository {
       const count = allApps.filter(
         (a) => a.currentStage === st || (st === "APPLIED" && a.status === "APPLIED"),
       ).length;
-      const conversionRate = totalApplications > 0
-        ? Math.round((count / totalApplications) * 1000) / 10
-        : 0;
+      const conversionRate =
+        totalApplications > 0 ? Math.round((count / totalApplications) * 1000) / 10 : 0;
       return {
         stage: st,
         label: stageLabels[st],
@@ -1162,7 +1183,8 @@ class ApplicationRepository {
     const topMatchesCount = allApps.filter((a) => (a.aiScore || 0) >= 80).length;
 
     const highScorers = allApps.filter(
-      (a) => (a.aiScore || 0) >= 85 && (a.currentStage === "APPLIED" || a.currentStage === "SCREENING"),
+      (a) =>
+        (a.aiScore || 0) >= 85 && (a.currentStage === "APPLIED" || a.currentStage === "SCREENING"),
     );
     const insightItems: RecruiterAIInsight[] = [];
     if (highScorers.length > 0) {
@@ -1264,9 +1286,8 @@ class ApplicationRepository {
         interviewed: appsInBucket.filter(
           (a) => a.currentStage === "INTERVIEW" || a.status === "INTERVIEW",
         ).length,
-        offered: appsInBucket.filter(
-          (a) => a.currentStage === "OFFERED" || a.status === "OFFERED",
-        ).length,
+        offered: appsInBucket.filter((a) => a.currentStage === "OFFERED" || a.status === "OFFERED")
+          .length,
       });
     }
 

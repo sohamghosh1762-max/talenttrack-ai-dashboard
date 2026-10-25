@@ -9,7 +9,8 @@ export interface AnalyticsQueryFilters {
 
 export const analyticsKeys = {
   all: ["analytics"] as const,
-  recruiter: (filters: AnalyticsQueryFilters = {}) => [...analyticsKeys.all, "recruiter", filters] as const,
+  recruiter: (filters: AnalyticsQueryFilters = {}) =>
+    [...analyticsKeys.all, "recruiter", filters] as const,
 };
 
 /**

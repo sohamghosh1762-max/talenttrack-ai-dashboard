@@ -2,7 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 import crypto from "node:crypto";
-import { connectToDatabase, disconnectDatabase, isDatabaseConnected } from "../src/server/db/mongodb.ts";
+import {
+  connectToDatabase,
+  disconnectDatabase,
+  isDatabaseConnected,
+} from "../src/server/db/mongodb.ts";
 import { User } from "../src/server/models/User.ts";
 import { Recruiter } from "../src/server/models/Recruiter.ts";
 import { Applicant } from "../src/server/models/Applicant.ts";
@@ -125,7 +129,8 @@ export async function createDatabaseBackup(outputFilePath?: string): Promise<{
   }
 
   const timestampStr = new Date().toISOString().replace(/[:.]/g, "-");
-  const finalPath = outputFilePath || path.join(targetDir, `talenttrack_snapshot_${timestampStr}.json.gz`);
+  const finalPath =
+    outputFilePath || path.join(targetDir, `talenttrack_snapshot_${timestampStr}.json.gz`);
 
   fs.writeFileSync(finalPath, compressedGzip);
 

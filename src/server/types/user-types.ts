@@ -128,6 +128,10 @@ export interface IUser {
   createdAt: string;
   updatedAt: string;
   lastActive?: string | undefined;
+  organizationId?: string | undefined;
+  departmentId?: string | undefined;
+  organizationName?: string | undefined;
+  departmentName?: string | undefined;
   recruiterProfile?: RecruiterProfileInfo | undefined;
   applicantProfile?: ApplicantProfileInfo | undefined;
   adminProfile?: AdminProfileInfo | undefined;
@@ -135,12 +139,37 @@ export interface IUser {
 
 export type SafeUser = Omit<IUser, "passwordHash">;
 
+export interface CreateUserInput {
+  name: string;
+  email: string;
+  password?: string | undefined;
+  role: UserRole;
+  status?: UserStatus | undefined;
+  organizationId?: string | undefined;
+  departmentId?: string | undefined;
+  emailVerified?: boolean | undefined;
+}
+
+export interface UpdateUserInput {
+  name?: string | undefined;
+  email?: string | undefined;
+  role?: UserRole | undefined;
+  status?: UserStatus | undefined;
+  organizationId?: string | undefined;
+  departmentId?: string | undefined;
+  emailVerified?: boolean | undefined;
+  avatarUrl?: string | undefined;
+  password?: string | undefined;
+}
+
 export interface UserQueryParams {
   page?: number | undefined;
   limit?: number | undefined;
   search?: string | undefined;
   role?: UserRole | undefined;
   status?: UserStatus | undefined;
+  organizationId?: string | undefined;
+  departmentId?: string | undefined;
   emailVerified?: boolean | undefined;
   sortBy?: "createdAt" | "name" | "email" | "role" | "status" | undefined;
   sortOrder?: "asc" | "desc" | undefined;
@@ -198,4 +227,73 @@ export interface UserActivityItem {
   performedByRole: string;
   details?: Record<string, unknown> | undefined;
   timestamp: string;
+}
+
+export interface AdminApplicantQueryParams {
+  page?: number | undefined;
+  limit?: number | undefined;
+  search?: string | undefined;
+  status?: UserStatus | undefined;
+  emailVerified?: boolean | undefined;
+  skills?: string | undefined;
+  location?: string | undefined;
+  sortBy?: "createdAt" | "name" | "email" | "status" | "headline" | "lastActive" | undefined;
+  sortOrder?: "asc" | "desc" | undefined;
+  dateFrom?: string | undefined;
+  dateTo?: string | undefined;
+}
+
+export interface AdminApplicantItem {
+  id: string;
+  name: string;
+  email: string;
+  role: "APPLICANT";
+  status: UserStatus;
+  emailVerified: boolean;
+  emailVerifiedAt?: string | undefined;
+  avatarUrl?: string | undefined;
+  headline: string;
+  location: string;
+  phone: string;
+  summary: string;
+  bio: string;
+  skills: string[];
+  experienceYears?: string | undefined;
+  experiences?: ApplicantExperienceItem[] | undefined;
+  education?: ApplicantEducationItem[] | undefined;
+  certifications?: ApplicantCertificationItem[] | undefined;
+  projects?: ApplicantProjectItem[] | undefined;
+  applicantProfile?: ApplicantProfileInfo | undefined;
+  resume?:
+    | {
+        id: string;
+        fileName: string;
+        fileSize?: number | undefined;
+        mimeType?: string | undefined;
+        uploadedAt?: string | undefined;
+        parsingStatus?: string | undefined;
+        atsScore?: number | null | undefined;
+      }
+    | null
+    | undefined;
+  applicationsCount: number;
+  createdAt: string;
+  updatedAt: string;
+  lastActive?: string | undefined;
+}
+
+export interface AdminApplicantSummaryStats {
+  totalApplicants: number;
+  active: number;
+  suspended: number;
+  inactive: number;
+  verified: number;
+  unverified: number;
+  withResume: number;
+}
+
+export interface PaginatedAdminApplicantsResponse {
+  applicants: AdminApplicantItem[];
+  pagination: UserPaginationInfo;
+  summary: AdminApplicantSummaryStats;
 }

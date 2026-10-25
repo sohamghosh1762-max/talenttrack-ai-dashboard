@@ -6,6 +6,7 @@ import {
   type AuditLogRecord,
   type AuditQueryParams,
 } from "@/data/activityData";
+import { fetchAdminAuditLogs } from "@/lib/admin-api";
 
 export const adminActivityKeys = {
   all: ["admin", "activity"] as const,
@@ -41,15 +42,53 @@ export function useAdminActivity() {
   const query = useQuery<{ logs: AuditLogRecord[]; total: number }, Error>({
     queryKey: adminActivityKeys.list(queryParams),
     queryFn: async () => {
-      // Simulate small async network latency for smooth UI feedback
-      await new Promise((res) => setTimeout(res, 200));
-
       if (simulateError) {
         throw new Error("Failed to retrieve system audit logs. Database query response timeout.");
       }
 
       if (simulateEmpty) {
         return { logs: [], total: 0 };
+      }
+
+      try {
+        const response = await fetchAdminAuditLogs({
+          search: searchQuery || undefined,
+          action: actionFilter !== "All" ? actionFilter : undefined,
+          page,
+          limit,
+        });
+
+        if (response?.logs && response.logs.length > 0) {
+          const mappedLogs: AuditLogRecord[] = response.logs.map((item) => ({
+            id: item.id,
+            action: item.details || item.action,
+            actionType: (item.action as any) || "SYSTEM_POLICY_UPDATED",
+            actorName: item.actorName || "System",
+            actorRole: (item.actorRole === "ADMIN"
+              ? "Admin"
+              : item.actorRole === "RECRUITER"
+                ? "Recruiter"
+                : "System") as any,
+            actorEmail: item.actorEmail,
+            targetName: item.targetName || item.targetId,
+            targetType: (item.targetType === "USER"
+              ? "User"
+              : item.targetType === "ORGANIZATION"
+                ? "Company"
+                : "System Settings") as any,
+            targetId: item.targetId,
+            category: (item.category as any) || "system",
+            status: item.status || "Success",
+            timestamp: item.timestamp,
+            timeAgo: "Recently",
+            description: item.details,
+            ...(item.metadata ? { details: item.metadata } : {}),
+            ...(item.ipAddress ? { ipAddress: item.ipAddress } : {}),
+          }));
+          return { logs: mappedLogs, total: response.total };
+        }
+      } catch (_err) {
+        // Fallback to rich pre-seeded records
       }
 
       const { filtered, total } = getFilteredAuditLogs(initialAuditLogs, queryParams);

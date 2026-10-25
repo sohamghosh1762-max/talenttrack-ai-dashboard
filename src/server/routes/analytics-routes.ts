@@ -19,15 +19,16 @@ export async function handleGetRecruiterAnalytics(req: Request): Promise<Respons
     user.role === "ORG_ADMIN";
 
   if (!isStaff) {
-    throw new ForbiddenError("Only recruiters and administrators are authorized to access analytics.");
+    throw new ForbiddenError(
+      "Only recruiters and administrators are authorized to access analytics.",
+    );
   }
 
   const url = new URL(req.url);
   const jobId = url.searchParams.get("jobId")?.trim() || undefined;
   const range = url.searchParams.get("range")?.trim() || "30d";
 
-  const recruiterId =
-    user.role === "ADMIN" || user.role === "SUPER_ADMIN" ? "" : user.id;
+  const recruiterId = user.role === "ADMIN" || user.role === "SUPER_ADMIN" ? "" : user.id;
 
   const analytics = await applicationRepository.getRecruiterAnalytics(recruiterId, jobId, range);
 

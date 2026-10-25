@@ -49,7 +49,10 @@ export const Route = createFileRoute("/ai-screening")({
   head: () => ({
     meta: [
       { title: "AI Resume Screening & Match Scoring — TalentTrack AI" },
-      { name: "description", content: "Explainable, job-specific candidate screening and ranking." },
+      {
+        name: "description",
+        content: "Explainable, job-specific candidate screening and ranking.",
+      },
     ],
   }),
   component: AIScreeningPage,
@@ -59,15 +62,19 @@ function AIScreeningPage() {
   const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [minScore, setMinScore] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedCandidateForModal, setSelectedCandidateForModal] = useState<Applicant | null>(null);
-  const [explanationModalCandidate, setExplanationModalCandidate] = useState<RankedCandidateItem | null>(null);
+  const [selectedCandidateForModal, setSelectedCandidateForModal] = useState<Applicant | null>(
+    null,
+  );
+  const [explanationModalCandidate, setExplanationModalCandidate] =
+    useState<RankedCandidateItem | null>(null);
 
   // Load published job vacancies
   const { data: jobsResponse, isLoading: isLoadingJobs } = useJobs({ status: "PUBLISHED" });
   const publishedJobs = jobsResponse?.jobs || [];
 
   // Active Job ID default
-  const activeJobId = selectedJobId || (publishedJobs.length > 0 && publishedJobs[0] ? publishedJobs[0].id : "");
+  const activeJobId =
+    selectedJobId || (publishedJobs.length > 0 && publishedJobs[0] ? publishedJobs[0].id : "");
 
   // Load Ranked Candidates for Selected Job
   const { data: rankedData, isLoading: isLoadingRanked } = useRankedCandidates(activeJobId, {
@@ -77,7 +84,8 @@ function AIScreeningPage() {
 
   // Semantic candidate search query
   const [semanticQuery, setSemanticQuery] = useState<string>("");
-  const { data: semanticResults, isLoading: isSearchingSemantic } = useSemanticCandidateSearch(semanticQuery);
+  const { data: semanticResults, isLoading: isSearchingSemantic } =
+    useSemanticCandidateSearch(semanticQuery);
 
   const humanReviewMutation = useRecordHumanReviewOverride();
 
@@ -150,7 +158,10 @@ function AIScreeningPage() {
         <div className="dashboard-card p-4 space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
-              <label htmlFor="job-select" className="text-xs font-semibold text-foreground shrink-0 flex items-center gap-1.5">
+              <label
+                htmlFor="job-select"
+                className="text-xs font-semibold text-foreground shrink-0 flex items-center gap-1.5"
+              >
                 <Briefcase className="size-3.5 text-brand-blue" />
                 Target Job Vacancy:
               </label>
@@ -192,10 +203,14 @@ function AIScreeningPage() {
             <div className="pt-2 border-t border-border/50 flex flex-wrap items-center gap-2 text-[11px]">
               <span className="text-muted-foreground font-semibold">Evaluated Against:</span>
               <span className="rounded-md bg-surface-purple px-2 py-0.5 font-medium text-brand-purple">
-                Seniority: {(activeJob as any).experienceLevel || activeJob.experienceRequired || "Mid-Senior"}
+                Seniority:{" "}
+                {(activeJob as any).experienceLevel || activeJob.experienceRequired || "Mid-Senior"}
               </span>
               {activeJob.skills?.slice(0, 5).map((sk) => (
-                <span key={sk} className="rounded-md bg-surface-blue px-2 py-0.5 font-medium text-brand-blue">
+                <span
+                  key={sk}
+                  className="rounded-md bg-surface-blue px-2 py-0.5 font-medium text-brand-blue"
+                >
                   {sk}
                 </span>
               ))}
@@ -261,9 +276,7 @@ function AIScreeningPage() {
         <div className="dashboard-card p-3.5 space-y-2">
           <div className="flex items-center gap-2">
             <Search className="size-4 text-brand-purple shrink-0" />
-            <h2 className="text-xs font-bold text-foreground">
-              Semantic Talent Search
-            </h2>
+            <h2 className="text-xs font-bold text-foreground">Semantic Talent Search</h2>
             <span className="text-[10px] text-muted-foreground">
               (Search candidates using natural language, technology aliases, or career background)
             </span>
@@ -292,7 +305,8 @@ function AIScreeningPage() {
           {semanticResults && semanticResults.results.length > 0 && (
             <div className="pt-2 border-t border-border/60">
               <span className="text-[11px] font-semibold text-brand-purple block mb-1.5">
-                {semanticResults.totalResults} matching candidate(s) for query "{semanticResults.query}":
+                {semanticResults.totalResults} matching candidate(s) for query "
+                {semanticResults.query}":
               </span>
               <div className="grid gap-2 sm:grid-cols-2">
                 {semanticResults.results.map((r) => (
@@ -644,16 +658,12 @@ function AIScreeningPage() {
                           className="p-2 rounded-lg border border-border/70 bg-muted/10 text-xs"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-foreground">
-                              {m.canonicalName}
-                            </span>
+                            <span className="font-semibold text-foreground">{m.canonicalName}</span>
                             <span className="text-[10px] text-amber-600 font-semibold">
                               {m.isRequired ? "Required" : "Preferred"}
                             </span>
                           </div>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
-                            {m.reason}
-                          </p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{m.reason}</p>
                         </div>
                       ))}
                     </div>
@@ -663,9 +673,7 @@ function AIScreeningPage() {
                 {/* Strengths & Gaps */}
                 <div className="grid gap-2 sm:grid-cols-2 text-xs">
                   <div className="p-2.5 rounded-lg border border-brand-green/20 bg-surface-green/30">
-                    <strong className="text-brand-green font-bold block mb-1">
-                      Key Strengths
-                    </strong>
+                    <strong className="text-brand-green font-bold block mb-1">Key Strengths</strong>
                     <ul className="list-disc pl-4 space-y-1 text-muted-foreground text-[11px]">
                       {explanationModalCandidate.explanation.strengths.map((s, idx) => (
                         <li key={idx}>{s}</li>
@@ -688,11 +696,12 @@ function AIScreeningPage() {
                 {/* Limitations & Model Versioning */}
                 <div className="p-2.5 rounded-lg bg-muted/40 text-[10.5px] text-muted-foreground space-y-1 border border-border/50">
                   <span className="block font-semibold text-foreground">
-                    Model Version: {explanationModalCandidate.explanation.modelVersion} •
-                    Engine: {explanationModalCandidate.explanation.engineVersion}
+                    Model Version: {explanationModalCandidate.explanation.modelVersion} • Engine:{" "}
+                    {explanationModalCandidate.explanation.engineVersion}
                   </span>
                   <span>
-                    Timestamp: {new Date(explanationModalCandidate.explanation.timestamp).toLocaleString()}
+                    Timestamp:{" "}
+                    {new Date(explanationModalCandidate.explanation.timestamp).toLocaleString()}
                   </span>
                 </div>
 

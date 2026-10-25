@@ -70,12 +70,7 @@ function RecruiterInterviewsPage() {
   const [meetingUrl, setMeetingUrl] = useState("https://meet.google.com/talenttrack-live");
   const [interviewNotes, setInterviewNotes] = useState("");
 
-  const {
-    data: dbInterviews = [],
-    isLoading,
-    isFetching,
-    refetch,
-  } = useInterviews();
+  const { data: dbInterviews = [], isLoading, isFetching, refetch } = useInterviews();
 
   const { data: applications = [] } = useRecruiterApplications();
   const createInterviewMutation = useCreateInterview();
@@ -95,7 +90,8 @@ function RecruiterInterviewsPage() {
 
     const matchesStatus =
       statusFilter === "All" ||
-      (statusFilter === "Scheduled" && (item.status === "SCHEDULED" || item.status === "CONFIRMED")) ||
+      (statusFilter === "Scheduled" &&
+        (item.status === "SCHEDULED" || item.status === "CONFIRMED")) ||
       (statusFilter === "Completed" && item.status === "COMPLETED") ||
       (statusFilter === "Cancelled" && item.status === "CANCELLED");
 
@@ -235,7 +231,9 @@ function RecruiterInterviewsPage() {
         {isLoading && (
           <div className="dashboard-card p-12 text-center space-y-3">
             <Loader2 className="size-8 animate-spin text-brand-blue mx-auto" />
-            <p className="text-xs text-muted-foreground font-medium">Loading interview schedules...</p>
+            <p className="text-xs text-muted-foreground font-medium">
+              Loading interview schedules...
+            </p>
           </div>
         )}
 
@@ -415,7 +413,8 @@ function RecruiterInterviewsPage() {
                     <option value="">Select Candidate Application...</option>
                     {applications.map((app) => (
                       <option key={app.id} value={app.id}>
-                        {app.applicant?.name || app.applicantName || "Candidate"} — {app.job?.title || app.jobTitle || "Role"}
+                        {app.applicant?.name || app.applicantName || "Candidate"} —{" "}
+                        {app.job?.title || app.jobTitle || "Role"}
                       </option>
                     ))}
                   </select>

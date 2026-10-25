@@ -99,10 +99,6 @@ export class GeminiService {
    * Lazily initialize or retrieve GoogleGenAI client instance
    */
   public getClient(): GoogleGenAI {
-    if (this.client) {
-      return this.client;
-    }
-
     const apiKey = this.getApiKey();
     if (!apiKey || !apiKey.trim()) {
       throw new AIServiceError(
@@ -111,7 +107,10 @@ export class GeminiService {
       );
     }
 
-    this.client = new GoogleGenAI({ apiKey: apiKey.trim() });
+    if (!this.client) {
+      this.client = new GoogleGenAI({ apiKey: apiKey.trim() });
+    }
+
     return this.client;
   }
 

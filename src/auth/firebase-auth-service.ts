@@ -119,7 +119,10 @@ export const firebaseAuthService = {
   /**
    * Sign in with Email and Password
    */
-  async signInWithEmail(email: string, pass: string): Promise<{ user: FirebaseUser; token: string }> {
+  async signInWithEmail(
+    email: string,
+    pass: string,
+  ): Promise<{ user: FirebaseUser; token: string }> {
     this.assertConfigured();
     const credential = await signInWithEmailAndPassword(auth, email.trim(), pass);
     const token = await credential.user.getIdToken();

@@ -9,7 +9,11 @@ import { useRecruiterAnalytics } from "@/hooks/api/useAnalytics";
 
 export function TopSkills() {
   const { data: analytics, isLoading } = useRecruiterAnalytics();
-  const [selectedSkill, setSelectedSkill] = useState<{ name: string; count: number; maxCount: number } | null>(null);
+  const [selectedSkill, setSelectedSkill] = useState<{
+    name: string;
+    count: number;
+    maxCount: number;
+  } | null>(null);
 
   const skills = analytics?.topSkills || [];
   const maxCount = Math.max(...skills.map((s) => s.count), 1);
@@ -118,4 +122,3 @@ export function TopSkills() {
     </>
   );
 }
-

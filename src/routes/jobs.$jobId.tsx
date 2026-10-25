@@ -241,7 +241,10 @@ function RecruiterJobDetailPage() {
                 <tbody className="divide-y divide-border/60">
                   {jobApplicants.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-xs text-muted-foreground">
+                      <td
+                        colSpan={5}
+                        className="px-4 py-8 text-center text-xs text-muted-foreground"
+                      >
                         No candidate applications received for this job opening yet.
                       </td>
                     </tr>

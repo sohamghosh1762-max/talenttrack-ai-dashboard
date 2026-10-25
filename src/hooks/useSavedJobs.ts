@@ -30,7 +30,11 @@ export function useSavedJobs() {
         try {
           localStorage.setItem(storageKey, JSON.stringify(newIds));
           // Dispatch custom event to notify other mounted components in the same window
-          window.dispatchEvent(new CustomEvent("talenttrack-saved-jobs-change", { detail: { key: storageKey, ids: newIds } }));
+          window.dispatchEvent(
+            new CustomEvent("talenttrack-saved-jobs-change", {
+              detail: { key: storageKey, ids: newIds },
+            }),
+          );
         } catch {
           // ignore storage errors
         }

@@ -5,9 +5,12 @@ import {
   fetchAdminUserActivity,
   updateAdminUserStatus,
   bulkUpdateAdminUserStatus,
+  createAdminUser,
+  updateAdminUser,
+  deleteAdminUser,
   type AdminUsersQueryParams,
 } from "@/lib/admin-api";
-import type { UserStatus } from "@/server/types/user-types";
+import type { UserStatus, CreateUserInput, UpdateUserInput } from "@/server/types/user-types";
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 
@@ -88,6 +91,49 @@ export function useBulkUpdateUserStatus() {
     mutationFn: ({ userIds, status }: { userIds: string[]; status: UserStatus }) =>
       bulkUpdateAdminUserStatus(userIds, status),
 
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: adminUsersKeys.all });
+    },
+  });
+}
+
+/**
+ * Create user mutation
+ */
+export function useCreateAdminUser() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateUserInput) => createAdminUser(data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: adminUsersKeys.all });
+    },
+  });
+}
+
+/**
+ * Update user mutation
+ */
+export function useUpdateAdminUser() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateUserInput }) => updateAdminUser(id, data),
+    onSuccess: (data) => {
+      void qc.invalidateQueries({ queryKey: adminUsersKeys.all });
+      qc.setQueryData(adminUsersKeys.detail(data.user.id), { user: data.user });
+    },
+  });
+}
+
+/**
+ * Delete user mutation
+ */
+export function useDeleteAdminUser() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => deleteAdminUser(id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: adminUsersKeys.all });
     },

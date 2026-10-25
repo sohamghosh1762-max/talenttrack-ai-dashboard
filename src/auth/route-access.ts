@@ -225,11 +225,7 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   // 3. Hiring Manager Workspace Area
   {
     pathPrefix: "/hiring-manager",
-    allowedRoles: [
-      USER_ROLES.HIRING_MANAGER,
-      USER_ROLES.ADMIN,
-      USER_ROLES.SUPER_ADMIN,
-    ],
+    allowedRoles: [USER_ROLES.HIRING_MANAGER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN],
     resourceType: "recruiter",
     resourceName: "Hiring Manager Workspace",
   },

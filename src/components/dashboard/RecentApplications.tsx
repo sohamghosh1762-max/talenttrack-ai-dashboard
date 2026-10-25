@@ -47,7 +47,6 @@ export function RecentApplications({
     );
   }, [searchQuery, baseApplicants]);
 
-
   const getStatusBadge = (status: Applicant["status"]) => {
     switch (status) {
       case "Shortlisted":

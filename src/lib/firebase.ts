@@ -5,7 +5,8 @@ export const firebaseConfig = {
   apiKey: (import.meta.env.VITE_FIREBASE_API_KEY || "").trim(),
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "talenttrack-ai-75a10.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "talenttrack-ai-75a10",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "talenttrack-ai-75a10.firebasestorage.app",
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "talenttrack-ai-75a10.firebasestorage.app",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "522852717438",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:522852717438:web:d6d24b4d5961545d8c592f",
 };
@@ -14,7 +15,10 @@ function createFirebaseApp(): FirebaseApp {
   const existingApps = getApps();
   if (existingApps.length > 0) {
     const existing = existingApps[0]!;
-    if (existing.options.apiKey === firebaseConfig.apiKey && existing.options.projectId === firebaseConfig.projectId) {
+    if (
+      existing.options.apiKey === firebaseConfig.apiKey &&
+      existing.options.projectId === firebaseConfig.projectId
+    ) {
       return existing;
     }
   }

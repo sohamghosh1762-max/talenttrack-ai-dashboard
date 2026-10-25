@@ -393,11 +393,14 @@ describe("RECRUITER DASHBOARD UPGRADE & RECRUITMENT PIPELINE TEST SUITE", () => 
       assert.equal(body.data.authorName, "Lead Recruiter");
 
       // Verify empty note rejected
-      const emptyReq = createJsonRequest(`http://localhost:3000/api/applications/${app1.id}/notes`, {
-        method: "POST",
-        token: recruiterToken,
-        body: { text: "   " },
-      });
+      const emptyReq = createJsonRequest(
+        `http://localhost:3000/api/applications/${app1.id}/notes`,
+        {
+          method: "POST",
+          token: recruiterToken,
+          body: { text: "   " },
+        },
+      );
       const emptyRes = await handleApiRequest(emptyReq);
       assert.ok(emptyRes);
       assert.equal(emptyRes.status, 400);

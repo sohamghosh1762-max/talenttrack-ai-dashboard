@@ -39,10 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useCandidates } from "@/hooks/api/useCandidates";
-import {
-  useBulkApplicationAction,
-  downloadCandidatesCsv,
-} from "@/hooks/api/useApplications";
+import { useBulkApplicationAction, downloadCandidatesCsv } from "@/hooks/api/useApplications";
 import { type Applicant } from "@/data/mockData";
 import { toast } from "sonner";
 
@@ -50,7 +47,10 @@ export const Route = createFileRoute("/candidates")({
   head: () => ({
     meta: [
       { title: "Candidate Talent Pool — TalentTrack AI" },
-      { name: "description", content: "Search, filter, and manage your complete candidate database." },
+      {
+        name: "description",
+        content: "Search, filter, and manage your complete candidate database.",
+      },
     ],
   }),
   component: CandidatesPage,
@@ -146,7 +146,8 @@ function CandidatesPage() {
 
   const toggleSelectAllPage = () => {
     const pageIds = candidatesList.map((c) => c.id);
-    const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedCandidateIds.includes(id));
+    const allSelected =
+      pageIds.length > 0 && pageIds.every((id) => selectedCandidateIds.includes(id));
     if (allSelected) {
       setSelectedCandidateIds((prev) => prev.filter((id) => !pageIds.includes(id)));
     } else {
@@ -212,8 +213,7 @@ function CandidatesPage() {
   };
 
   const isAllPageSelected =
-    candidatesList.length > 0 &&
-    candidatesList.every((c) => selectedCandidateIds.includes(c.id));
+    candidatesList.length > 0 && candidatesList.every((c) => selectedCandidateIds.includes(c.id));
 
   return (
     <DashboardLayout>
@@ -225,7 +225,9 @@ function CandidatesPage() {
               <span className="grid size-8 place-items-center rounded-lg bg-surface-purple text-brand-purple">
                 <CircleUserRound className="size-5" />
               </span>
-              <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">Candidates Talent Pool</h1>
+              <h1 className="text-xl font-extrabold text-foreground sm:text-2xl">
+                Candidates Talent Pool
+              </h1>
             </div>
             <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
               Search, filter, and manage applicant profiles across all vacancies.
@@ -316,7 +318,9 @@ function CandidatesPage() {
           {/* Sub Filters: Skills, Sorting & Reset */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-border/50 text-xs">
             <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-              <span className="text-[11px] font-semibold text-muted-foreground mr-1 shrink-0">Skills:</span>
+              <span className="text-[11px] font-semibold text-muted-foreground mr-1 shrink-0">
+                Skills:
+              </span>
               {SKILL_OPTIONS.map((skill) => (
                 <button
                   key={skill}
@@ -414,7 +418,9 @@ function CandidatesPage() {
         {isLoading && (
           <div className="dashboard-card p-16 text-center space-y-3">
             <Loader2 className="size-8 animate-spin text-brand-blue mx-auto" />
-            <p className="text-xs text-muted-foreground font-medium">Loading candidate talent pool...</p>
+            <p className="text-xs text-muted-foreground font-medium">
+              Loading candidate talent pool...
+            </p>
           </div>
         )}
 
@@ -434,7 +440,9 @@ function CandidatesPage() {
                 )}
                 <span>Select all on page ({candidatesList.length})</span>
               </button>
-              <span>Showing {candidatesList.length} of {totalCount} records</span>
+              <span>
+                Showing {candidatesList.length} of {totalCount} records
+              </span>
             </div>
 
             <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -445,7 +453,9 @@ function CandidatesPage() {
                   <div
                     key={candidate.id}
                     className={`dashboard-card flex flex-col justify-between p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md border-2 ${
-                      isSelected ? "border-brand-blue ring-1 ring-brand-blue/30 bg-surface-blue/20" : "border-border/60"
+                      isSelected
+                        ? "border-brand-blue ring-1 ring-brand-blue/30 bg-surface-blue/20"
+                        : "border-border/60"
                     }`}
                   >
                     <div>
@@ -472,8 +482,12 @@ function CandidatesPage() {
                             {candidate.initials}
                           </div>
                           <div className="min-w-0">
-                            <h3 className="text-xs font-bold text-foreground truncate">{candidate.name}</h3>
-                            <p className="text-[10.5px] font-medium text-brand-blue truncate">{candidate.job}</p>
+                            <h3 className="text-xs font-bold text-foreground truncate">
+                              {candidate.name}
+                            </h3>
+                            <p className="text-[10.5px] font-medium text-brand-blue truncate">
+                              {candidate.job}
+                            </p>
                           </div>
                         </div>
 
@@ -529,18 +543,20 @@ function CandidatesPage() {
                         size="sm"
                         variant="outline"
                         className="h-6.5 text-[11px] font-semibold text-brand-blue hover:bg-surface-blue gap-1"
-                        onClick={() => setSelectedCandidate({
-                          id: candidate.id,
-                          name: candidate.name,
-                          email: candidate.email,
-                          job: candidate.job,
-                          score: candidate.score,
-                          status: candidate.status,
-                          currentStage: candidate.currentStage,
-                          initials: candidate.initials,
-                          skills: candidate.skills,
-                          resumeId: candidate.resumeId,
-                        })}
+                        onClick={() =>
+                          setSelectedCandidate({
+                            id: candidate.id,
+                            name: candidate.name,
+                            email: candidate.email,
+                            job: candidate.job,
+                            score: candidate.score,
+                            status: candidate.status,
+                            currentStage: candidate.currentStage,
+                            initials: candidate.initials,
+                            skills: candidate.skills,
+                            resumeId: candidate.resumeId,
+                          })
+                        }
                       >
                         <Eye className="size-3" />
                         Details
@@ -594,7 +610,8 @@ function CandidatesPage() {
             <DialogHeader>
               <DialogTitle className="text-base font-bold">Move Selected Candidates</DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Transition {selectedCandidateIds.length} selected candidate applications to a new recruitment stage.
+                Transition {selectedCandidateIds.length} selected candidate applications to a new
+                recruitment stage.
               </DialogDescription>
             </DialogHeader>
             <div className="py-2 space-y-2 text-xs">

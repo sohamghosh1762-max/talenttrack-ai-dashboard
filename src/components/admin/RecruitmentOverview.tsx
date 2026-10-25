@@ -25,6 +25,10 @@ export function RecruitmentOverview({
   cards = recruitmentOverviewCards,
   funnel = recruitmentFunnelSteps,
 }: RecruitmentOverviewProps) {
+  const totalApps = cards.find((c) => c.id === "total-apps")?.count ?? 0;
+  const totalOffers = cards.find((c) => c.id === "offers")?.count ?? 0;
+  const overallConversionPct = totalApps > 0 ? ((totalOffers / totalApps) * 100).toFixed(1) : "0.0";
+
   return (
     <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:border-slate-800 dark:bg-slate-900/90">
       {/* Header */}
@@ -100,7 +104,7 @@ export function RecruitmentOverview({
             Recruitment Funnel Velocity
           </span>
           <span className="text-[11px] text-slate-400 dark:text-slate-500">
-            Overall Pipeline Conversion: 3.2%
+            Overall Pipeline Conversion: {overallConversionPct}%
           </span>
         </div>
 

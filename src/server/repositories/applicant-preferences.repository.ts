@@ -40,7 +40,7 @@ class ApplicantPreferencesRepository {
 
   public async findByUserId(userId: string): Promise<IApplicantPreferences> {
     if (isDatabaseConnected() && isValidObjectId(userId)) {
-      let doc = await ApplicantPreferences.findOne({ userId }).lean<any>();
+      const doc = await ApplicantPreferences.findOne({ userId }).lean<any>();
 
       if (!doc) {
         const id = generateObjectId();

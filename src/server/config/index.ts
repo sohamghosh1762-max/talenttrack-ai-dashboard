@@ -39,7 +39,6 @@ export const config = {
     port: env.SMTP_PORT,
     user: env.SMTP_USER,
     password: env.SMTP_PASSWORD,
-    secure: env.SMTP_SECURE,
     fromEmail: env.SMTP_FROM_EMAIL,
     fromName: env.SMTP_FROM_NAME,
   },

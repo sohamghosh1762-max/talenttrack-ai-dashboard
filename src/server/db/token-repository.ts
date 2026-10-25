@@ -19,7 +19,7 @@ class TokenRepository {
   private tokens: Map<string, IAuthToken> = new Map(); // Key: tokenHash
 
   /**
-   * Asynchronously generate and persist a password reset token in MongoDB Atlas
+   * Generate and store a password reset token
    */
   public async createPasswordResetTokenAsync(
     userId: string,
@@ -342,12 +342,14 @@ class TokenRepository {
       usedAt: null,
       createdAt: now.toISOString(),
     };
+
     this.tokens.set(tokenHash, record);
 
     if (isDatabaseConnected()) {
       const mongoUserId = isValidObjectId(userId)
         ? new mongoose.Types.ObjectId(userId)
         : new mongoose.Types.ObjectId();
+
       AuthToken.create({
         tokenId,
         userId: mongoUserId,
@@ -355,12 +357,17 @@ class TokenRepository {
         type: "PASSWORD_RESET",
         expiresAt,
         usedAt: null,
-      }).catch(() => {});
+      }).catch((err) => {
+        console.warn("[TokenRepository] MongoDB token write warning:", err.message);
+      });
     }
 
     return { token: rawToken, expiresAt: expiresAt.toISOString() };
   }
 
+  /**
+   * Validate password reset token
+   */
   public verifyPasswordResetToken(rawToken: string): {
     valid: boolean;
     userId?: string;
@@ -373,15 +380,21 @@ class TokenRepository {
     if (!record || record.type !== "PASSWORD_RESET") {
       return { valid: false, error: "Invalid password reset token." };
     }
+
     if (record.usedAt) {
       return { valid: false, error: "Password reset token has already been used." };
     }
+
     if (Date.now() > new Date(record.expiresAt).getTime()) {
       return { valid: false, error: "Password reset token has expired." };
     }
+
     return { valid: true, userId: record.userId };
   }
 
+  /**
+   * Consume password reset token
+   */
   public consumePasswordResetToken(rawToken: string): boolean {
     const tokenHash = hashToken(rawToken);
     const record = this.tokens.get(tokenHash);
@@ -389,13 +402,16 @@ class TokenRepository {
       const now = new Date();
       record.usedAt = now.toISOString();
       if (isDatabaseConnected()) {
-        AuthToken.updateOne({ tokenHash }, { $set: { usedAt: now } }).catch(() => {});
+        AuthToken.updateOne({ tokenHash }, { usedAt: now }).catch(() => {});
       }
       return true;
     }
     return false;
   }
 
+  /**
+   * Generate and store an email verification token
+   */
   public createEmailVerificationToken(
     userId: string,
     ttlHours: number = 48,
@@ -415,12 +431,14 @@ class TokenRepository {
       usedAt: null,
       createdAt: now.toISOString(),
     };
+
     this.tokens.set(tokenHash, record);
 
     if (isDatabaseConnected()) {
       const mongoUserId = isValidObjectId(userId)
         ? new mongoose.Types.ObjectId(userId)
         : new mongoose.Types.ObjectId();
+
       AuthToken.create({
         tokenId,
         userId: mongoUserId,
@@ -428,12 +446,17 @@ class TokenRepository {
         type: "EMAIL_VERIFICATION",
         expiresAt,
         usedAt: null,
-      }).catch(() => {});
+      }).catch((err) => {
+        console.warn("[TokenRepository] MongoDB verification token write warning:", err.message);
+      });
     }
 
     return { token: rawToken, expiresAt: expiresAt.toISOString() };
   }
 
+  /**
+   * Validate email verification token
+   */
   public verifyEmailVerificationToken(rawToken: string): {
     valid: boolean;
     userId?: string;
@@ -446,15 +469,21 @@ class TokenRepository {
     if (!record || record.type !== "EMAIL_VERIFICATION") {
       return { valid: false, error: "Invalid verification token." };
     }
+
     if (record.usedAt) {
       return { valid: false, error: "Verification token has already been used." };
     }
+
     if (Date.now() > new Date(record.expiresAt).getTime()) {
       return { valid: false, error: "Verification token has expired." };
     }
+
     return { valid: true, userId: record.userId };
   }
 
+  /**
+   * Consume email verification token
+   */
   public consumeEmailVerificationToken(rawToken: string): boolean {
     const tokenHash = hashToken(rawToken);
     const record = this.tokens.get(tokenHash);
@@ -462,17 +491,35 @@ class TokenRepository {
       const now = new Date();
       record.usedAt = now.toISOString();
       if (isDatabaseConnected()) {
-        AuthToken.updateOne({ tokenHash }, { $set: { usedAt: now } }).catch(() => {});
+        AuthToken.updateOne({ tokenHash }, { usedAt: now }).catch(() => {});
       }
       return true;
     }
     return false;
   }
 
+  /**
+   * Invalidate existing tokens of a given type for a user
+   */
   public invalidateUserTokens(userId: string, type: "PASSWORD_RESET" | "EMAIL_VERIFICATION"): void {
-    this.invalidateUserTokensAsync(userId, type).catch(() => {});
+    const now = new Date();
+    for (const record of this.tokens.values()) {
+      if (record.userId === userId && record.type === type && !record.usedAt) {
+        record.usedAt = now.toISOString();
+      }
+    }
+
+    if (isDatabaseConnected() && isValidObjectId(userId)) {
+      AuthToken.updateMany(
+        { userId: new mongoose.Types.ObjectId(userId), type, usedAt: null },
+        { usedAt: now },
+      ).catch(() => {});
+    }
   }
 
+  /**
+   * Clear all tokens (used for test isolation)
+   */
   public clearAll(): void {
     this.tokens.clear();
   }

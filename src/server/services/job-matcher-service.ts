@@ -329,7 +329,10 @@ export class JobMatcherService {
     }
     if (strengths.length === 0 && matchedSkills.length > 0) {
       strengths.push(
-        `Directly matches key role skills: ${matchedSkills.slice(0, 3).map((m) => m.canonicalName).join(", ")}.`,
+        `Directly matches key role skills: ${matchedSkills
+          .slice(0, 3)
+          .map((m) => m.canonicalName)
+          .join(", ")}.`,
       );
     }
 
@@ -351,7 +354,10 @@ export class JobMatcherService {
     }
     if (missingRequired.length === 0 && missingSkills.length > 0) {
       gaps.push(
-        `Preferred secondary skills absent: ${missingSkills.slice(0, 3).map((m) => m.canonicalName).join(", ")}.`,
+        `Preferred secondary skills absent: ${missingSkills
+          .slice(0, 3)
+          .map((m) => m.canonicalName)
+          .join(", ")}.`,
       );
     }
 
@@ -463,8 +469,10 @@ export class JobMatcherService {
     // Sort deterministically: overallScore desc -> requiredSkills desc -> experience desc -> candidateId asc
     rankedItems.sort((a, b) => {
       if (b.overallScore !== a.overallScore) return b.overallScore - a.overallScore;
-      if (b.factorScores.requiredSkills !== a.factorScores.requiredSkills) return b.factorScores.requiredSkills - a.factorScores.requiredSkills;
-      if (b.factorScores.experience !== a.factorScores.experience) return b.factorScores.experience - a.factorScores.experience;
+      if (b.factorScores.requiredSkills !== a.factorScores.requiredSkills)
+        return b.factorScores.requiredSkills - a.factorScores.requiredSkills;
+      if (b.factorScores.experience !== a.factorScores.experience)
+        return b.factorScores.experience - a.factorScores.experience;
       return a.candidateId.localeCompare(b.candidateId);
     });
 
@@ -480,11 +488,15 @@ export class JobMatcherService {
    */
   public async rankCandidatesForJob(
     jobIdOrJob: string | IJob,
-    recruiterIdOrCandidates?: string | Array<{ id: string; name: string; email: string; profile: IParsedResumeProfile }>,
+    recruiterIdOrCandidates?:
+      string | Array<{ id: string; name: string; email: string; profile: IParsedResumeProfile }>,
     filters: { minScore?: number; search?: string; stage?: string } = {},
   ): Promise<any> {
     if (typeof jobIdOrJob === "object" || Array.isArray(recruiterIdOrCandidates)) {
-      const jobObj = typeof jobIdOrJob === "object" ? (jobIdOrJob as IJob) : await jobRepository.findById(jobIdOrJob);
+      const jobObj =
+        typeof jobIdOrJob === "object"
+          ? (jobIdOrJob as IJob)
+          : await jobRepository.findById(jobIdOrJob);
       const candidatesList = Array.isArray(recruiterIdOrCandidates) ? recruiterIdOrCandidates : [];
       return this.rankCandidateProfiles(jobObj!, candidatesList);
     }
@@ -666,8 +678,18 @@ export class JobMatcherService {
         id: "rec-missing-skills",
         category: "skill_gap",
         title: "Highlight Missing Required Technologies",
-        recommendation: `This position explicitly requires ${missingRequired.slice(0, 3).map((s) => s.canonicalName).join(", ")}. If you have practical experience with these tools, explicitly highlight them in your project or employment descriptions.`,
-        suggestion: `This position explicitly requires ${missingRequired.slice(0, 3).map((s) => s.canonicalName).join(", ")}. If you have practical experience with these tools, explicitly highlight them in your project or employment descriptions.`,
+        recommendation: `This position explicitly requires ${missingRequired
+          .slice(0, 3)
+          .map((s) => s.canonicalName)
+          .join(
+            ", ",
+          )}. If you have practical experience with these tools, explicitly highlight them in your project or employment descriptions.`,
+        suggestion: `This position explicitly requires ${missingRequired
+          .slice(0, 3)
+          .map((s) => s.canonicalName)
+          .join(
+            ", ",
+          )}. If you have practical experience with these tools, explicitly highlight them in your project or employment descriptions.`,
         justification: `The automated screening engine identified ${missingRequired.length} core job requirement(s) absent from your resume text.`,
         rationale: `The automated screening engine identified ${missingRequired.length} core job requirement(s) absent from your resume text.`,
         relevantJobRequirement: missingRequired[0]?.canonicalName,
@@ -681,8 +703,18 @@ export class JobMatcherService {
         id: "rec-skill-context",
         category: "projects",
         title: "Ground Skills in Project Experience",
-        recommendation: `You listed ${summaryOnly.slice(0, 3).map((s) => s.canonicalName).join(", ")} in your skills section. Connect them directly to a specific work responsibility or project bullet point to provide practical proof.`,
-        suggestion: `You listed ${summaryOnly.slice(0, 3).map((s) => s.canonicalName).join(", ")} in your skills section. Connect them directly to a specific work responsibility or project bullet point to provide practical proof.`,
+        recommendation: `You listed ${summaryOnly
+          .slice(0, 3)
+          .map((s) => s.canonicalName)
+          .join(
+            ", ",
+          )} in your skills section. Connect them directly to a specific work responsibility or project bullet point to provide practical proof.`,
+        suggestion: `You listed ${summaryOnly
+          .slice(0, 3)
+          .map((s) => s.canonicalName)
+          .join(
+            ", ",
+          )} in your skills section. Connect them directly to a specific work responsibility or project bullet point to provide practical proof.`,
         justification:
           "Recruiters and ATS algorithms score skills higher when verified through tangible project or employment context.",
         rationale:
@@ -777,7 +809,8 @@ export class JobMatcherService {
         }
       }
 
-      const text = `${cand.name} ${cand.profile.summary || ""} ${JSON.stringify(cand.profile.experience || "")}`.toLowerCase();
+      const text =
+        `${cand.name} ${cand.profile.summary || ""} ${JSON.stringify(cand.profile.experience || "")}`.toLowerCase();
       for (const token of queryTokens) {
         if (token.length > 2 && text.includes(token.toLowerCase())) {
           matchScore += 10;
@@ -811,7 +844,8 @@ export class JobMatcherService {
    */
   public async semanticSearchCandidates(
     query: string,
-    recruiterIdOrCandidates?: string | Array<{ id: string; name: string; email: string; profile: IParsedResumeProfile }>,
+    recruiterIdOrCandidates?:
+      string | Array<{ id: string; name: string; email: string; profile: IParsedResumeProfile }>,
     options: { limit?: number } = {},
   ): Promise<any> {
     if (Array.isArray(recruiterIdOrCandidates)) {
@@ -834,9 +868,7 @@ export class JobMatcherService {
 
     // Retrieve active candidate applicants
     const usersResult = userRepository.findAll({ role: "APPLICANT", limit: 100 });
-    const applicants = usersResult.users.filter(
-      (u) => u.status?.toUpperCase() !== "DEACTIVATED",
-    );
+    const applicants = usersResult.users.filter((u) => u.status?.toUpperCase() !== "DEACTIVATED");
 
     const searchResults: SemanticSearchResultItem[] = [];
     const limit = options.limit || 20;
@@ -852,7 +884,9 @@ export class JobMatcherService {
       const parsed = latestResume?.parsedProfile;
 
       if (parsed) {
-        parsed.skills?.forEach((s) => canonicalCandidateSkills.push(skillTaxonomyService.canonicalizeSkill(s)));
+        parsed.skills?.forEach((s) =>
+          canonicalCandidateSkills.push(skillTaxonomyService.canonicalizeSkill(s)),
+        );
       }
 
       const allSkillsLower = new Set(canonicalCandidateSkills.map((s) => s.toLowerCase()));
@@ -872,7 +906,8 @@ export class JobMatcherService {
       // 2. Query text in headline or summary
       const headline = profile.headline || "";
       const summary = parsed?.summary || "";
-      const textToSearch = `${applicant.name} ${headline} ${summary} ${candidateSkills.join(" ")}`.toLowerCase();
+      const textToSearch =
+        `${applicant.name} ${headline} ${summary} ${candidateSkills.join(" ")}`.toLowerCase();
 
       for (const token of queryTokens) {
         if (token.length > 2 && textToSearch.includes(token.toLowerCase())) {

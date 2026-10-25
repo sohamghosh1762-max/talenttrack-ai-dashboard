@@ -80,10 +80,7 @@ export function useCandidates(
 /**
  * TanStack Query hook for Single Candidate Details API
  */
-export function useCandidate(
-  id: string | null | undefined,
-  options: { enabled?: boolean } = {},
-) {
+export function useCandidate(id: string | null | undefined, options: { enabled?: boolean } = {}) {
   return useQuery<any>({
     queryKey: candidateKeys.detail(id || ""),
     queryFn: async () => {

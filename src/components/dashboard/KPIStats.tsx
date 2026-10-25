@@ -11,7 +11,12 @@ interface KPIStatsProps {
 }
 
 export function KPIStats({ onCardClick, dateRange = "30d", jobId }: KPIStatsProps) {
-  const { data: analytics, isLoading, isError, refetch } = useRecruiterAnalytics({
+  const {
+    data: analytics,
+    isLoading,
+    isError,
+    refetch,
+  } = useRecruiterAnalytics({
     range: dateRange,
     jobId,
   });
@@ -106,4 +111,3 @@ export function KPIStats({ onCardClick, dateRange = "30d", jobId }: KPIStatsProp
     </div>
   );
 }
-

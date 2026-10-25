@@ -41,10 +41,7 @@ export function useMyInterviews(
 /**
  * Hook to retrieve scheduled interviews (Recruiter / Hiring Manager / Admin)
  */
-export function useInterviews(
-  params?: InterviewQueryParams,
-  options: { enabled?: boolean } = {},
-) {
+export function useInterviews(params?: InterviewQueryParams, options: { enabled?: boolean } = {}) {
   return useQuery<IInterview[]>({
     queryKey: interviewKeys.list(params),
     queryFn: async () => {
@@ -61,10 +58,7 @@ export function useInterviews(
 /**
  * Hook to retrieve a single interview by ID
  */
-export function useInterview(
-  id: string | null | undefined,
-  options: { enabled?: boolean } = {},
-) {
+export function useInterview(id: string | null | undefined, options: { enabled?: boolean } = {}) {
   return useQuery<IInterview>({
     queryKey: interviewKeys.detail(id || ""),
     queryFn: async () => {

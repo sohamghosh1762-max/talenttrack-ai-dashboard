@@ -110,7 +110,8 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
       location: "San Francisco, CA",
       employmentType: "Full-Time",
       experienceRequired: "4+ years",
-      description: "We are seeking a Senior Full Stack Engineer proficient in TypeScript, React, Node.js, and Cloud Infrastructure (AWS/Docker). Minimum 4+ years of relevant experience.",
+      description:
+        "We are seeking a Senior Full Stack Engineer proficient in TypeScript, React, Node.js, and Cloud Infrastructure (AWS/Docker). Minimum 4+ years of relevant experience.",
       skills: ["React", "TypeScript", "Node.js", "Docker", "AWS", "MongoDB"],
       recruiterId: recruiterUser.id,
     });
@@ -155,7 +156,9 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
             role: "Staff Engineer",
             startDate: "2021-01",
             endDate: "Present",
-            description: ["Architected microservices using Node.js and TypeScript handling high throughput."],
+            description: [
+              "Architected microservices using Node.js and TypeScript handling high throughput.",
+            ],
             technologies: ["Node.js", "TypeScript", "MongoDB"],
           },
         ],
@@ -223,7 +226,8 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
     it("should calculate transparent factor scores and overall match score with configured weights", () => {
       const candidateProfile: IParsedResumeProfile = {
         personal: { fullName: "Senior Jane", email: "jane@test.com" },
-        summary: "Senior Full Stack developer with extensive experience building cloud native apps.",
+        summary:
+          "Senior Full Stack developer with extensive experience building cloud native apps.",
         skills: ["React", "TypeScript", "Node.js", "Docker", "AWS", "MongoDB"],
         experience: [
           {
@@ -264,7 +268,10 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
       );
 
       // Verify overall match score & tier
-      assert.ok(result.overallScore >= 80, `Expected strong match score >= 80, got ${result.overallScore}`);
+      assert.ok(
+        result.overallScore >= 80,
+        `Expected strong match score >= 80, got ${result.overallScore}`,
+      );
       assert.equal(result.matchTier, "STRONG_MATCH");
 
       // Verify individual factor scores exist and are bounded [0, 100]
@@ -280,19 +287,19 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
       const weights = (result.weights || result.factorWeights) as any;
       assert.equal(weights.requiredSkills, 0.35);
       assert.equal(weights.preferredSkills, 0.15);
-      assert.equal(weights.experience, 0.20);
+      assert.equal(weights.experience, 0.2);
       assert.equal(weights.projects, 0.15);
-      assert.equal(weights.education, 0.10);
+      assert.equal(weights.education, 0.1);
       assert.equal(weights.semanticAlignment, 0.05);
 
       // Verify overall score equals the sum of weighted factor scores
       const expectedScore = Math.round(
         factors.requiredSkills * weights.requiredSkills +
-        factors.preferredSkills * weights.preferredSkills +
-        factors.experienceScore * weights.experience +
-        factors.projectRelevance * weights.projects +
-        factors.educationQualifications * weights.education +
-        factors.semanticAlignment * weights.semanticAlignment
+          factors.preferredSkills * weights.preferredSkills +
+          factors.experienceScore * weights.experience +
+          factors.projectRelevance * weights.projects +
+          factors.educationQualifications * weights.education +
+          factors.semanticAlignment * weights.semanticAlignment,
       );
       assert.equal(result.overallScore, expectedScore);
     });
@@ -341,7 +348,11 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
       // Strengths & gaps should be populated and grounded
       assert.ok(result.strengths.length > 0);
       assert.ok(result.gaps.length > 0);
-      assert.ok(result.gaps.some((g) => g.toLowerCase().includes("docker") || g.toLowerCase().includes("experience")));
+      assert.ok(
+        result.gaps.some(
+          (g) => g.toLowerCase().includes("docker") || g.toLowerCase().includes("experience"),
+        ),
+      );
     });
 
     it("should never state that candidate definitively lacks a skill, using unverified/not_found framing", () => {
@@ -353,15 +364,22 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
         projects: [],
         certifications: [],
       } as unknown as IParsedResumeProfile;
-      const result = jobMatcherService.evaluateCandidateForJob("cand-003", "Test Person", profile, testJob);
+      const result = jobMatcherService.evaluateCandidateForJob(
+        "cand-003",
+        "Test Person",
+        profile,
+        testJob,
+      );
       for (const missing of result.missingSkills) {
         assert.ok(
-          missing.status === "not_found" || missing.status === "unverified" || missing.status === "partially_supported",
-          `Status must be nuanced, got: ${missing.status}`
+          missing.status === "not_found" ||
+            missing.status === "unverified" ||
+            missing.status === "partially_supported",
+          `Status must be nuanced, got: ${missing.status}`,
         );
         assert.ok(
           !missing.explanation?.includes("definitively lacks"),
-          "Explanation must not make definitive negative claim"
+          "Explanation must not make definitive negative claim",
         );
       }
     });
@@ -411,7 +429,8 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
 
     it("should produce identical match scores regardless of demographic name, gender indicators, or photo markers", () => {
       const baseProfile: Omit<IParsedResumeProfile, "personal"> = {
-        summary: "Software engineer with 5 years experience building cloud services in TypeScript and AWS.",
+        summary:
+          "Software engineer with 5 years experience building cloud services in TypeScript and AWS.",
         skills: ["TypeScript", "React", "Node.js", "AWS", "Docker"],
         experience: [
           {
@@ -461,10 +480,26 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
       const evalB = jobMatcherService.evaluateCandidateForJob(profileB, testJob);
       const evalC = jobMatcherService.evaluateCandidateForJob(profileC, testJob);
 
-      assert.equal(evalA.overallScore, evalB.overallScore, "Score must be completely neutral to name/background");
-      assert.equal(evalB.overallScore, evalC.overallScore, "Score must be completely neutral to name/background");
-      assert.deepEqual(evalA.factorScores, evalB.factorScores, "Factor breakdown must be identical");
-      assert.deepEqual(evalB.factorScores, evalC.factorScores, "Factor breakdown must be identical");
+      assert.equal(
+        evalA.overallScore,
+        evalB.overallScore,
+        "Score must be completely neutral to name/background",
+      );
+      assert.equal(
+        evalB.overallScore,
+        evalC.overallScore,
+        "Score must be completely neutral to name/background",
+      );
+      assert.deepEqual(
+        evalA.factorScores,
+        evalB.factorScores,
+        "Factor breakdown must be identical",
+      );
+      assert.deepEqual(
+        evalB.factorScores,
+        evalC.factorScores,
+        "Factor breakdown must be identical",
+      );
     });
   });
 
@@ -581,7 +616,13 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
           profile: {
             personal: { fullName: "Cloud Specialist" },
             skills: ["Docker", "Kubernetes", "AWS", "Terraform"],
-            experience: [{ company: "CloudCorp", role: "SRE", description: ["Cloud deployments and CI/CD pipelines."] }],
+            experience: [
+              {
+                company: "CloudCorp",
+                role: "SRE",
+                description: ["Cloud deployments and CI/CD pipelines."],
+              },
+            ],
           } as IParsedResumeProfile,
         },
         {
@@ -591,7 +632,13 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
           profile: {
             personal: { fullName: "Fullstack React TS" },
             skills: ["React", "TypeScript", "Node.js", "AWS"],
-            experience: [{ company: "DevCorp", role: "Engineer", description: ["Built full stack web apps with React and TypeScript."] }],
+            experience: [
+              {
+                company: "DevCorp",
+                role: "Engineer",
+                description: ["Built full stack web apps with React and TypeScript."],
+              },
+            ],
           } as IParsedResumeProfile,
         },
         {
@@ -601,7 +648,13 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
           profile: {
             personal: { fullName: "Python Data Scientist" },
             skills: ["Python", "Pandas", "Machine Learning", "PyTorch"],
-            experience: [{ company: "DataCo", role: "Scientist", description: ["Trained deep learning models with PyTorch."] }],
+            experience: [
+              {
+                company: "DataCo",
+                role: "Scientist",
+                description: ["Trained deep learning models with PyTorch."],
+              },
+            ],
           } as IParsedResumeProfile,
         },
       ];
@@ -627,7 +680,10 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
           profile: { personal: { fullName: "Dev One" }, skills: ["React"] } as IParsedResumeProfile,
         },
       ];
-      const results = await jobMatcherService.semanticSearchCandidates("Cobol and Fortran mainframe specialist", candidates);
+      const results = await jobMatcherService.semanticSearchCandidates(
+        "Cobol and Fortran mainframe specialist",
+        candidates,
+      );
       assert.equal(results.length, 0);
     });
   });
@@ -660,10 +716,16 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
       // Verify categories
       const categories = result.recommendations.map((r) => r.category);
       assert.ok(categories.includes("skill_gap"), "Should suggest missing key skills");
-      assert.ok(categories.includes("action_impact"), "Should suggest adding measurable impact to vague experience");
+      assert.ok(
+        categories.includes("action_impact"),
+        "Should suggest adding measurable impact to vague experience",
+      );
 
       // Verify advisory notice is present
-      assert.ok(result.advisoryNotice && result.advisoryNotice.includes("does not guarantee interview selection"));
+      assert.ok(
+        result.advisoryNotice &&
+          result.advisoryNotice.includes("does not guarantee interview selection"),
+      );
 
       // Verify no hallucination of fake past employers
       for (const rec of result.recommendations) {
@@ -810,20 +872,18 @@ describe("AI RESUME SCREENING & INTELLIGENCE UPGRADE TEST SUITE", () => {
     });
 
     it("POST /api/screening/override records recruiter human review without automated rejection", async () => {
-      const req = createJsonRequest(
-        `http://localhost/api/screening/override`,
-        {
-          method: "POST",
-          token: recruiterToken,
-          body: {
-            candidateId: applicantUser1.id,
-            jobId: testJob.id,
-            decision: "ADVANCE_TO_INTERVIEW",
-            reason: "Candidate demonstrated strong practical design in offline portfolio despite minor skill name discrepancy.",
-            verifiedSkills: ["TypeScript", "React", "Node.js"],
-          },
+      const req = createJsonRequest(`http://localhost/api/screening/override`, {
+        method: "POST",
+        token: recruiterToken,
+        body: {
+          candidateId: applicantUser1.id,
+          jobId: testJob.id,
+          decision: "ADVANCE_TO_INTERVIEW",
+          reason:
+            "Candidate demonstrated strong practical design in offline portfolio despite minor skill name discrepancy.",
+          verifiedSkills: ["TypeScript", "React", "Node.js"],
         },
-      );
+      });
       const res = await handleApiRequest(req);
       assert.ok(res);
       assert.equal(res.status, 200);

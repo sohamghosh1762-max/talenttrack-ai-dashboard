@@ -22,7 +22,8 @@ export const applicationKeys = {
   lists: () => [...applicationKeys.all, "list"] as const,
   list: (filters: ApplicationQueryFilters) => [...applicationKeys.lists(), filters] as const,
   my: () => [...applicationKeys.all, "my"] as const,
-  recruiter: (filters: ApplicationQueryFilters) => [...applicationKeys.all, "recruiter", filters] as const,
+  recruiter: (filters: ApplicationQueryFilters) =>
+    [...applicationKeys.all, "recruiter", filters] as const,
   details: () => [...applicationKeys.all, "detail"] as const,
   detail: (id: string) => [...applicationKeys.details(), id] as const,
 };
@@ -90,7 +91,9 @@ export function useApplication(id: string | undefined, options: { enabled?: bool
     queryKey: applicationKeys.detail(id || ""),
     queryFn: async () => {
       if (!id) throw new Error("Application ID is required");
-      const res = await apiClient.get<{ application: IApplication } | IApplication>(`/api/applications/${id}`);
+      const res = await apiClient.get<{ application: IApplication } | IApplication>(
+        `/api/applications/${id}`,
+      );
       if (res && "application" in res) {
         return res.application;
       }
@@ -110,12 +113,18 @@ export function useCreateApplication() {
   return useMutation<
     IApplication,
     Error,
-    { jobId: string; resumeId?: string | undefined; coverLetter?: string | undefined; notes?: string | undefined }
+    {
+      jobId: string;
+      resumeId?: string | undefined;
+      coverLetter?: string | undefined;
+      notes?: string | undefined;
+    }
   >({
     mutationFn: async (payload) => {
-      const res = await apiClient.post<
-        { application: IApplication; id: string } | IApplication
-      >("/api/applications", payload);
+      const res = await apiClient.post<{ application: IApplication; id: string } | IApplication>(
+        "/api/applications",
+        payload,
+      );
 
       if (res && "application" in res) {
         return res.application;
@@ -200,11 +209,7 @@ export function useUpdateApplicationStage() {
 export function useAddApplicationNote() {
   const queryClient = useQueryClient();
 
-  return useMutation<
-    any,
-    Error,
-    { applicationId: string; text: string; isInternal?: boolean }
-  >({
+  return useMutation<any, Error, { applicationId: string; text: string; isInternal?: boolean }>({
     mutationFn: async ({ applicationId, text, isInternal = true }) => {
       return await apiClient.post(`/api/applications/${applicationId}/notes`, {
         text,
@@ -254,7 +259,13 @@ export function useBulkApplicationAction() {
   const queryClient = useQueryClient();
 
   return useMutation<
-    { action: string; totalRequested: number; successCount: number; failureCount: number; results: any[] },
+    {
+      action: string;
+      totalRequested: number;
+      successCount: number;
+      failureCount: number;
+      results: any[];
+    },
     Error,
     {
       action: "UPDATE_STAGE" | "ADD_NOTE" | "ARCHIVE";
@@ -284,7 +295,9 @@ export function useBulkApplicationAction() {
 /**
  * Utility to trigger CSV download of candidates / applications with formula-injection protection
  */
-export async function downloadCandidatesCsv(params: Record<string, string | number | undefined> = {}) {
+export async function downloadCandidatesCsv(
+  params: Record<string, string | number | undefined> = {},
+) {
   const query = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== "") {
@@ -334,4 +347,3 @@ export async function downloadCandidatesCsv(params: Record<string, string | numb
   document.body.removeChild(a);
   window.URL.revokeObjectURL(downloadUrl);
 }
-

@@ -84,32 +84,9 @@ export const resendVerificationSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address."),
 });
 
-export const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Current password is required."),
-    newPassword: z
-      .string()
-      .min(8, "New password must contain at least 8 characters.")
-      .max(128, "New password cannot exceed 128 characters."),
-    confirmPassword: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.confirmPassword && data.confirmPassword !== data.newPassword) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: "Passwords do not match.",
-      path: ["confirmPassword"],
-    },
-  );
-
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;
-export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

@@ -32,7 +32,6 @@ export function HiringPipeline({ onStageSelect, dateRange = "30d", jobId }: Hiri
     };
   });
 
-
   return (
     <section className="dashboard-card min-w-0 p-3.5">
       <div className="flex h-7 items-center justify-between pb-2">

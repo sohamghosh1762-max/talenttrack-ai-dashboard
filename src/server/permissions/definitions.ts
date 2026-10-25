@@ -59,6 +59,23 @@ export const PERMISSIONS = {
   ADMIN_ACCESS: "admin.access",
   ADMIN_AUDIT_LOGS: "admin.audit_logs",
   ADMIN_SYSTEM_CONFIG: "admin.system_config",
+
+  // Organizations & Multi-tenancy
+  ORGANIZATIONS_READ: "organizations.read",
+  ORGANIZATIONS_CREATE: "organizations.create",
+  ORGANIZATIONS_UPDATE: "organizations.update",
+  ORGANIZATIONS_DELETE: "organizations.delete",
+  ORGANIZATIONS_MANAGE_STATUS: "organizations.manage_status",
+
+  // Departments
+  DEPARTMENTS_READ: "departments.read",
+  DEPARTMENTS_CREATE: "departments.create",
+  DEPARTMENTS_UPDATE: "departments.update",
+  DEPARTMENTS_DELETE: "departments.delete",
+
+  // Roles & Security
+  ROLES_READ: "roles.read",
+  ROLES_MANAGE: "roles.manage",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

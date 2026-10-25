@@ -35,7 +35,6 @@ out/
 .next/
 .nuxt/
 .vite/
-.cache/
 coverage/
 .nyc_output/
 
@@ -51,16 +50,28 @@ lerna-debug.log*
 .wrangler/
 .dev.vars
 
-# Local backup & temporary copy folders
+# TypeScript build info
+*.tsbuildinfo
+
+# Local backup & temporary copy files and folders
 backups/
 *.gz
+*.zip
+*- Copy*
+* - Copy*
 *- Copy/
 * - Copy/
+*-Copy/
+.lovable - Copy/
+.output - Copy/
+.tanstack - Copy/
+.wrangler - Copy/
+docs - Copy/
+node_modules - Copy/
 
 # Firebase / Service Credentials / Private Keys / Secrets
 serviceAccountKey*.json
 service-account*.json
-*-service-account*.json
 firebase-service-account*.json
 *-firebase-adminsdk-*.json
 firebase-adminsdk*.json

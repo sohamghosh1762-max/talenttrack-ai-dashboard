@@ -73,10 +73,7 @@ export function ApplicationOverview({ dateRange = "30d", jobId }: ApplicationOve
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={chartData}
-              margin={{ top: 8, right: 15, left: -20, bottom: 0 }}
-            >
+            <LineChart data={chartData} margin={{ top: 8, right: 15, left: -20, bottom: 0 }}>
               <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -139,4 +136,3 @@ export function ApplicationOverview({ dateRange = "30d", jobId }: ApplicationOve
     </section>
   );
 }
-

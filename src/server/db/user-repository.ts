@@ -3,9 +3,12 @@ import { User, type IUserDocument } from "../models/User.ts";
 import { Recruiter } from "../models/Recruiter.ts";
 import { Applicant } from "../models/Applicant.ts";
 import { isDatabaseConnected, ensureDatabaseConnected } from "./mongodb.ts";
+import { hashPassword } from "../auth/password.ts";
 import type {
   IUser,
   SafeUser,
+  CreateUserInput,
+  UpdateUserInput,
   UserQueryParams,
   PaginatedUsersResponse,
   UserStatus,
@@ -17,10 +20,13 @@ import type {
   BulkUpdateStatusResult,
   UserActivityItem,
   UpdateApplicantProfileInput,
+  AdminApplicantQueryParams,
+  AdminApplicantItem,
+  AdminApplicantSummaryStats,
+  PaginatedAdminApplicantsResponse,
 } from "../types/user-types.ts";
 import type { IParsedResumeProfile } from "../types/resume-types.ts";
 import { auditService } from "../services/audit-service.ts";
-import { AppError } from "../utils/errors.ts";
 
 // Standard 24-character hexadecimal MongoDB ObjectId validator
 export function isValidObjectId(id: string): boolean {
@@ -43,7 +49,6 @@ export function toSafeUser(user: IUser): SafeUser {
 }
 
 // Convert Mongoose User document to internal IUser entity
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 export function docToUser(doc: any): IUser {
   const obj = doc.toObject ? doc.toObject() : doc;
   const idStr = doc._id ? doc._id.toString() : obj.id || doc.id;
@@ -66,13 +71,13 @@ export function docToUser(doc: any): IUser {
     recruiterProfile: obj.recruiterProfile,
     applicantProfile: obj.applicantProfile,
     adminProfile: obj.adminProfile,
+    organizationId: obj.organizationId,
+    departmentId: obj.departmentId,
+    organizationName: obj.organizationName,
+    departmentName: obj.departmentName,
     firebaseUid: obj.firebaseUid,
   };
 }
-
-// Pre-computed scrypt hash for development seed accounts (password123)
-export const DEFAULT_SEED_PASSWORD_HASH =
-  "scrypt$770a1a77abc429427d5543a4c06986ac$bb8de7458a9e53290bfe6fb5f954c590a64d82dd1ed9577dea7c450e86135728e2e714ba02f691540aab1a820df15a91ec11d510b86c2dec29372756958c16e9";
 
 // Pre-seeded database records with genuine 24-hex MongoDB ObjectIds
 export const DEFAULT_SEED_USERS: IUser[] = [
@@ -81,13 +86,15 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c001",
     name: "Platform Administrator",
     email: "admin@talenttrack.ai",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "ADMIN",
     status: "ACTIVE",
     emailVerified: true,
     createdAt: "2025-01-01T08:00:00.000Z",
     updatedAt: "2025-01-01T08:00:00.000Z",
     lastActive: "2026-09-20T08:00:00.000Z",
+    organizationId: "org-1",
+    organizationName: "TalentTrack Technologies Inc.",
     adminProfile: {
       platformRole: "Super Administrator",
       permissions: ["all"],
@@ -98,13 +105,15 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c002",
     name: "Elena Rostova",
     email: "elena.admin@talenttrack.ai",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "ADMIN",
     status: "ACTIVE",
     emailVerified: true,
     createdAt: "2025-01-15T10:00:00.000Z",
     updatedAt: "2025-01-15T10:00:00.000Z",
     lastActive: "2026-09-18T14:30:00.000Z",
+    organizationId: "org-1",
+    organizationName: "TalentTrack Technologies Inc.",
     adminProfile: {
       platformRole: "Security & Compliance Admin",
       permissions: ["user_management", "audit_logs", "compliance"],
@@ -116,13 +125,17 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c020",
     name: "Sarah Chen",
     email: "manager@talenttrack.ai",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "HIRING_MANAGER",
     status: "ACTIVE",
     emailVerified: true,
     createdAt: "2025-02-01T09:30:00.000Z",
     updatedAt: "2025-02-01T09:30:00.000Z",
     lastActive: "2026-09-20T10:00:00.000Z",
+    organizationId: "org-1",
+    organizationName: "TalentTrack Technologies Inc.",
+    departmentId: "dept-1",
+    departmentName: "Engineering",
     recruiterProfile: {
       companyName: "TalentTrack Technologies",
       jobTitle: "VP of Engineering",
@@ -134,13 +147,17 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c003",
     name: "Rahul Mehta",
     email: "rahul.mehta@talenttrack.ai",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "RECRUITER",
     status: "ACTIVE",
     emailVerified: true,
     createdAt: "2025-02-01T09:30:00.000Z",
     updatedAt: "2025-02-01T09:30:00.000Z",
     lastActive: "2026-09-19T16:15:00.000Z",
+    organizationId: "org-1",
+    organizationName: "TalentTrack Technologies Inc.",
+    departmentId: "dept-3",
+    departmentName: "Talent Acquisition",
     recruiterProfile: {
       companyName: "TalentTrack Technologies",
       jobTitle: "Principal Talent Acquisition Lead",
@@ -151,24 +168,28 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c004",
     name: "Sarah Jenkins",
     email: "sarah.j@stripe-recruit.com",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "RECRUITER",
     status: "ACTIVE",
     emailVerified: true,
     createdAt: "2025-02-14T11:20:00.000Z",
     updatedAt: "2025-02-14T11:20:00.000Z",
     lastActive: "2026-09-15T12:00:00.000Z",
+    organizationId: "org-2",
+    organizationName: "CloudScale Systems",
+    departmentId: "dept-7",
+    departmentName: "Recruitment",
     recruiterProfile: {
-      companyName: "Stripe",
+      companyName: "CloudScale Systems",
       jobTitle: "Senior Technical Recruiter",
-      department: "Infrastructure & Platform Hiring",
+      department: "Recruitment",
     },
   },
   {
     id: "65f1a2b3c4d5e6f7a8b9c005",
     name: "David Kim",
     email: "david.kim@databricks-partners.com",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "RECRUITER",
     status: "ACTIVE",
     emailVerified: true,
@@ -185,7 +206,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c006",
     name: "Claire Dupont",
     email: "claire.dupont@scale-talent.io",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "RECRUITER",
     status: "SUSPENDED",
     emailVerified: true,
@@ -202,7 +223,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c007",
     name: "Marcus Vance",
     email: "marcus.v@fintechhiring.net",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "RECRUITER",
     status: "INACTIVE",
     emailVerified: false,
@@ -220,7 +241,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c008",
     name: "Aarav Mehta",
     email: "aarav.mehta@example.com",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -240,7 +261,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c009",
     name: "Sophia Chen",
     email: "sophia.chen@example.org",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -260,7 +281,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c010",
     name: "Lucas Althaus",
     email: "lucas.althaus@example.de",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -280,7 +301,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c011",
     name: "Maya Patel",
     email: "maya.patel@example.com",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: false,
@@ -300,7 +321,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c012",
     name: "Daniel Santos",
     email: "daniel.santos@example.com",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "APPLICANT",
     status: "SUSPENDED",
     emailVerified: true,
@@ -320,7 +341,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c013",
     name: "Amira Zahra",
     email: "amira.zahra@example.io",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "APPLICANT",
     status: "INACTIVE",
     emailVerified: false,
@@ -340,7 +361,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c014",
     name: "Nathaniel Cole",
     email: "nathaniel.cole@example.com",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -360,7 +381,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c015",
     name: "Jessica Taylor",
     email: "jessica.taylor@example.com",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -380,7 +401,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c016",
     name: "Vikram Singhania",
     email: "vikram.singh@example.co.in",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -400,7 +421,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c017",
     name: "Chloe Martin",
     email: "chloe.martin@example.fr",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: false,
@@ -420,7 +441,7 @@ export const DEFAULT_SEED_USERS: IUser[] = [
     id: "65f1a2b3c4d5e6f7a8b9c018",
     name: "Ethan Wright",
     email: "ethan.wright@example.com",
-    passwordHash: DEFAULT_SEED_PASSWORD_HASH,
+    passwordHash: "password123",
     role: "APPLICANT",
     status: "ACTIVE",
     emailVerified: true,
@@ -444,25 +465,25 @@ class UserRepository {
   private users: Map<string, IUser> = new Map();
 
   constructor() {
-    // Strictly isolate seed users from production
-    if (process.env["NODE_ENV"] !== "production") {
-      this.resetToDefaults();
-    }
+    this.resetToDefaults();
   }
 
   /**
-   * Reset database to initial seed dataset (strictly prohibited in production)
+   * Reset database to initial seed dataset (useful for testing)
    */
   public resetToDefaults(): void {
     this.users.clear();
-    if (process.env["NODE_ENV"] === "production") {
-      // In production, NEVER load mock/seed users
-      return;
-    }
     for (const u of DEFAULT_SEED_USERS) {
       // Store clone to prevent mutations
       this.users.set(u.id, JSON.parse(JSON.stringify(u)));
     }
+  }
+
+  /**
+   * Get all raw user entities
+   */
+  public getAllRawUsers(): IUser[] {
+    return Array.from(this.users.values()).map((u) => JSON.parse(JSON.stringify(u)));
   }
 
   /**
@@ -539,6 +560,16 @@ class UserRepository {
         return false;
       }
 
+      // Filter by organization (tenant isolation)
+      if (params.organizationId && u.organizationId !== params.organizationId) {
+        return false;
+      }
+
+      // Filter by department
+      if (params.departmentId && u.departmentId !== params.departmentId) {
+        return false;
+      }
+
       // Filter by date range (createdAt)
       if (dateFrom !== undefined && !isNaN(dateFrom)) {
         const createdTime = new Date(u.createdAt).getTime();
@@ -582,6 +613,197 @@ class UserRepository {
 
     return {
       users: safeUsers,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+      summary,
+    };
+  }
+
+  /**
+   * Query applicants with search, status/verification/skill/location/date filtering, custom sorting, and pagination
+   */
+  public findApplicants(params: AdminApplicantQueryParams = {}): PaginatedAdminApplicantsResponse {
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(params.limit) || 20));
+    const search = params.search ? params.search.trim().toLowerCase() : "";
+    const statusFilter = params.status
+      ? (params.status.toUpperCase() as IUser["status"])
+      : undefined;
+    const emailVerifiedFilter =
+      typeof params.emailVerified === "boolean" ? params.emailVerified : undefined;
+    const skillFilter = params.skills ? params.skills.trim().toLowerCase() : undefined;
+    const locationFilter = params.location ? params.location.trim().toLowerCase() : undefined;
+
+    const dateFrom = params.dateFrom ? new Date(params.dateFrom).getTime() : undefined;
+    const dateTo = params.dateTo
+      ? new Date(
+          params.dateTo.includes("T") ? params.dateTo : `${params.dateTo}T23:59:59.999Z`,
+        ).getTime()
+      : undefined;
+
+    const sortBy = params.sortBy || "createdAt";
+    const sortOrder = params.sortOrder || (sortBy === "createdAt" ? "desc" : "asc");
+
+    // All registered users with role APPLICANT
+    const allApplicants = Array.from(this.users.values()).filter((u) => u.role === "APPLICANT");
+
+    // Summary metrics across all applicants
+    const summary: AdminApplicantSummaryStats = {
+      totalApplicants: allApplicants.length,
+      active: allApplicants.filter((u) => u.status === "ACTIVE").length,
+      suspended: allApplicants.filter((u) => u.status === "SUSPENDED").length,
+      inactive: allApplicants.filter((u) => u.status === "INACTIVE" || u.status === "DEACTIVATED")
+        .length,
+      verified: allApplicants.filter((u) => u.emailVerified).length,
+      unverified: allApplicants.filter((u) => !u.emailVerified).length,
+      withResume: allApplicants.filter(
+        (u) => !!u.applicantProfile?.resumeId || !!u.applicantProfile?.resumeFileName,
+      ).length,
+    };
+
+    // Filter matching criteria
+    const filtered = allApplicants.filter((u) => {
+      const profile = u.applicantProfile || {};
+      const skills = profile.skills || [];
+
+      // Search across name, email, headline, skills, location, summary, bio
+      if (search) {
+        const matchesName = u.name.toLowerCase().includes(search);
+        const matchesEmail = u.email.toLowerCase().includes(search);
+        const matchesHeadline = (profile.headline || "").toLowerCase().includes(search);
+        const matchesLocation = (profile.location || "").toLowerCase().includes(search);
+        const matchesSummary = (profile.summary || profile.bio || "")
+          .toLowerCase()
+          .includes(search);
+        const matchesSkills = skills.some((s) => s.toLowerCase().includes(search));
+
+        if (
+          !matchesName &&
+          !matchesEmail &&
+          !matchesHeadline &&
+          !matchesLocation &&
+          !matchesSummary &&
+          !matchesSkills
+        ) {
+          return false;
+        }
+      }
+
+      // Filter by status
+      if (statusFilter && u.status !== statusFilter) {
+        return false;
+      }
+
+      // Filter by email verification
+      if (emailVerifiedFilter !== undefined && u.emailVerified !== emailVerifiedFilter) {
+        return false;
+      }
+
+      // Filter by skills
+      if (skillFilter) {
+        const hasSkill = skills.some((s) => s.toLowerCase().includes(skillFilter));
+        if (!hasSkill) return false;
+      }
+
+      // Filter by location
+      if (locationFilter) {
+        const matchesLoc = (profile.location || "").toLowerCase().includes(locationFilter);
+        if (!matchesLoc) return false;
+      }
+
+      // Filter by date range (createdAt)
+      if (dateFrom !== undefined && !isNaN(dateFrom)) {
+        const createdTime = new Date(u.createdAt).getTime();
+        if (createdTime < dateFrom) return false;
+      }
+
+      if (dateTo !== undefined && !isNaN(dateTo)) {
+        const createdTime = new Date(u.createdAt).getTime();
+        if (createdTime > dateTo) return false;
+      }
+
+      return true;
+    });
+
+    // Sort by requested column
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === "name") {
+        comparison = a.name.localeCompare(b.name);
+      } else if (sortBy === "email") {
+        comparison = a.email.localeCompare(b.email);
+      } else if (sortBy === "status") {
+        comparison = a.status.localeCompare(b.status);
+      } else if (sortBy === "headline") {
+        const hA = a.applicantProfile?.headline || "";
+        const hB = b.applicantProfile?.headline || "";
+        comparison = hA.localeCompare(hB);
+      } else if (sortBy === "lastActive") {
+        const tA = a.lastActive ? new Date(a.lastActive).getTime() : 0;
+        const tB = b.lastActive ? new Date(b.lastActive).getTime() : 0;
+        comparison = tA - tB;
+      } else {
+        // Default createdAt
+        comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+
+      return sortOrder === "desc" ? -comparison : comparison;
+    });
+
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit) || 0;
+    const skip = (page - 1) * limit;
+    const paginatedSlice = filtered.slice(skip, skip + limit);
+
+    // Map to AdminApplicantItem (exclude passwordHash)
+    const applicants: AdminApplicantItem[] = paginatedSlice.map((u) => {
+      const p = u.applicantProfile || {};
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: "APPLICANT",
+        status: u.status,
+        emailVerified: u.emailVerified,
+        emailVerifiedAt: u.emailVerifiedAt,
+        avatarUrl: u.avatarUrl,
+        headline: p.headline || "",
+        location: p.location || "",
+        phone: p.phone || "",
+        summary: p.summary || p.bio || "",
+        bio: p.bio || p.summary || "",
+        skills: p.skills || [],
+        experienceYears: p.experienceYears || "",
+        experiences: p.experiences || [],
+        education: p.education || [],
+        certifications: p.certifications || [],
+        projects: p.projects || [],
+        applicantProfile: { ...p },
+        resume:
+          p.resumeFileName || p.resumeId
+            ? {
+                id: p.resumeId || `res_${u.id}`,
+                fileName: p.resumeFileName || "resume.pdf",
+                fileSize: 0,
+                mimeType: "application/pdf",
+                uploadedAt: u.createdAt,
+                parsingStatus: "COMPLETED",
+                atsScore: null,
+              }
+            : null,
+        applicationsCount: 0,
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt,
+        lastActive: u.lastActive,
+      };
+    });
+
+    return {
+      applicants,
       pagination: {
         page,
         limit,
@@ -637,12 +859,12 @@ class UserRepository {
   }
 
   /**
-   * Async find full user by ID with authoritative MongoDB persistence
+   * Async find full user by ID with MongoDB fallback and caching
    */
   public async findFullUserByIdAsync(id: string): Promise<IUser | null> {
     await ensureDatabaseConnected();
 
-    if (isDatabaseConnected() && isValidObjectId(id)) {
+    if (isValidObjectId(id) && isDatabaseConnected()) {
       try {
         const doc = await User.findById(id).exec();
         if (doc) {
@@ -654,16 +876,11 @@ class UserRepository {
       } catch (err) {
         console.warn(`[UserRepository] MongoDB findFullUserByIdAsync error:`, err);
         if (process.env["NODE_ENV"] === "production") {
-          throw new AppError("User service temporarily unavailable.", 503, "DATABASE_UNAVAILABLE");
+          return null;
         }
       }
-    } else if (process.env["NODE_ENV"] === "production") {
-      return null;
     }
-
-    const cached = this.findFullUserById(id);
-    if (cached) return cached;
-    return null;
+    return this.findFullUserById(id);
   }
 
   /**
@@ -675,7 +892,7 @@ class UserRepository {
   }
 
   /**
-   * Async find user by email with authoritative MongoDB persistence
+   * Async find user by email with MongoDB fallback and caching
    */
   public async findByEmailAsync(email: string): Promise<IUser | null> {
     const normalized = email.trim().toLowerCase();
@@ -695,25 +912,11 @@ class UserRepository {
       } catch (err) {
         console.warn(`[UserRepository] MongoDB findByEmailAsync error:`, err);
         if (process.env["NODE_ENV"] === "production") {
-          throw new AppError(
-            "Authentication service temporarily unavailable.",
-            503,
-            "DATABASE_UNAVAILABLE",
-          );
+          return null;
         }
       }
-    } else if (process.env["NODE_ENV"] === "production") {
-      throw new AppError(
-        "Authentication service temporarily unavailable.",
-        503,
-        "DATABASE_UNAVAILABLE",
-      );
     }
-
-    // In-memory fallback for local development & unit tests
-    const cached = this.findByEmail(normalized);
-    if (cached) return cached;
-    return null;
+    return this.findByEmail(normalized);
   }
 
   /**
@@ -833,7 +1036,7 @@ class UserRepository {
             location: applicantProfile.location,
             phone: applicantProfile.phone,
             skills: [],
-          }).catch(console.error);
+          } as any).catch(console.error);
         })
         .catch((err) => {
           console.error(`[MongoDB] Error saving Firebase user ${newUser.email}:`, err);
@@ -850,7 +1053,7 @@ class UserRepository {
   public countActiveAdmins(): number {
     let count = 0;
     for (const u of this.users.values()) {
-      if (u.role === "ADMIN" && u.status === "ACTIVE") {
+      if ((u.role === "ADMIN" || u.role === "SUPER_ADMIN") && u.status === "ACTIVE") {
         count++;
       }
     }
@@ -873,7 +1076,11 @@ class UserRepository {
     const previousStatus = user.status;
 
     // Safeguard: do not allow deactivating or suspending the only active admin account
-    if (user.role === "ADMIN" && user.status === "ACTIVE" && newStatus !== "ACTIVE") {
+    if (
+      (user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
+      user.status === "ACTIVE" &&
+      newStatus !== "ACTIVE"
+    ) {
       const activeAdmins = this.countActiveAdmins();
       if (activeAdmins <= 1) {
         throw new Error("Cannot deactivate or suspend the only active administrator account.");
@@ -916,7 +1123,12 @@ class UserRepository {
     // First check: check if any active admins in the batch are being changed to non-active
     const activeAdminsTargeted = uniqueIds.filter((id) => {
       const u = this.users.get(id);
-      return u && u.role === "ADMIN" && u.status === "ACTIVE" && newStatus !== "ACTIVE";
+      return (
+        u &&
+        (u.role === "ADMIN" || u.role === "SUPER_ADMIN") &&
+        u.status === "ACTIVE" &&
+        newStatus !== "ACTIVE"
+      );
     });
 
     if (activeAdminsTargeted.length > 0) {
@@ -936,7 +1148,11 @@ class UserRepository {
             continue;
           }
 
-          if (u.role === "ADMIN" && u.status === "ACTIVE" && newStatus !== "ACTIVE") {
+          if (
+            (u.role === "ADMIN" || u.role === "SUPER_ADMIN") &&
+            u.status === "ACTIVE" &&
+            newStatus !== "ACTIVE"
+          ) {
             if (adminSkipCount >= remainingAllowed) {
               failedCount++;
               failedUserIds.push(id);
@@ -1065,6 +1281,10 @@ class UserRepository {
     role: UserRole;
     status?: UserStatus;
     emailVerified?: boolean;
+    organizationId?: string;
+    departmentId?: string;
+    organizationName?: string;
+    departmentName?: string;
     recruiterProfile?: RecruiterProfileInfo;
     applicantProfile?: ApplicantProfileInfo;
     adminProfile?: AdminProfileInfo;
@@ -1091,6 +1311,10 @@ class UserRepository {
       createdAt: now,
       updatedAt: now,
       lastActive: now,
+      organizationId: (userData as any).organizationId || undefined,
+      departmentId: (userData as any).departmentId || undefined,
+      organizationName: (userData as any).organizationName || undefined,
+      departmentName: (userData as any).departmentName || undefined,
       ...(userData.recruiterProfile ? { recruiterProfile: userData.recruiterProfile } : {}),
       ...(userData.applicantProfile ? { applicantProfile: userData.applicantProfile } : {}),
       ...(userData.adminProfile ? { adminProfile: userData.adminProfile } : {}),
@@ -1119,7 +1343,7 @@ class UserRepository {
               companyName: newUser.recruiterProfile.companyName,
               designation: newUser.recruiterProfile.jobTitle,
               department: newUser.recruiterProfile.department || "Talent Acquisition",
-            }).catch(console.error);
+            } as any).catch(console.error);
           } else if (newUser.role === "APPLICANT" && newUser.applicantProfile) {
             await Applicant.create({
               userId: createdUserDoc._id,
@@ -1129,7 +1353,7 @@ class UserRepository {
               skills: newUser.applicantProfile.skills || [],
               experience: newUser.applicantProfile.experienceYears,
               resume: newUser.applicantProfile.resumeFileName,
-            }).catch(console.error);
+            } as any).catch(console.error);
           }
         })
         .catch((err) => {
@@ -1139,6 +1363,152 @@ class UserRepository {
 
     this.users.set(id, newUser);
     return { ...newUser };
+  }
+
+  public updateUser(id: string, updateData: UpdateUserInput, actorId?: string): SafeUser {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (updateData.email && updateData.email.trim().toLowerCase() !== user.email) {
+      const normalizedNewEmail = updateData.email.trim().toLowerCase();
+      const existing = this.findByEmail(normalizedNewEmail);
+      if (existing && existing.id !== id) {
+        throw new Error("An account with this email address already exists.");
+      }
+      user.email = normalizedNewEmail;
+    }
+
+    if (updateData.name && updateData.name.trim().length >= 2) {
+      user.name = updateData.name.trim();
+    }
+
+    // Role update with last active administrator safeguard
+    if (updateData.role && updateData.role !== user.role) {
+      if (
+        (user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
+        user.status === "ACTIVE" &&
+        updateData.role !== "ADMIN" &&
+        updateData.role !== "SUPER_ADMIN"
+      ) {
+        if (this.countActiveAdmins() <= 1) {
+          throw new Error("Cannot demote the only active administrator account.");
+        }
+      }
+      const prevRole = user.role;
+      user.role = updateData.role;
+
+      auditService.recordEvent({
+        action: "USER_ROLE_CHANGED",
+        category: "role",
+        actorId: actorId || "admin",
+        actorName: "Administrator",
+        actorEmail: "admin@talenttrack.ai",
+        actorRole: "ADMIN",
+        targetId: user.id,
+        targetType: "USER",
+        targetName: user.name,
+        organizationId: user.organizationId,
+        details: `Updated role for ${user.name} from ${prevRole} to ${user.role}`,
+        status: "Success",
+        metadata: { previousRole: prevRole, newRole: user.role },
+      });
+    }
+
+    // Status update with last active administrator safeguard
+    if (updateData.status && updateData.status !== user.status) {
+      if (
+        (user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
+        user.status === "ACTIVE" &&
+        updateData.status !== "ACTIVE"
+      ) {
+        if (this.countActiveAdmins() <= 1) {
+          throw new Error("Cannot deactivate or suspend the only active administrator account.");
+        }
+      }
+      const prevStatus = user.status;
+      user.status = updateData.status;
+
+      auditService.recordStatusChange({
+        adminId: actorId || "admin",
+        targetUserId: user.id,
+        previousStatus: prevStatus,
+        newStatus: user.status,
+      });
+    }
+
+    if (updateData.organizationId !== undefined) {
+      user.organizationId = updateData.organizationId || undefined;
+    }
+    if (updateData.departmentId !== undefined) {
+      user.departmentId = updateData.departmentId || undefined;
+    }
+    if (updateData.emailVerified !== undefined) {
+      user.emailVerified = updateData.emailVerified;
+    }
+    if (updateData.avatarUrl !== undefined) {
+      user.avatarUrl = updateData.avatarUrl;
+    }
+    if (updateData.password) {
+      user.passwordHash = hashPassword(updateData.password);
+    }
+
+    user.updatedAt = new Date().toISOString();
+    this.users.set(id, user);
+
+    auditService.recordEvent({
+      action: "USER_UPDATED",
+      category: "user",
+      actorId: actorId || "admin",
+      actorName: "Administrator",
+      actorEmail: "admin@talenttrack.ai",
+      actorRole: "ADMIN",
+      targetId: user.id,
+      targetType: "USER",
+      targetName: user.name,
+      organizationId: user.organizationId,
+      details: `Updated user profile for ${user.name} (${user.email})`,
+      status: "Success",
+    });
+
+    return toSafeUser(user);
+  }
+
+  public deleteUser(id: string, actorId?: string): { success: boolean; message: string } {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if ((user.role === "ADMIN" || user.role === "SUPER_ADMIN") && user.status === "ACTIVE") {
+      if (this.countActiveAdmins() <= 1) {
+        throw new Error("Cannot delete the only active administrator account.");
+      }
+    }
+
+    this.users.delete(id);
+
+    auditService.recordEvent({
+      action: "USER_DELETED",
+      category: "user",
+      actorId: actorId || "admin",
+      actorName: "Administrator",
+      actorEmail: "admin@talenttrack.ai",
+      actorRole: "ADMIN",
+      targetId: id,
+      targetType: "USER",
+      targetName: user.name,
+      organizationId: user.organizationId,
+      details: `Deleted user account ${user.name} (${user.email})`,
+      status: "Warning",
+    });
+
+    return { success: true, message: `User ${user.name} was successfully removed.` };
+  }
+
+  public findAllInternalUsers(): IUser[] {
+    return Array.from(this.users.values());
   }
 
   /**
@@ -1185,7 +1555,6 @@ class UserRepository {
     await ensureDatabaseConnected();
 
     if (isDatabaseConnected()) {
-      let createdUserDocId: string | null = null;
       try {
         const createdUserDoc = await User.create({
           _id: id,
@@ -1202,7 +1571,6 @@ class UserRepository {
           applicantProfile: newUser.applicantProfile,
           adminProfile: newUser.adminProfile,
         });
-        createdUserDocId = String(createdUserDoc._id);
 
         if (newUser.role === "RECRUITER" && newUser.recruiterProfile) {
           await Recruiter.create({
@@ -1210,7 +1578,7 @@ class UserRepository {
             companyName: newUser.recruiterProfile.companyName,
             designation: newUser.recruiterProfile.jobTitle,
             department: newUser.recruiterProfile.department || "Talent Acquisition",
-          });
+          } as any).catch(console.error);
         } else if (newUser.role === "APPLICANT" && newUser.applicantProfile) {
           await Applicant.create({
             userId: createdUserDoc._id,
@@ -1220,14 +1588,10 @@ class UserRepository {
             skills: newUser.applicantProfile.skills || [],
             experience: newUser.applicantProfile.experienceYears,
             resume: newUser.applicantProfile.resumeFileName,
-          });
+          } as any).catch(console.error);
         }
-      } catch (err: unknown) {
-        if (createdUserDocId) {
-          await User.findByIdAndDelete(createdUserDocId).catch(() => {});
-        }
-        const mongoErr = err as { code?: number };
-        if (mongoErr.code === 11000) {
+      } catch (err: any) {
+        if (err.code === 11000) {
           throw new Error("An account with this email address already exists.");
         }
         console.error(`[UserRepository] MongoDB error persisting user ${newUser.email}:`, err);

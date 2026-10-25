@@ -98,7 +98,9 @@ export function CandidateDetailModal({
 
   const [noteText, setNoteText] = useState("");
   const [feedbackRating, setFeedbackRating] = useState(4);
-  const [feedbackRec, setFeedbackRec] = useState<"STRONG_YES" | "YES" | "NEUTRAL" | "NO" | "STRONG_NO">("YES");
+  const [feedbackRec, setFeedbackRec] = useState<
+    "STRONG_YES" | "YES" | "NEUTRAL" | "NO" | "STRONG_NO"
+  >("YES");
   const [feedbackNotes, setFeedbackNotes] = useState("");
   const [feedbackStrengths, setFeedbackStrengths] = useState("");
   const [feedbackConcerns, setFeedbackConcerns] = useState("");
@@ -167,8 +169,14 @@ export function CandidateDetailModal({
     e.preventDefault();
     if (!targetAppId || !feedbackNotes.trim()) return;
     try {
-      const strengthsArr = feedbackStrengths.split(",").map((s) => s.trim()).filter(Boolean);
-      const concernsArr = feedbackConcerns.split(",").map((s) => s.trim()).filter(Boolean);
+      const strengthsArr = feedbackStrengths
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const concernsArr = feedbackConcerns
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       await addFeedbackMutation.mutateAsync({
         applicationId: targetAppId,
         stage: activeStage,
@@ -250,10 +258,18 @@ export function CandidateDetailModal({
 
         <Tabs defaultValue="overview" className="w-full pt-2">
           <TabsList className="grid w-full grid-cols-4 h-9">
-            <TabsTrigger value="overview" className="text-xs">Profile</TabsTrigger>
-            <TabsTrigger value="notes" className="text-xs">Notes ({notesList.length})</TabsTrigger>
-            <TabsTrigger value="feedback" className="text-xs">Feedback ({feedbackList.length})</TabsTrigger>
-            <TabsTrigger value="history" className="text-xs">History ({stageHistoryList.length})</TabsTrigger>
+            <TabsTrigger value="overview" className="text-xs">
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="text-xs">
+              Notes ({notesList.length})
+            </TabsTrigger>
+            <TabsTrigger value="feedback" className="text-xs">
+              Feedback ({feedbackList.length})
+            </TabsTrigger>
+            <TabsTrigger value="history" className="text-xs">
+              History ({stageHistoryList.length})
+            </TabsTrigger>
           </TabsList>
 
           {/* TAB 1: OVERVIEW */}
@@ -472,7 +488,10 @@ export function CandidateDetailModal({
 
           {/* TAB 2: INTERNAL NOTES */}
           <TabsContent value="notes" className="space-y-3.5 py-2 text-xs">
-            <form onSubmit={handleCreateNote} className="space-y-2 border border-border/80 rounded-lg p-3 bg-card">
+            <form
+              onSubmit={handleCreateNote}
+              className="space-y-2 border border-border/80 rounded-lg p-3 bg-card"
+            >
               <label className="font-semibold text-foreground text-xs flex items-center gap-1.5">
                 <MessageSquare className="size-3.5 text-brand-blue" />
                 Add Internal Recruiter Note
@@ -486,7 +505,9 @@ export function CandidateDetailModal({
                 maxLength={2000}
               />
               <div className="flex justify-between items-center pt-1">
-                <span className="text-[10px] text-muted-foreground">{noteText.length}/2000 characters</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {noteText.length}/2000 characters
+                </span>
                 <Button
                   size="sm"
                   type="submit"
@@ -499,7 +520,9 @@ export function CandidateDetailModal({
             </form>
 
             <div className="space-y-2">
-              <h4 className="font-semibold text-foreground text-xs">Notes History ({notesList.length})</h4>
+              <h4 className="font-semibold text-foreground text-xs">
+                Notes History ({notesList.length})
+              </h4>
               {notesList.length === 0 ? (
                 <p className="text-muted-foreground text-xs py-4 text-center border border-dashed rounded-lg">
                   No internal notes recorded yet for this candidate application.
@@ -507,14 +530,19 @@ export function CandidateDetailModal({
               ) : (
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                   {notesList.map((n: any, idx: number) => (
-                    <div key={n.id || idx} className="rounded-lg border border-border bg-muted/30 p-2.5 space-y-1">
+                    <div
+                      key={n.id || idx}
+                      className="rounded-lg border border-border bg-muted/30 p-2.5 space-y-1"
+                    >
                       <div className="flex justify-between items-center text-[10.5px]">
                         <strong className="text-foreground">{n.authorName || "Recruiter"}</strong>
                         <span className="text-muted-foreground">
                           {n.createdAt ? new Date(n.createdAt).toLocaleString() : "Recently"}
                         </span>
                       </div>
-                      <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">{n.text}</p>
+                      <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                        {n.text}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -524,14 +552,19 @@ export function CandidateDetailModal({
 
           {/* TAB 3: RECRUITER FEEDBACK */}
           <TabsContent value="feedback" className="space-y-3.5 py-2 text-xs">
-            <form onSubmit={handleCreateFeedback} className="space-y-2.5 border border-border/80 rounded-lg p-3 bg-card">
+            <form
+              onSubmit={handleCreateFeedback}
+              className="space-y-2.5 border border-border/80 rounded-lg p-3 bg-card"
+            >
               <h4 className="font-semibold text-foreground text-xs flex items-center gap-1.5">
                 <Star className="size-3.5 text-amber-500 fill-amber-500" />
                 Submit Evaluation & Recommendation
               </h4>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground block mb-1">Overall Recommendation</label>
+                  <label className="text-[11px] font-medium text-muted-foreground block mb-1">
+                    Overall Recommendation
+                  </label>
                   <select
                     value={feedbackRec}
                     onChange={(e) => setFeedbackRec(e.target.value as any)}
@@ -545,7 +578,9 @@ export function CandidateDetailModal({
                   </select>
                 </div>
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground block mb-1">Competency Rating (1-5)</label>
+                  <label className="text-[11px] font-medium text-muted-foreground block mb-1">
+                    Competency Rating (1-5)
+                  </label>
                   <div className="flex items-center gap-1 pt-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -563,14 +598,18 @@ export function CandidateDetailModal({
                         />
                       </button>
                     ))}
-                    <span className="text-xs font-bold text-foreground ml-1.5">{feedbackRating}/5</span>
+                    <span className="text-xs font-bold text-foreground ml-1.5">
+                      {feedbackRating}/5
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground block mb-1">Strengths (comma-separated)</label>
+                  <label className="text-[11px] font-medium text-muted-foreground block mb-1">
+                    Strengths (comma-separated)
+                  </label>
                   <input
                     type="text"
                     value={feedbackStrengths}
@@ -580,7 +619,9 @@ export function CandidateDetailModal({
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-medium text-muted-foreground block mb-1">Areas for Improvement</label>
+                  <label className="text-[11px] font-medium text-muted-foreground block mb-1">
+                    Areas for Improvement
+                  </label>
                   <input
                     type="text"
                     value={feedbackConcerns}
@@ -592,7 +633,9 @@ export function CandidateDetailModal({
               </div>
 
               <div>
-                <label className="text-[11px] font-medium text-muted-foreground block mb-1">Detailed Evaluation Notes</label>
+                <label className="text-[11px] font-medium text-muted-foreground block mb-1">
+                  Detailed Evaluation Notes
+                </label>
                 <Textarea
                   value={feedbackNotes}
                   onChange={(e) => setFeedbackNotes(e.target.value)}
@@ -615,7 +658,9 @@ export function CandidateDetailModal({
             </form>
 
             <div className="space-y-2">
-              <h4 className="font-semibold text-foreground text-xs">Evaluations ({feedbackList.length})</h4>
+              <h4 className="font-semibold text-foreground text-xs">
+                Evaluations ({feedbackList.length})
+              </h4>
               {feedbackList.length === 0 ? (
                 <p className="text-muted-foreground text-xs py-4 text-center border border-dashed rounded-lg">
                   No interview feedback or evaluations recorded yet.
@@ -623,16 +668,21 @@ export function CandidateDetailModal({
               ) : (
                 <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
                   {feedbackList.map((f: any, idx: number) => (
-                    <div key={f.id || idx} className="rounded-lg border border-border bg-card p-3 space-y-1.5">
+                    <div
+                      key={f.id || idx}
+                      className="rounded-lg border border-border bg-card p-3 space-y-1.5"
+                    >
                       <div className="flex justify-between items-center text-xs">
                         <strong className="text-foreground">{f.authorName || "Reviewer"}</strong>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          f.overallRecommendation.includes("YES")
-                            ? "bg-surface-green text-brand-green"
-                            : f.overallRecommendation === "NEUTRAL"
-                              ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-                              : "bg-surface-peach text-brand-orange"
-                        }`}>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            f.overallRecommendation.includes("YES")
+                              ? "bg-surface-green text-brand-green"
+                              : f.overallRecommendation === "NEUTRAL"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                                : "bg-surface-peach text-brand-orange"
+                          }`}
+                        >
                           {f.overallRecommendation} • {f.rating}/5 ★
                         </span>
                       </div>
@@ -640,12 +690,18 @@ export function CandidateDetailModal({
                       {(f.strengths?.length > 0 || f.concerns?.length > 0) && (
                         <div className="flex flex-wrap gap-2 pt-1 text-[10px]">
                           {f.strengths?.map((s: string, sI: number) => (
-                            <span key={sI} className="text-brand-green bg-surface-green px-1.5 py-0.5 rounded font-medium">
+                            <span
+                              key={sI}
+                              className="text-brand-green bg-surface-green px-1.5 py-0.5 rounded font-medium"
+                            >
                               + {s}
                             </span>
                           ))}
                           {f.concerns?.map((c: string, cI: number) => (
-                            <span key={cI} className="text-brand-orange bg-surface-peach px-1.5 py-0.5 rounded font-medium">
+                            <span
+                              key={cI}
+                              className="text-brand-orange bg-surface-peach px-1.5 py-0.5 rounded font-medium"
+                            >
                               - {c}
                             </span>
                           ))}
@@ -675,14 +731,18 @@ export function CandidateDetailModal({
                     <span className="absolute -left-[23px] top-1 size-3 rounded-full bg-brand-blue border-2 border-background" />
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-foreground text-xs">
-                        {item.fromStage ? `${item.fromStage} → ` : ""}{item.toStage}
+                        {item.fromStage ? `${item.fromStage} → ` : ""}
+                        {item.toStage}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
                         {item.changedAt ? new Date(item.changedAt).toLocaleString() : "Recently"}
                       </span>
                     </div>
                     <p className="text-[11px] text-muted-foreground">
-                      Updated by <strong className="text-foreground">{item.changedByName || "Recruiter"}</strong>
+                      Updated by{" "}
+                      <strong className="text-foreground">
+                        {item.changedByName || "Recruiter"}
+                      </strong>
                       {item.reason ? ` — "${item.reason}"` : ""}
                     </p>
                   </div>

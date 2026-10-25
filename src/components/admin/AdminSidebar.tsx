@@ -10,6 +10,7 @@ import {
   ChevronDown,
   LogOut,
   Shield,
+  UserRound,
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/auth/AuthProvider";
@@ -25,6 +26,7 @@ import {
 export type AdminNavItemKey =
   | "Dashboard"
   | "Users"
+  | "Applicants"
   | "Organizations"
   | "Audit Logs"
   | "Reports"
@@ -32,7 +34,6 @@ export type AdminNavItemKey =
   | "System Activity"
   | "Companies"
   | "Recruiters"
-  | "Applicants"
   | "Jobs"
   | "Applications";
 
@@ -55,6 +56,12 @@ export const adminNavGroups: NavGroup[] = [
     title: "PLATFORM",
     items: [
       { key: "Users", label: "Users", icon: Users, route: "/admin/users" },
+      {
+        key: "Applicants",
+        label: "Applicants",
+        icon: UserRound,
+        route: "/admin/applicants",
+      },
       {
         key: "Organizations",
         label: "Organizations",
