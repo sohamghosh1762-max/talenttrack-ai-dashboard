@@ -12,6 +12,10 @@ function apiDevPlugin(): Plugin {
   return {
     name: "api-dev-middleware",
     configureServer(server: ViteDevServer) {
+      import("./src/server/db/mongodb.ts")
+        .then((m) => m.ensureDatabaseConnected())
+        .catch(() => {});
+
       server.middlewares.use(async (req, res, next) => {
         if (req.url && req.url.startsWith("/api")) {
           try {

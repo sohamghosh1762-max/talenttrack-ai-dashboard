@@ -1,6 +1,7 @@
 import { userRepository, DEFAULT_SEED_EMAILS } from "../db/user-repository.ts";
 import { sessionRepository } from "../db/session-repository.ts";
 import { tokenRepository } from "../db/token-repository.ts";
+import { ensureDatabaseConnected } from "../db/mongodb.ts";
 import {
   createUserSession,
   createUserSessionAsync,
@@ -31,6 +32,8 @@ import type { UserRole } from "../types/user-types.ts";
  * Handle POST /api/auth/register
  */
 export async function handleRegister(req: Request): Promise<Response> {
+  await ensureDatabaseConnected();
+
   let body: unknown;
   try {
     body = await req.json();
@@ -143,6 +146,8 @@ export async function handleRegister(req: Request): Promise<Response> {
  * Handle POST /api/auth/login
  */
 export async function handleLogin(req: Request): Promise<Response> {
+  await ensureDatabaseConnected();
+
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     req.headers.get("x-real-ip") ||
@@ -174,6 +179,7 @@ export async function handleLogin(req: Request): Promise<Response> {
 
   if (!user) {
     loginRateLimiter.recordIpAttempt(ip);
+    logger.info(`[Auth Diagnostics] Failed login attempt for ${normalizedEmail}: Reason: USER_NOT_FOUND`);
     return errorResponse(new AppError("Invalid email or password.", 401, "INVALID_CREDENTIALS"));
   }
 
@@ -183,6 +189,9 @@ export async function handleLogin(req: Request): Promise<Response> {
     (DEFAULT_SEED_EMAILS.has(normalizedEmail) || !user.passwordHash?.startsWith("scrypt$"))
   ) {
     loginRateLimiter.recordIpAttempt(ip);
+    logger.info(
+      `[Auth Diagnostics] Login rejected for seed/unhashed user in production: ${normalizedEmail}`,
+    );
     return errorResponse(new AppError("Invalid email or password.", 401, "INVALID_CREDENTIALS"));
   }
 
@@ -191,6 +200,7 @@ export async function handleLogin(req: Request): Promise<Response> {
     const lockExpiry = new Date(user.lockedUntil).getTime();
     if (Date.now() < lockExpiry) {
       const remainingMin = Math.ceil((lockExpiry - Date.now()) / 60000);
+      logger.info(`[Auth Diagnostics] Login rejected for locked account: ${normalizedEmail}`);
       return errorResponse(
         new AppError(
           `Account is temporarily locked due to failed login attempts. Please try again in ${remainingMin} minutes or reset your password.`,
@@ -203,7 +213,34 @@ export async function handleLogin(req: Request): Promise<Response> {
     }
   }
 
+  if (user.status === "PENDING_VERIFICATION") {
+    loginRateLimiter.recordIpAttempt(ip);
+    logger.info(
+      `[Auth Diagnostics] Login rejected for unverified account requiring email verification: ${normalizedEmail}`,
+    );
+    return errorResponse(
+      new AppError(
+        "Please verify your email address before signing in. Check your inbox for the verification link.",
+        403,
+        "EMAIL_NOT_VERIFIED",
+      ),
+    );
+  }
+
+  if (user.status === "INACTIVE") {
+    loginRateLimiter.recordIpAttempt(ip);
+    logger.info(`[Auth Diagnostics] Login rejected for inactive account: ${normalizedEmail}`);
+    return errorResponse(
+      new AppError(
+        "Your account is inactive. Please contact support.",
+        403,
+        "ACCOUNT_INACTIVE",
+      ),
+    );
+  }
+
   if (user.status === "SUSPENDED") {
+    logger.info(`[Auth Diagnostics] Login rejected for suspended account: ${normalizedEmail}`);
     return errorResponse(
       new AppError(
         "Your account has been suspended. Please contact support.",
@@ -214,6 +251,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   }
 
   if (user.status === "DEACTIVATED") {
+    logger.info(`[Auth Diagnostics] Login rejected for deactivated account: ${normalizedEmail}`);
     return errorResponse(
       new AppError(
         "Your account has been deactivated. Please contact support.",
@@ -227,6 +265,9 @@ export async function handleLogin(req: Request): Promise<Response> {
   const passwordMatch = verifyPassword(validated.password, user.passwordHash);
   if (!passwordMatch) {
     loginRateLimiter.recordIpAttempt(ip);
+    logger.info(
+      `[Auth Diagnostics] Failed login attempt for ${normalizedEmail}: Reason: PASSWORD_MISMATCH`,
+    );
     const lockResult = await userRepository.recordLoginFailureAsync(user.id);
     if (lockResult.locked) {
       return errorResponse(
@@ -242,6 +283,9 @@ export async function handleLogin(req: Request): Promise<Response> {
 
   // Successful login
   await userRepository.recordLoginSuccessAsync(user.id);
+  logger.info(
+    `[Auth Diagnostics] Successful login for user ${user.id} (${normalizedEmail}, role: ${user.role})`,
+  );
   const sessionRes = await createUserSessionAsync(user.id, req, {
     persistent: validated.rememberMe ?? true,
   });
@@ -529,6 +573,8 @@ export async function handleAuthApiRequest(req: Request): Promise<Response | nul
   }
 
   try {
+    await ensureDatabaseConnected();
+
     if (pathname === "/api/auth/register" && req.method === "POST") {
       return await handleRegister(req);
     }

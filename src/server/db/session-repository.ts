@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { Session } from "../models/Session.ts";
-import { isDatabaseConnected } from "./mongodb.ts";
+import { isDatabaseConnected, ensureDatabaseConnected } from "./mongodb.ts";
 import { isValidObjectId } from "./user-repository.ts";
 import mongoose from "mongoose";
 
@@ -121,6 +121,8 @@ class SessionRepository {
     if (!token) return null;
     const tokenHash = hashToken(token);
 
+    await ensureDatabaseConnected();
+
     if (isDatabaseConnected()) {
       try {
         const doc = await Session.findOne({
@@ -223,6 +225,8 @@ class SessionRepository {
       ...(options.userAgent ? { userAgent: options.userAgent } : {}),
     };
 
+    await ensureDatabaseConnected();
+
     if (isDatabaseConnected()) {
       const mongoUserId = isValidObjectId(userId)
         ? new mongoose.Types.ObjectId(userId)
@@ -239,8 +243,11 @@ class SessionRepository {
         lastUsedAt: now,
         revokedAt: null,
       });
-    } else if (process.env["NODE_ENV"] === "production") {
-      throw new Error("Cannot create session: Database is unavailable.");
+    } else {
+      const hasDbConfig = !!(process.env["MONGODB_URI"] || process.env["DATABASE_URL"]);
+      if (process.env["NODE_ENV"] === "production" || hasDbConfig) {
+        throw new Error("Cannot create session: Database is unavailable.");
+      }
     }
 
     this.sessions.set(tokenHash, session);

@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { hashToken } from "./session-repository.ts";
 import { AuthToken } from "../models/AuthToken.ts";
-import { isDatabaseConnected } from "./mongodb.ts";
+import { isDatabaseConnected, ensureDatabaseConnected } from "./mongodb.ts";
 import { isValidObjectId } from "./user-repository.ts";
 import mongoose from "mongoose";
 
@@ -31,6 +31,8 @@ class TokenRepository {
     const expiresAt = new Date(now.getTime() + ttlMinutes * 60 * 1000);
     const tokenId = `tok_${now.getTime().toString(36)}_${crypto.randomBytes(6).toString("hex")}`;
 
+    await ensureDatabaseConnected();
+
     if (isDatabaseConnected()) {
       const mongoUserId = isValidObjectId(userId)
         ? new mongoose.Types.ObjectId(userId)
@@ -44,8 +46,11 @@ class TokenRepository {
         expiresAt,
         usedAt: null,
       });
-    } else if (process.env["NODE_ENV"] === "production") {
-      throw new Error("Cannot create password reset token: Database is unavailable.");
+    } else {
+      const hasDbConfig = !!(process.env["MONGODB_URI"] || process.env["DATABASE_URL"]);
+      if (process.env["NODE_ENV"] === "production" || hasDbConfig) {
+        throw new Error("Cannot create password reset token: Database is unavailable.");
+      }
     }
 
     const record: IAuthToken = {
@@ -167,6 +172,8 @@ class TokenRepository {
     const expiresAt = new Date(now.getTime() + ttlHours * 60 * 60 * 1000);
     const tokenId = `tok_${now.getTime().toString(36)}_${crypto.randomBytes(6).toString("hex")}`;
 
+    await ensureDatabaseConnected();
+
     if (isDatabaseConnected()) {
       const mongoUserId = isValidObjectId(userId)
         ? new mongoose.Types.ObjectId(userId)
@@ -180,8 +187,11 @@ class TokenRepository {
         expiresAt,
         usedAt: null,
       });
-    } else if (process.env["NODE_ENV"] === "production") {
-      throw new Error("Cannot create email verification token: Database is unavailable.");
+    } else {
+      const hasDbConfig = !!(process.env["MONGODB_URI"] || process.env["DATABASE_URL"]);
+      if (process.env["NODE_ENV"] === "production" || hasDbConfig) {
+        throw new Error("Cannot create email verification token: Database is unavailable.");
+      }
     }
 
     const record: IAuthToken = {

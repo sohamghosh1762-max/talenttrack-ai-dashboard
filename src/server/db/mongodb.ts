@@ -97,6 +97,48 @@ export function isDatabaseConnected(): boolean {
 }
 
 /**
+ * Ensure database is connected before executing database operations.
+ * Awaits existing in-flight connection promise or initiates new connection.
+ */
+export async function ensureDatabaseConnected(timeoutMs: number = 10000): Promise<boolean> {
+  if (isDatabaseConnected()) {
+    return true;
+  }
+  if (mongoose.connection.readyState === 2 && cachedConnectionPromise) {
+    try {
+      await cachedConnectionPromise;
+      return isDatabaseConnected();
+    } catch {
+      return false;
+    }
+  }
+  // In test environment without explicit URI, do not force-connect to localhost if disconnected
+  if (
+    process.env["NODE_ENV"] === "test" &&
+    !process.env["MONGODB_URI"] &&
+    !process.env["DATABASE_URL"]
+  ) {
+    return false;
+  }
+  try {
+    const connPromise = connectToDatabase();
+    if (timeoutMs > 0) {
+      await Promise.race([
+        connPromise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Database connection timeout")), timeoutMs),
+        ),
+      ]);
+    } else {
+      await connPromise;
+    }
+    return isDatabaseConnected();
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Active ping probe to verify MongoDB can execute database operations
  */
 export async function pingDatabase(timeoutMs: number = 2000): Promise<boolean> {

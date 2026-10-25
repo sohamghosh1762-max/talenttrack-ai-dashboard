@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { User, type IUserDocument } from "../models/User.ts";
 import { Recruiter } from "../models/Recruiter.ts";
 import { Applicant } from "../models/Applicant.ts";
-import { isDatabaseConnected } from "./mongodb.ts";
+import { isDatabaseConnected, ensureDatabaseConnected } from "./mongodb.ts";
 import type {
   IUser,
   SafeUser,
@@ -640,6 +640,8 @@ class UserRepository {
    * Async find full user by ID with authoritative MongoDB persistence
    */
   public async findFullUserByIdAsync(id: string): Promise<IUser | null> {
+    await ensureDatabaseConnected();
+
     if (isDatabaseConnected() && isValidObjectId(id)) {
       try {
         const doc = await User.findById(id).exec();
@@ -648,9 +650,7 @@ class UserRepository {
           this.users.set(user.id, user);
           return user;
         }
-        if (process.env["NODE_ENV"] === "production") {
-          return null;
-        }
+        return null;
       } catch (err) {
         console.warn(`[UserRepository] MongoDB findFullUserByIdAsync error:`, err);
         if (process.env["NODE_ENV"] === "production") {
@@ -680,6 +680,8 @@ class UserRepository {
   public async findByEmailAsync(email: string): Promise<IUser | null> {
     const normalized = email.trim().toLowerCase();
 
+    await ensureDatabaseConnected();
+
     if (isDatabaseConnected()) {
       try {
         const doc = await User.findOne({ email: normalized }).exec();
@@ -688,10 +690,8 @@ class UserRepository {
           this.users.set(user.id, user);
           return user;
         }
-        // In production, MongoDB is strictly authoritative: non-existent records return null
-        if (process.env["NODE_ENV"] === "production") {
-          return null;
-        }
+        // When MongoDB is connected, it is strictly authoritative: non-existent records return null
+        return null;
       } catch (err) {
         console.warn(`[UserRepository] MongoDB findByEmailAsync error:`, err);
         if (process.env["NODE_ENV"] === "production") {
@@ -1182,6 +1182,8 @@ class UserRepository {
       ...(userData.adminProfile ? { adminProfile: userData.adminProfile } : {}),
     };
 
+    await ensureDatabaseConnected();
+
     if (isDatabaseConnected()) {
       let createdUserDocId: string | null = null;
       try {
@@ -1231,8 +1233,13 @@ class UserRepository {
         console.error(`[UserRepository] MongoDB error persisting user ${newUser.email}:`, err);
         throw err;
       }
-    } else if (process.env["NODE_ENV"] === "production") {
-      throw new Error("Cannot create user: Database is unavailable.");
+    } else {
+      const hasDbConfig = !!(process.env["MONGODB_URI"] || process.env["DATABASE_URL"]);
+      if (process.env["NODE_ENV"] === "production" || hasDbConfig) {
+        throw new Error(
+          "Cannot create user: Database is unavailable. Registration persistence failed.",
+        );
+      }
     }
 
     this.users.set(id, newUser);

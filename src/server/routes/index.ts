@@ -8,7 +8,7 @@ import { handleAtsApiRequest } from "./ats-routes.ts";
 import { handleApplicantApiRequest } from "./applicant-routes.ts";
 import { handleConversationApiRequest } from "./conversation-routes.ts";
 import { handleNotificationApiRequest } from "./notification-routes.ts";
-import { getDatabaseStatus, pingDatabase } from "../db/mongodb.ts";
+import { ensureDatabaseConnected, getDatabaseStatus, pingDatabase } from "../db/mongodb.ts";
 import { errorResponse, successResponse } from "../utils/response.ts";
 import { NotFoundError } from "../utils/errors.ts";
 import { createRequestLogger } from "../middleware/request-logger.ts";
@@ -25,6 +25,9 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
   if (!pathname.startsWith("/api")) {
     return null;
   }
+
+  // Ensure database connection is ready for API traffic
+  await ensureDatabaseConnected();
 
   const startTime = performance.now();
 
